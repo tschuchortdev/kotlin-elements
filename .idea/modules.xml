@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/annotation-test.iml" filepath="$PROJECT_DIR$/.idea/modules/annotation-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/annotation-test/com.tschuchort.kotlinelements.annotation-test.iml" filepath="$PROJECT_DIR$/.idea/modules/annotation-test/com.tschuchort.kotlinelements.annotation-test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/annotation-test/com.tschuchort.kotlinelements.annotation-test.main.iml" filepath="$PROJECT_DIR$/.idea/modules/annotation-test/com.tschuchort.kotlinelements.annotation-test.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/annotation-test/com.tschuchort.kotlinelements.annotation-test.test.iml" filepath="$PROJECT_DIR$/.idea/modules/annotation-test/com.tschuchort.kotlinelements.annotation-test.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.tschuchort.kotlinelements.kotlinelements.iml" filepath="$PROJECT_DIR$/.idea/modules/com.tschuchort.kotlinelements.kotlinelements.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lib/com.tschuchort.kotlinelements.kotlinelements.main.iml" filepath="$PROJECT_DIR$/.idea/modules/lib/com.tschuchort.kotlinelements.kotlinelements.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lib/com.tschuchort.kotlinelements.kotlinelements.test.iml" filepath="$PROJECT_DIR$/.idea/modules/lib/com.tschuchort.kotlinelements.kotlinelements.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.iml" filepath="$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.test.iml" filepath="$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/kotlinelements.iml" filepath="$PROJECT_DIR$/.idea/modules/kotlinelements.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lib/lib.com.tschuchort.kotlinelements.kotlinelements.iml" filepath="$PROJECT_DIR$/.idea/modules/lib/lib.com.tschuchort.kotlinelements.kotlinelements.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/test-annot-processor.iml" filepath="$PROJECT_DIR$/.idea/modules/test-annot-processor.iml" />
+    </modules>
+  </component>
+</project>

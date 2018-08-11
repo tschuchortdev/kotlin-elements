@@ -1,0 +1,6 @@
+rootProject.name = 'kotlinelements'
+include 'lib'
+findProject(':lib')?.name = 'kotlinelements'
+include 'test-annot-processor'
+include 'annotation-test'
+
