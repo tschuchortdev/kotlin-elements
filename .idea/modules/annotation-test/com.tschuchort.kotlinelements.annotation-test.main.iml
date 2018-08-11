@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id=":annotation-test:main" external.linked.project.path="$MODULE_DIR$/../../../annotation-test" external.root.project.path="$MODULE_DIR$/../../.." external.system.id="GRADLE" external.system.module.group="com.tschuchort.kotlinelements" external.system.module.type="sourceSet" external.system.module.version="1.0-SNAPSHOT" type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="kotlin-language" name="Kotlin">
+      <configuration version="3" platform="JVM 1.8" useProjectSettings="false">
+        <compilerSettings>
+          <option name="additionalArguments" value="-Xskip-runtime-version-check" />
+        </compilerSettings>
+        <compilerArguments>
+          <option name="destination" value="$MODULE_DIR$/../../../annotation-test/build/classes/kotlin/main" />
+          <option name="noStdlib" value="true" />
+          <option name="noReflect" value="true" />
+          <option name="moduleName" value="annotation-test" />
+          <option name="jvmTarget" value="1.8" />
+          <option name="addCompilerBuiltIns" value="true" />
+          <option name="loadBuiltInsFromDependencies" value="true" />
+          <option name="languageVersion" value="1.2" />
+          <option name="apiVersion" value="1.2" />
+          <option name="pluginOptions">
+            <array />
+          </option>
+          <option name="pluginClasspaths">
+            <array>
+              <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-annotation-processing-gradle/1.2.60/6b880300d011dfc5962e8f24b6f9b7218516108/kotlin-annotation-processing-gradle-1.2.60.jar" />
+            </array>
+          </option>
+        </compilerArguments>
+      </configuration>
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
+    <output url="file://$MODULE_DIR$/../../../annotation-test/out/production/classes" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../../annotation-test/build/generated/source/kapt/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../../annotation-test/build/generated/source/kapt/main" isTestSource="false" generated="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../../annotation-test/build/generated/source/kaptKotlin/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../../annotation-test/build/generated/source/kaptKotlin/main" isTestSource="false" generated="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../../annotation-test/src/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../../annotation-test/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../annotation-test/src/main/kotlin" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../../../annotation-test/src/main/resources" type="java-resource" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library">
+      <library name="Gradle: kaptGeneratedClasses">
+        <CLASSES>
+          <root url="file://$MODULE_DIR$/../../../annotation-test/build/tmp/kapt3/classes/main" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.60" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains:annotations:13.0" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.60" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.60" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.2.60" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.2.50" level="project" />
+    <orderEntry type="module" module-name="com.tschuchort.kotlinelements.test-annot-processor.main" scope="PROVIDED" />
+    <orderEntry type="library" scope="PROVIDED" name="Gradle: me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Gradle: me.eugeniomarletti.kotlin.metadata:kotlin-compiler-lite:1.0.3-k-1.2.40" level="project" />
+    <orderEntry type="module" module-name="com.tschuchort.kotlinelements.kotlinelements.main" scope="PROVIDED" />
+    <orderEntry type="library" scope="PROVIDED" name="Gradle: com.squareup:kotlinpoet:1.0.0-RC1" level="project" />
+  </component>
+</module>

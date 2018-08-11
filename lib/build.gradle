@@ -1,0 +1,3 @@
+dependencies {
+    compile "me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0"
+}

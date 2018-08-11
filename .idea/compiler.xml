@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="com.tschuchort.kotlinelements.annotation-test.main" target="1.8" />
+      <module name="com.tschuchort.kotlinelements.annotation-test.test" target="1.8" />
+      <module name="com.tschuchort.kotlinelements.kotlinelements.main" target="1.8" />
+      <module name="com.tschuchort.kotlinelements.kotlinelements.test" target="1.8" />
+      <module name="com.tschuchort.kotlinelements.test-annot-processor.main" target="1.8" />
+      <module name="com.tschuchort.kotlinelements.test-annot-processor.test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
