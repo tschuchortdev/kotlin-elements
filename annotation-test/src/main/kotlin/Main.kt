@@ -29,6 +29,9 @@ class C {
 	}
 }
 
+@ClassAnnotation
+enum class EnumClass { ENUM_A, ENUM_B }
+
 @FunctionAnnotation
 inline fun <reified T, S : Integer, U : Int> foo() {}
 

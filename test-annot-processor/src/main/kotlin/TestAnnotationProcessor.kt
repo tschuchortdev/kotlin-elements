@@ -5,6 +5,7 @@ import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
 import me.eugeniomarletti.kotlin.metadata.KotlinMetadataUtils
 import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
 import me.eugeniomarletti.kotlin.processing.KotlinAbstractProcessor
+import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
@@ -33,7 +34,7 @@ annotation class ParameterAnnotation
 
 @Suppress("unused")
 @AutoService(Processor::class)
-internal class TestAnnotationProcessor : KotlinAbstractProcessor() {
+internal class TestAnnotationProcessor : AbstractProcessor() {
 	companion object {
 		const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"
 		const val GENERATE_KOTLIN_CODE_OPTION = "generate.kotlin.code"
@@ -41,12 +42,12 @@ internal class TestAnnotationProcessor : KotlinAbstractProcessor() {
 		const val FILE_SUFFIX_OPTION = "suffix"
 	}
 
-	private val kaptKotlinGeneratedDir by lazy { options[KAPT_KOTLIN_GENERATED_OPTION_NAME] }
-	private val generateErrors by lazy { options[GENERATE_ERRORS_OPTION] == "true" }
-	private val generateKotlinCode by lazy { options[GENERATE_KOTLIN_CODE_OPTION] == "true" }
-	private val generatedFilesSuffix by lazy { options[FILE_SUFFIX_OPTION] ?: "Generated"}
+	private val kaptKotlinGeneratedDir by lazy { processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME] }
+	private val generateErrors by lazy { processingEnv.options[GENERATE_ERRORS_OPTION] == "true" }
+	private val generateKotlinCode by lazy { processingEnv.options[GENERATE_KOTLIN_CODE_OPTION] == "true" }
+	private val generatedFilesSuffix by lazy { processingEnv.options[FILE_SUFFIX_OPTION] ?: "Generated"}
 
-	private fun log(msg: String) = messager.printMessage(Diagnostic.Kind.WARNING, msg)
+	private fun log(msg: String) = processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, msg)
 
 	override fun getSupportedAnnotationTypes() = setOf(
 			ClassAnnotation::class.java.name, FunctionAnnotation::class.java.name, TypeAliasAnnotation::class.java.name,
@@ -61,8 +62,6 @@ internal class TestAnnotationProcessor : KotlinAbstractProcessor() {
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
 			log("----------------------------------------------------------------------------------------------------")
 			annotatedElem.printSummary()
-
-
 
 			with(KotlinTypeElement.get(annotatedElem as TypeElement, processingEnv)!!) {
 				log("classKind: $classKind")

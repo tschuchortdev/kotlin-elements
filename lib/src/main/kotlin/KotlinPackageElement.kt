@@ -1,8 +1,10 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.KotlinPackageMetadata
+import me.eugeniomarletti.kotlin.metadata.jvm.jvmPackageModuleName
 import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Name
 import javax.lang.model.element.PackageElement
@@ -10,10 +12,13 @@ import javax.lang.model.element.PackageElement
 open class KotlinPackageElement internal constructor(
 		private val element: PackageElement,
 		metadata: KotlinPackageMetadata,
-		processingEnv: ProcessingEnvironment)
-	: KotlinElement(element, metadata.data.nameResolver, processingEnv), PackageElement {
+		processingEnv: ProcessingEnvironment
+) : KotlinElement(element, processingEnv), PackageElement {
 
 	protected val protoPackage: ProtoBuf.Package = metadata.data.packageProto
+	protected val protoNameResolver: NameResolver = metadata.data.nameResolver
+
+	val jvmPackageModuleName: String? = protoPackage.jvmPackageModuleName?.let{ protoNameResolver.getString(it) }
 
 	override fun isUnnamed(): Boolean = element.isUnnamed
 
@@ -30,4 +35,6 @@ open class KotlinPackageElement internal constructor(
 	}
 
 	override fun toString() = element.toString()
+	override fun equals(other: Any?) = element.equals(other)
+	override fun hashCode() = element.hashCode()
 }
