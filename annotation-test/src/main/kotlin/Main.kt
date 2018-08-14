@@ -7,19 +7,43 @@ data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 }
 
 //@ClassAnnotation
-data class B(val a: Integer) {
+open class B(val a: Integer) {
 	companion object {
 	}
 }
 
-//@ClassAnnotation
-class C {
+class C : B(Integer(1)) {
 
 	//@ClassAnnotation
 	inner class InnerClass
 }
 
-@ClassAnnotation class D {
+fun five() = 5
+
+//@ClassAnnotation
+class D {
+	companion object {
+		@JvmStatic
+		fun get(f: Float): D = D()
+	}
+
+	val x
+		get() = five()
+
+	var y = 6
+
+	var z: Int
+		get() = 5
+		set(@ParameterAnnotation value) {}
+
+	var isXx: Int
+		get() = 5
+		set(value) {}
+
+	var hasYy: Int
+		get() = 5
+		set(value) {}
+
 	fun memberFoo(@ParameterAnnotation param: Int) {
 		val localVar = 1
 
@@ -29,19 +53,28 @@ class C {
 	}
 }
 
-@ClassAnnotation
-enum class EnumClass { ENUM_A, ENUM_B }
+class SomeClass
 
-@FunctionAnnotation
+@ClassAnnotation
+enum class EnumClassWithCtor(x: SomeClass) {
+}
+
+//@ClassAnnotation
+enum class EnumClass { }
+
+//@ClassAnnotation
+annotation class Ann(val x: String)
+
+//@FunctionAnnotation
 inline fun <reified T, S : Integer, U : Int> foo() {}
 
-@FunctionAnnotation
+//@FunctionAnnotation
 fun bar() {
 	// local annotations don't get processed :/
-	@FunctionAnnotation
+	//@FunctionAnnotation
 	fun localBar() {}
 
-	@ClassAnnotation
+	//@ClassAnnotation
 	class LocalClass {
 	}
 }

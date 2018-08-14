@@ -54,6 +54,8 @@ open class KotlinFunctionElement internal constructor(
 				}
 
 				else ->
+					// to construct the KotlinFunctionElement, metadata of the parent element is needed
+					// so the construction is delegated to the parent element
 					(element.enclosingElement.toKotlinElement(processingEnv)
 							as? KotlinTypeElement)
 							?.getKotlinFunction(element)
@@ -84,23 +86,17 @@ open class KotlinFunctionElement internal constructor(
 	internal fun getKotlinTypeParameter(typeParamElem: TypeParameterElement): KotlinTypeParameterElement?
 			= findMatchingProtoTypeParam(typeParamElem, protoFunction.typeParameterList, protoNameResolver)
 			?.let { protoTypeParam -> KotlinTypeParameterElement(typeParamElem, protoTypeParam, processingEnv) }
-
-	override fun toString() = element.toString()
-	override fun equals(other: Any?) = element.equals(other)
-	override fun hashCode() = element.hashCode()
 }
 
-internal fun ProcessingEnvironment.findMatchingProtoFunction(functionElement: ExecutableElement,
-															 protoFunctions: List<ProtoBuf.Function>,
-															 nameResolver: NameResolver): ProtoBuf.Function?
-		= with(this.kotlinMetadataUtils) {
+internal fun ProcessingEnvironment.findMatchingProtoFunction(
+		functionElement: ExecutableElement, protoFunctions: List<ProtoBuf.Function>, nameResolver: NameResolver
+): ProtoBuf.Function? = with(this.kotlinMetadataUtils) {
 	getFunctionOrNull(functionElement, nameResolver, protoFunctions)
 }
 
-internal fun ProcessingEnvironment.findMatchingFunctionElement(protoFunction: ProtoBuf.Function,
-															   functionElements: List<ExecutableElement>,
-															   nameResolver: NameResolver): ExecutableElement?
-		= with(this.kotlinMetadataUtils) {
+internal fun ProcessingEnvironment.findMatchingFunctionElement(
+		protoFunction: ProtoBuf.Function, functionElements: List<ExecutableElement>, nameResolver: NameResolver
+): ExecutableElement? = with(this.kotlinMetadataUtils) {
 	val matchingFunctionElems = functionElements.filter { doFunctionsMatch(it, protoFunction, nameResolver) }
 
 	return when(matchingFunctionElems.size) {
@@ -113,10 +109,9 @@ internal fun ProcessingEnvironment.findMatchingFunctionElement(protoFunction: Pr
 	}
 }
 
-internal fun ProcessingEnvironment.doFunctionsMatch(functionElement: ExecutableElement,
-													protoFunction: ProtoBuf.Function,
-													nameResolver: NameResolver): Boolean
-		= with(this.kotlinMetadataUtils) {
+internal fun ProcessingEnvironment.doFunctionsMatch(
+		functionElement: ExecutableElement, protoFunction: ProtoBuf.Function, nameResolver: NameResolver
+): Boolean = with(this.kotlinMetadataUtils) {
 	functionElement.jvmMethodSignature == protoFunction.getJvmMethodSignature(nameResolver)
 }
 

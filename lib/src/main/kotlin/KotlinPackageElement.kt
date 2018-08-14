@@ -8,6 +8,7 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameRe
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Name
 import javax.lang.model.element.PackageElement
+import javax.tools.Diagnostic
 
 open class KotlinPackageElement internal constructor(
 		private val element: PackageElement,
@@ -25,13 +26,14 @@ open class KotlinPackageElement internal constructor(
 	override fun getQualifiedName(): Name = element.qualifiedName
 
 	companion object {
-		fun get(element: PackageElement, processingEnv: ProcessingEnvironment): KotlinPackageElement?
-				= if (element is KotlinPackageElement)
-					element
-				else
-					(element.kotlinMetadata as? KotlinPackageMetadata)?.let { metadata ->
-						KotlinPackageElement(element, metadata, processingEnv)
-					}
+		fun get(element: PackageElement, processingEnv: ProcessingEnvironment): KotlinPackageElement? {
+			return if (element is KotlinPackageElement)
+				element
+			else
+				(element.kotlinMetadata as? KotlinPackageMetadata)?.let { metadata ->
+					KotlinPackageElement(element, metadata, processingEnv)
+				}
+		}
 	}
 
 	override fun toString() = element.toString()

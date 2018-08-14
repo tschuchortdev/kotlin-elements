@@ -1,6 +1,7 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
+import me.eugeniomarletti.kotlin.metadata.jvm.getJvmConstructorSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
@@ -16,6 +17,7 @@ open class KotlinTypeElement internal constructor(
 
 	protected val protoClass: ProtoBuf.Class = metadata.data.classProto
 	protected val protoNameResolver: NameResolver = metadata.data.nameResolver
+	protected val protoTypeTable: ProtoBuf.TypeTable = protoClass.typeTable
 
 	val packageName: String = protoNameResolver.getString(protoClass.fqName).substringBeforeLast('/').replace('/', '.')
 
@@ -153,14 +155,22 @@ open class KotlinTypeElement internal constructor(
 	 * The primary constructor will be the first one in the list
 	 */
 	val constructors: List<KotlinConstructorElement> by lazy {
-		enclosedElements.filter { it.kind == ElementKind.CONSTRUCTOR }.castList<ExecutableElement>()
-				.map { constructorElem ->
-					getKotlinConstructor(constructorElem)
-					?: throw IllegalStateException(
-							"Could not find matching ProtoBuf.Constructor for constructor element \"$constructorElem\"" +
-							"which is a sub-element of \"$this\"")
+		val methodElements = element.enclosedElements.filter { it.kind == ElementKind.CONSTRUCTOR }
+				.castList<ExecutableElement>()
 
-				}
+		protoClass.constructorList.map { protoCtor ->
+			processingEnv.findMatchingConstructorElement(protoCtor, methodElements, protoNameResolver, protoTypeTable)
+					?.let { matchingMethodElem ->
+						KotlinConstructorElement(matchingMethodElem, protoCtor, protoNameResolver, processingEnv)
+					}
+			?: //if(kind != ElementKind.ENUM && kind != ElementKind.ANNOTATION_TYPE)
+					throw IllegalStateException(
+					"Could not find matching ExecutableElement for ProtoBuf.Constructor \"${protoCtor.jvmSignature()}\"" +
+					"which is a sub-element of \"$this\"")
+			//else
+			//	 null
+		}
+				.filterNotNull()
 				.sortedBy { !it.isPrimary } // sort list by inverse of isPrimary so that the primary ctor will come first
 				.also {
 					// check that the first ctor really is primary
@@ -181,25 +191,29 @@ open class KotlinTypeElement internal constructor(
 	 * function alone can not do it
 	 */
 	internal fun getKotlinConstructor(constructorElem: ExecutableElement): KotlinConstructorElement?
-			= processingEnv.findMatchingProtoConstructor(constructorElem, protoClass.constructorList, protoNameResolver, protoClass.typeTable)
+			= processingEnv.findMatchingProtoConstructor(constructorElem, protoClass.constructorList, protoNameResolver, protoTypeTable)
 			?.let { protoCtor -> KotlinConstructorElement(constructorElem, protoCtor, protoNameResolver, processingEnv) }
 
 	/**
 	 * methods declared within this class
 	 */
 	val declaredMethods: List<KotlinFunctionElement> by lazy {
-		enclosedElements.filter { it.kind == ElementKind.METHOD }.castList<ExecutableElement>()
-				.map { methodElem ->
-					getKotlinFunction(methodElem)
-					?: throw IllegalStateException(
-							"Could not find matching ProtoBuf.Function for method element \"$methodElem\"" +
-							"which is a sub-element of \"$this\"")
+		val methodElements = element.enclosedElements.filter { it.kind == ElementKind.METHOD }
+				.castList<ExecutableElement>()
 
-				}
+		protoClass.functionList.map { protoMethod ->
+			processingEnv.findMatchingFunctionElement(protoMethod, methodElements, protoNameResolver)
+					?.let { matchingMethodElem ->
+						KotlinFunctionElement(matchingMethodElem, protoMethod, protoNameResolver, processingEnv)
+					}
+			?: throw IllegalStateException(
+					"Could not find matching ExecutableElement for ProtoBuf.Function \"${protoMethod.jvmSignature()}\"" +
+					"which is a sub-element of \"$this\"")
+		}
 	}
 
 	/**
-	 * returns a [KotlinFunctionElement] for this [ExecutableElementElement] if it's a method
+	 * returns a [KotlinFunctionElement] for this [ExecutableElement] if it's a method
 	 * of this class or null otherwise
 	 *
 	 * this function is mostly necessary to be used by [KotlinFunctionElement.get] because only the
@@ -212,14 +226,18 @@ open class KotlinTypeElement internal constructor(
 
 	override fun getQualifiedName(): Name = element.qualifiedName
 
+	/*val properties: List<KotlinPropertyElement> by lazy {
+		protoClass.propertyList
+	}*/
+
 	//TODO(return kotlin interfaces)
 	override fun getInterfaces(): List<TypeMirror> = element.interfaces
 
 	override fun getNestingKind(): NestingKind = element.nestingKind
 
-	override fun toString() = element.toString()
-	override fun equals(other: Any?) = element.equals(other)
-	override fun hashCode() = element.hashCode()
+	protected fun ProtoBuf.Constructor.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
+		this@jvmSignature.getJvmConstructorSignature(protoNameResolver, protoTypeTable)
+	}
 }
 
 fun TypeElement.isKotlinClass() = kotlinMetadata is KotlinClassMetadata

@@ -1,6 +1,9 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
+import me.eugeniomarletti.kotlin.metadata.jvm.getJvmConstructorSignature
+import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
@@ -12,6 +15,10 @@ open class KotlinElement internal constructor(
 
 	protected val typeUtils = processingEnv.typeUtils
 	protected val elementUtils = processingEnv.elementUtils
+
+	protected fun ProtoBuf.Function.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
+		this@jvmSignature.jvmMethodSignature
+	}
 
 	companion object {
 		fun get(element: Element, processingEnv: ProcessingEnvironment): KotlinElement? =
@@ -80,20 +87,17 @@ open class KotlinElement internal constructor(
 			enclosingElement?.run { kind == ElementKind.PACKAGE || kotlinMetadata is KotlinPackageMetadata }
 			?: true
 
-	//TODO("handle enclosing element that is a module")
-	override fun getEnclosingElement(): KotlinElement?
+	override fun getEnclosingElement(): Element?
 			= element.enclosingElement?.let{ enclosingElement ->
-		KotlinElement.get(enclosingElement, processingEnv)
-		?: throw IllegalStateException(
-				"Can not convert enclosing element \"$this\" of KotlinElement \"${this@KotlinElement}\" to KotlinElement but" +
-				"the enclosing element of a kotlin element should also be kotlin element (as long as it's not a module)")
+		KotlinElement.get(enclosingElement, processingEnv) ?: enclosingElement
 	}
 
 	override fun getEnclosedElements(): List<KotlinElement>
 			= element.enclosedElements.map { enclosedElement ->
 		KotlinElement.get(enclosedElement, processingEnv)
 		?: throw IllegalStateException(
-				"Can not convert enclosed element \"$enclosedElement\" of KotlinElement \"${this@KotlinElement}\" to KotlinElement but" +
+				"Can not convert enclosed element \"$enclosedElement\" with kind \"${enclosedElement.kind}\"" +
+				" of KotlinElement \"$this\" to KotlinElement but" +
 				"all enclosed elements of a kotlin element should also be kotlin elements")
 	}
 

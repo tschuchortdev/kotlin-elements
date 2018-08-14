@@ -24,8 +24,10 @@ abstract class KotlinExecutableElement internal constructor(
 		}
 	}
 
+	abstract override fun getTypeParameters(): List<KotlinTypeParameterElement>
+
 	//TODO("handle Kotlin receiver type")
-	override fun getReceiverType(): TypeMirror = element.receiverType
+	override fun getReceiverType(): TypeMirror? = element.receiverType
 
 	//TODO("handle Kotlin thrown types")
 	override fun getThrownTypes(): List<TypeMirror> = element.thrownTypes
@@ -41,8 +43,4 @@ abstract class KotlinExecutableElement internal constructor(
 
 	//TODO("handle Kotlin return types")
 	override fun getReturnType(): TypeMirror = element.returnType
-
-	override fun toString() = element.toString()
-	override fun equals(other: Any?) = element.equals(other)
-	override fun hashCode() = element.hashCode()
 }

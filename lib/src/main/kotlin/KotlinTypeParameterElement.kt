@@ -35,6 +35,8 @@ open class KotlinTypeParameterElement internal constructor(
 			return if (element is KotlinTypeParameterElement)
 				element
 			else
+				// to construct the KotlinTypeParameterElement, metadata of the parent element is needed
+				// so the construction is delegated to the parent element
 				element.enclosingElement.toKotlinElement(processingEnv)?.let { parentElem ->
 					when (parentElem) {
 						is KotlinTypeElement -> parentElem.getKotlinTypeParameter(element)
@@ -47,15 +49,13 @@ open class KotlinTypeParameterElement internal constructor(
 				}
 		}
 	}
-
-	override fun toString() = element.toString()
-	override fun equals(other: Any?) = element.equals(other)
-	override fun hashCode() = element.hashCode()
 }
 
-internal fun findMatchingProtoTypeParam(typeParamElem: TypeParameterElement, protoTypeParams: List<ProtoBuf.TypeParameter>,
-										nameResolver: NameResolver): ProtoBuf.TypeParameter? {
-
+internal fun findMatchingProtoTypeParam(
+		typeParamElem: TypeParameterElement,
+		protoTypeParams: List<ProtoBuf.TypeParameter>,
+		nameResolver: NameResolver
+): ProtoBuf.TypeParameter? {
 	val matchingProtoTypeParams = protoTypeParams.filter { protoTypeParam ->
 		doTypeParamsMatch(typeParamElem, protoTypeParam, nameResolver)
 	}
@@ -68,9 +68,11 @@ internal fun findMatchingProtoTypeParam(typeParamElem: TypeParameterElement, pro
 	}
 }
 
-internal fun findMatchingTypeParamElement(protoTypeParam: ProtoBuf.TypeParameter, typeParamElems: List<TypeParameterElement>,
-										  nameResolver: NameResolver): TypeParameterElement? {
-
+internal fun findMatchingTypeParamElement(
+		protoTypeParam: ProtoBuf.TypeParameter,
+		typeParamElems: List<TypeParameterElement>,
+		nameResolver: NameResolver
+): TypeParameterElement? {
 	val matchingTypeParamElems = typeParamElems.filter { typeParamElem ->
 		doTypeParamsMatch(typeParamElem, protoTypeParam, nameResolver)
 	}
@@ -83,7 +85,8 @@ internal fun findMatchingTypeParamElement(protoTypeParam: ProtoBuf.TypeParameter
 	}
 }
 
-internal fun doTypeParamsMatch(typeParamElem: TypeParameterElement, protoTypeParam: ProtoBuf.TypeParameter,
-							   nameResolver: NameResolver): Boolean
+internal fun doTypeParamsMatch(
+		typeParamElem: TypeParameterElement, protoTypeParam: ProtoBuf.TypeParameter, nameResolver: NameResolver
+): Boolean
 		= typeParamElem.simpleName.toString() == nameResolver.getString(protoTypeParam.name)
 

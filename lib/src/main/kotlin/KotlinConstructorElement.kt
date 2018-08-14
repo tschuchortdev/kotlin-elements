@@ -29,6 +29,8 @@ class KotlinConstructorElement internal constructor(
 			return if(element is KotlinConstructorElement)
 				element
 			else {
+				// to construct the KotlinConstructorElement, metadata of the parent element is needed
+				// so the construction is delegated to the parent element
 				(element.enclosingElement.toKotlinElement(processingEnv)
 						as? KotlinTypeElement)
 						?.getKotlinConstructor(element)
@@ -46,10 +48,12 @@ class KotlinConstructorElement internal constructor(
 	}
 }
 
-internal fun ProcessingEnvironment.findMatchingProtoConstructor(constructorElement: ExecutableElement,
-																protoConstructors: List<ProtoBuf.Constructor>,
-																nameResolver: NameResolver,
-																typeTable: ProtoBuf.TypeTable): ProtoBuf.Constructor? {
+internal fun ProcessingEnvironment.findMatchingProtoConstructor(
+		constructorElement: ExecutableElement,
+		protoConstructors: List<ProtoBuf.Constructor>,
+		nameResolver: NameResolver,
+		typeTable: ProtoBuf.TypeTable
+): ProtoBuf.Constructor? {
 	val matchingProtoCtors = protoConstructors.filter {
 		doConstructorsMatch(constructorElement, it, nameResolver, typeTable)
 	}
@@ -62,11 +66,12 @@ internal fun ProcessingEnvironment.findMatchingProtoConstructor(constructorEleme
 	}
 }
 
-internal fun ProcessingEnvironment.findMatchingConstructorElement(protoConstructor: ProtoBuf.Constructor,
-																  functionElements: List<ExecutableElement>,
-																  nameResolver: NameResolver,
-																  typeTable: ProtoBuf.TypeTable): ExecutableElement?
-		= with(this.kotlinMetadataUtils) {
+internal fun ProcessingEnvironment.findMatchingConstructorElement(
+		protoConstructor: ProtoBuf.Constructor,
+		functionElements: List<ExecutableElement>,
+		nameResolver: NameResolver,
+		typeTable: ProtoBuf.TypeTable
+): ExecutableElement? = with(this.kotlinMetadataUtils) {
 	val matchingCtorElems = functionElements.filter {
 		doConstructorsMatch(it, protoConstructor, nameResolver, typeTable)
 	}
@@ -79,10 +84,11 @@ internal fun ProcessingEnvironment.findMatchingConstructorElement(protoConstruct
 	}
 }
 
-internal fun ProcessingEnvironment.doConstructorsMatch(constructorElement: ExecutableElement,
-													   protoConstructor: ProtoBuf.Constructor,
-													   nameResolver: NameResolver,
-													   typeTable: ProtoBuf.TypeTable): Boolean
-		= with(this.kotlinMetadataUtils) {
+internal fun ProcessingEnvironment.doConstructorsMatch(
+		constructorElement: ExecutableElement,
+		protoConstructor: ProtoBuf.Constructor,
+		nameResolver: NameResolver,
+		typeTable: ProtoBuf.TypeTable
+): Boolean = with(this.kotlinMetadataUtils) {
 	constructorElement.jvmMethodSignature == protoConstructor.getJvmConstructorSignature(nameResolver, typeTable)
 }

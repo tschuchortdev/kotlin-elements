@@ -61,75 +61,131 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
 			log("----------------------------------------------------------------------------------------------------")
-			annotatedElem.printSummary()
-
-			with(KotlinTypeElement.get(annotatedElem as TypeElement, processingEnv)!!) {
-				log("classKind: $classKind")
-				log("packageName: $packageName")
-				log("companion: $companionObject")
-				log("qualifiedName: $qualifiedName")
-				log("isDataClass: $isDataClass")
-				log("visibility: $visibility")
-				log("modality: $modality")
-				log("isExternalClass: $isExternalClass")
-				log("isInnerClass: $isInnerClass")
-				log("isExpectClass: $isExpectClass")
-				log("typeParameters: ${typeParameters.joinToString(", ") { "$it variance: ${it.variance} reified: ${it.reified}" }}")
-
-
-
-				typeParameters.forEach {
-					log("typeParam ${it.simpleName} metadata kind: ${it.kotlinMetadata?.header?.kind}")
-				}
-			}
-
-			val (nameResolver, classProto) = (annotatedElem.kotlinMetadata as KotlinClassMetadata).data
-
-			classProto.typeParameterList.forEach {
-				log("protoTypeParam ${nameResolver.getString(it.name)}")
-			}
-
-
+			log("$annotatedElem")
+			//log("enclosing: ${annotatedElem.enclosingElement}")
+			log("-             -                -               -                  -                      -")
+			annotatedElem.enclosedElements.forEach { log("    $it, kind: ${it.kind}") }
+			log(KotlinElement.get(annotatedElem, processingEnv)!!.printSummary().write())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FunctionAnnotation::class.java)) {
 			log("----------------------------------------------------------------------------------------------------")
-			annotatedElem.printSummary()
-			//annotatedElem.printParents()
-
-			with(annotatedElem as ExecutableElement) {
-				log("$typeParameters")
-			}
-
+			log("$annotatedElem")
+			log("enclosing: ${annotatedElem.enclosingElement}")
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ParameterAnnotation::class.java)) {
-			annotatedElem.printSummary()
+
 		}
 
 		return true
 	}
 
-	fun Element.printSummary() {
-		log("$this")
-		log("kind: $kind")
-		log("simpleName $simpleName")
-		log("metadata: $kotlinMetadata")
+	fun KotlinElement.printSummary(): StringWriter {
+		return StringWriter() +
+			   """
+				   name: $this
+				   simpleName: $simpleName
+				   isTopLevel: $isTopLevel
+				   kind: $kind
+				   modifiers: $modifiers
+				   isKotlinElement: ${isKotlinElement()}
+			   """.trimIndent() +
+			   if(this is KotlinExecutableElement) {
+				   StringWriter() + """
+					   isDefault: $isDefault
+					   isVarArgs: $isVarArgs
+					   receiverType: $receiverType
+					   returnType: $returnType
+					   thrownTypes: $thrownTypes
+					   typeParameters:
+				   """.trimIndent() +
+				   typeParameters.map { it.printSummary() }.combine().indent()
+			   }
+			   else {
+				   StringWriter()
+			   } +
+			   when(this) {
+				   is KotlinTypeElement -> StringWriter() + """
+					   packageName: $packageName
+					   isExternalClass: $isExternalClass
+					   isDataClass: $isDataClass
+					   isExpectClass: $isExpectClass
+					   isInnerClass: $isInnerClass
+					   isObject: $isObject
+					   modality: $modality
+					   visibility: $visibility
+					   constructors:
+				   """.trimIndent() +
+										   constructors.map { it.printSummary() }.combine().indent() +
+										   "declaredMethods:" +
+										   declaredMethods.map { it.printSummary() }.combine().indent() +
+										   "typeParams:" +
+										   typeParameters.map { it.printSummary() }.combine().indent() +
+										   "companionObject:" +
+										   companionObject?.printSummary()?.indent()
 
-		log("enclosedElements: ")
-		for(element in enclosedElements) {
-			element.printSummary()
-		}
-	}
+				   is KotlinFunctionElement -> StringWriter() + """
+					   isExpectFunc: $isExpectFunction
+					   isExternalFunc: $isExternalFunction
+					   isInfix: $isInfix
+					   isInline: $isInline
+					   isOperator: $isOperator
+					   isSuspend: $isSuspend
+					   isTailRec: $isTailRec
+				   """.trimIndent()
 
-	fun Element.printParents() {
-		enclosingElement?.let {
-			log("enclosing element:")
-			it.printSummary()
-			it.printParents()
-		}
+				   is KotlinConstructorElement -> StringWriter() + """
+					   isPrimary: $isPrimary
+				   """.trimIndent()
+
+				   is KotlinTypeParameterElement -> StringWriter() + """
+					   reified: $reified
+					   variance: $variance
+					   bounds: $bounds
+				   """.trimIndent()
+
+				   is KotlinPackageElement -> StringWriter() + """
+					   jvmPackageModuleName: $jvmPackageModuleName
+				   """.trimIndent()
+
+				   else -> StringWriter()
+			   }
 	}
 }
+
+class StringWriter(var lines: List<String> = emptyList()) {
+	fun write() = lines.joinToString("\n")
+
+	fun mapLines(f: (String) -> String): StringWriter {
+		lines = lines.map(f)
+		return this
+	}
+
+	fun indent(): StringWriter {
+		mapLines { "\t" + it }
+		return this
+	}
+
+	operator fun plus(line: String?): StringWriter {
+		if(line != null)
+			lines += line.split("\n").filter(CharSequence::isNotEmpty)
+
+		return this
+	}
+
+	operator fun plus(writer: StringWriter?): StringWriter {
+		if(writer != null)
+			lines += writer.lines
+
+		return this
+	}
+}
+
+fun List<StringWriter>.combine() = StringWriter(fold(mutableListOf<String>()) { accLines, writer ->
+	accLines.addAll(writer.lines)
+	accLines
+})
 
