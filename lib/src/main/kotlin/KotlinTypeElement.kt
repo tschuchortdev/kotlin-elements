@@ -124,7 +124,7 @@ open class KotlinTypeElement internal constructor(
 			}
 
 	/**
-	 * returns a [KotlinTypeParameterElement] for this [TypeParameterElement] if it's a type parameter
+	 * Returns a [KotlinTypeParameterElement] for this [TypeParameterElement] if it's a type parameter
 	 * of this class or null otherwise
 	 *
 	 * this function is mostly necessary to be used by [KotlinTypeParameterElement.get] because only the
@@ -134,6 +134,55 @@ open class KotlinTypeElement internal constructor(
 	internal fun getKotlinTypeParameter(typeParamElem: TypeParameterElement): KotlinTypeParameterElement?
 			= findMatchingProtoTypeParam(typeParamElem, protoClass.typeParameterList, protoNameResolver)
 				?.let { protoTypeParam -> KotlinTypeParameterElement(typeParamElem, protoTypeParam, processingEnv) }
+
+
+	val primaryConstructor: KotlinConstructorElement? by lazy {
+		constructors.firstOrNull { it.isPrimary }
+	}
+
+	/**
+	 * Secondary constructors declared within this type element
+	 */
+	val secondaryConstructors: List<KotlinConstructorElement> by lazy {
+		constructors.filter { !it.isPrimary }
+	}
+
+	/**
+	 * All constructors declared within this type element
+	 *
+	 * The primary constructor will be the first one in the list
+	 */
+	val constructors: List<KotlinConstructorElement> by lazy {
+		enclosedElements.filter { it.kind == ElementKind.CONSTRUCTOR }.castList<ExecutableElement>()
+				.map { constructorElem ->
+					getKotlinConstructor(constructorElem)
+					?: throw IllegalStateException(
+							"Could not find matching ProtoBuf.Constructor for constructor element \"$constructorElem\"" +
+							"which is a sub-element of \"$this\"")
+
+				}
+				.sortedBy { !it.isPrimary } // sort list by inverse of isPrimary so that the primary ctor will come first
+				.also {
+					// check that the first ctor really is primary
+					assert(it.firstOrNull()?.isPrimary ?: true)
+
+					//check that the second ctor is secondary if there is one, since
+					// there may be only one primary ctor
+					assert(it.getOrNull(1)?.isPrimary?.not() ?: true)
+				}
+	}
+
+	/**
+	 * returns a [KotlinConstructorElement] for this [ExecutableElementElement] if it's a constructor
+	 * of this type element or null otherwise
+	 *
+	 * this function is mostly necessary to be used by [KotlinConstructorElement.get] because only the
+	 * enclosing class has enough information to create the [KotlinConstructorElement] and the factory
+	 * function alone can not do it
+	 */
+	internal fun getKotlinConstructor(constructorElem: ExecutableElement): KotlinConstructorElement?
+			= processingEnv.findMatchingProtoConstructor(constructorElem, protoClass.constructorList, protoNameResolver, protoClass.typeTable)
+			?.let { protoCtor -> KotlinConstructorElement(constructorElem, protoCtor, protoNameResolver, processingEnv) }
 
 	/**
 	 * methods declared within this class
@@ -160,7 +209,6 @@ open class KotlinTypeElement internal constructor(
 	internal fun getKotlinFunction(functionElem: ExecutableElement): KotlinFunctionElement?
 			= processingEnv.findMatchingProtoFunction(functionElem, protoClass.functionList, protoNameResolver)
 			?.let { protoFunc -> KotlinFunctionElement(functionElem, protoFunc, protoNameResolver, processingEnv) }
-
 
 	override fun getQualifiedName(): Name = element.qualifiedName
 

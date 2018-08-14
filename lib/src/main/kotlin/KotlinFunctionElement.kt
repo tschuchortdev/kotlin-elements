@@ -2,6 +2,7 @@ package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.jvm.getJvmMethodSignature
+import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
@@ -10,10 +11,10 @@ import javax.lang.model.type.TypeMirror
 
 open class KotlinFunctionElement internal constructor(
 		private val element: ExecutableElement,
-		protoFunction: ProtoBuf.Function,
-		protoNameResolver: NameResolver,
+		private val protoFunction: ProtoBuf.Function,
+		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinExecutableElement(element, protoNameResolver, protoFunction.typeParameterList, processingEnv) {
+) : KotlinExecutableElement(element, processingEnv) {
 
 	val isInline: Boolean = protoFunction.isInline
 	val isInfix: Boolean = protoFunction.isInfix
@@ -53,14 +54,36 @@ open class KotlinFunctionElement internal constructor(
 				}
 
 				else ->
-					element.enclosingElement.toKotlinElement(processingEnv)?.let { parentElem ->
-						(parentElem as? KotlinTypeElement)?.getKotlinFunction(element)
+					(element.enclosingElement.toKotlinElement(processingEnv)
+							as? KotlinTypeElement)
+							?.getKotlinFunction(element)
 						?: throw IllegalStateException(
 								"Could not convert $element to KotlinTypeParameterElement even " +
 								"though it is apparently a Kotlin element")
-					}
+
 			}
 	}
+
+	override fun getTypeParameters(): List<KotlinTypeParameterElement>
+			= element.typeParameters
+			.map { typeParamElem ->
+				getKotlinTypeParameter(typeParamElem)
+				?: throw IllegalStateException(
+						"Could not find matching ProtoBuf.TypeParameter for TypeParameterElement \"$typeParamElem\"" +
+						"which is a sub-element of \"$this\"")
+			}
+
+	/**
+	 * returns a [KotlinTypeParameterElement] for this [TypeParameterElement] if it's a type parameter
+	 * of this function or null otherwise
+	 *
+	 * this function is mostly necessary to be used by [KotlinTypeParameterElement.get] because only the
+	 * enclosing function has enough information to create the [KotlinTypeParameterElement] and the factory
+	 * function alone can not do it
+	 */
+	internal fun getKotlinTypeParameter(typeParamElem: TypeParameterElement): KotlinTypeParameterElement?
+			= findMatchingProtoTypeParam(typeParamElem, protoFunction.typeParameterList, protoNameResolver)
+			?.let { protoTypeParam -> KotlinTypeParameterElement(typeParamElem, protoTypeParam, processingEnv) }
 
 	override fun toString() = element.toString()
 	override fun equals(other: Any?) = element.equals(other)
@@ -78,16 +101,14 @@ internal fun ProcessingEnvironment.findMatchingFunctionElement(protoFunction: Pr
 															   functionElements: List<ExecutableElement>,
 															   nameResolver: NameResolver): ExecutableElement?
 		= with(this.kotlinMetadataUtils) {
-	val functionSignature = protoFunction.getJvmMethodSignature(nameResolver)
-
-	val matchingFunctionElems = functionElements.filter { it.jvmMethodSignature == functionSignature }
+	val matchingFunctionElems = functionElements.filter { doFunctionsMatch(it, protoFunction, nameResolver) }
 
 	return when(matchingFunctionElems.size) {
 		0 -> null
 		1 -> matchingFunctionElems.single()
 		else -> throw IllegalStateException(
 				"More than one element in the list of functionElements matches the protoFunction's signature\n" +
-				"protoFunction signature: $functionSignature\n" +
+				"protoFunction signature: ${protoFunction.jvmMethodSignature}\n" +
 				"matching elements: $matchingFunctionElems")
 	}
 }
