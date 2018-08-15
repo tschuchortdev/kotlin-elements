@@ -9,7 +9,7 @@ import javax.lang.model.element.VariableElement
 /*class KotlinVariableElement internal constructor(
 		private val element: VariableElement,
 		processingEnv: ProcessingEnvironment
-): KotlinElement(element, processingEnv), VariableElement {
+): KotlinSyntacticElement(element, processingEnv), VariableElement {
 
 	companion object {
 		fun get(element: VariableElement, processingEnv: ProcessingEnvironment): KotlinVariableElement? {

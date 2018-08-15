@@ -53,7 +53,7 @@ class D {
 	}
 }
 
-class SomeClass
+open class SomeClass
 
 //@ClassAnnotation
 enum class EnumClassWithCtor(x: SomeClass) {
@@ -62,8 +62,18 @@ enum class EnumClassWithCtor(x: SomeClass) {
 //@ClassAnnotation
 enum class EnumClass { }
 
+//@ClassAnnotation
+annotation class Ann(val x: String, val y: String) {
+}
+
 @ClassAnnotation
-annotation class Ann(val x: String)
+interface Interf<in T, S : SomeClass> {
+	fun foo()
+
+	fun bar() {
+		println("bar")
+	}
+}
 
 //@FunctionAnnotation
 inline fun <reified T, S : Integer, U : Int> foo() {}
@@ -77,6 +87,10 @@ fun bar() {
 	//@ClassAnnotation
 	class LocalClass {
 	}
+}
+
+fun fooWithDefault(x: Int = 5) {
+
 }
 
 var x: @TypeAnnotation Integer? = null

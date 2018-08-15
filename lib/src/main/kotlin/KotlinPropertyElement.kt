@@ -7,11 +7,11 @@ import javax.lang.model.element.VariableElement
 
 /*open class KotlinPropertyElement internal constructor(
 		private val fieldElement: VariableElement,
-		private val setterElement: KotlinElement?,
+		private val setterElement: KotlinSyntacticElement?,
 		private val getterElement: ExecutableElement?,
 		private val protoProperty: ProtoBuf.Property,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(fieldElement, processingEnv) {
+) : KotlinSyntacticElement(fieldElement, processingEnv) {
 
 	companion object {
 		fun get(fieldElement: VariableElement, processingEnv: ProcessingEnvironment): KotlinPropertyElement? {

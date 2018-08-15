@@ -7,7 +7,7 @@ import javax.lang.model.type.TypeMirror
 abstract class KotlinExecutableElement internal constructor(
 		private val element: ExecutableElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(element, processingEnv), ExecutableElement, KotlinParameterizable {
+) : KotlinSubelement(element, processingEnv), ExecutableElement, KotlinParameterizable {
 
 	companion object {
 		fun get(element: ExecutableElement, processingEnv: ProcessingEnvironment): KotlinExecutableElement? {
@@ -17,7 +17,7 @@ abstract class KotlinExecutableElement internal constructor(
 				ElementKind.METHOD -> KotlinFunctionElement.get(element, processingEnv)
 				ElementKind.CONSTRUCTOR -> KotlinConstructorElement.get(element, processingEnv)
 				ElementKind.INSTANCE_INIT, ElementKind.STATIC_INIT -> throw UnsupportedOperationException(
-						"Can not convert element $element of kind ${element.kind} to KotlinElement")
+						"Can not convert element $element of kind ${element.kind} to KotlinSyntacticElement")
 				else -> throw IllegalStateException(
 						"ElementKind of ExecutableElement \"$element\" should never be \"${element.kind}\"")
 			}

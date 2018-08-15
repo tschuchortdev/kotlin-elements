@@ -8,13 +8,12 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameRe
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Name
 import javax.lang.model.element.PackageElement
-import javax.tools.Diagnostic
 
 open class KotlinPackageElement internal constructor(
 		private val element: PackageElement,
 		metadata: KotlinPackageMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(element, processingEnv), PackageElement {
+) : KotlinSyntacticElement(element, processingEnv), PackageElement {
 
 	protected val protoPackage: ProtoBuf.Package = metadata.data.packageProto
 	protected val protoNameResolver: NameResolver = metadata.data.nameResolver

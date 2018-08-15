@@ -1,11 +1,11 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
-import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
+import javax.tools.Diagnostic
 
 open class KotlinFunctionElement internal constructor(
 		private val element: ExecutableElement,
@@ -28,7 +28,12 @@ open class KotlinFunctionElement internal constructor(
 	 */
 	val isExpectFunction: Boolean = protoFunction.isExpectFunction
 
-	//TODO(docs)
+	/**
+	 * Whether this function has the `external` keyword
+	 *
+	 * An external function is a class declaration with the actual definition in native
+	 * code, similar to the `native` keyword in Java
+	 */
 	val isExternalFunction: Boolean = protoFunction.isExternalFunction
 
 	/**
@@ -51,12 +56,13 @@ open class KotlinFunctionElement internal constructor(
 				 */
 				element.isLocal() -> {
 					val enclosingElement = element.enclosingElement
+					processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "${(element as? TypeElement)?.nestingKind}")
 					throw IllegalStateException(
-							"can not construct KotlinTypeElement because this library was written" +
-							"with the assumption that it is impossible to get an `Element` of" +
+							"Can not construct KotlinFunctionElement of element \"$element\" because this library was written " +
+							"with the assumption that it is impossible to get an `Element` of " +
 							"a local function but the enclosing element \"$enclosingElement\" " +
 							"is of kind \"${enclosingElement.kind}\"${enclosingElement.asTypeElement()?.run {
-							"with nesting kind \"$nestingKind\""
+							" with nesting kind \"$nestingKind\""
 							}}")
 				}
 
@@ -67,7 +73,7 @@ open class KotlinFunctionElement internal constructor(
 							as? KotlinTypeElement)
 							?.getKotlinMethod(element)
 						?: throw IllegalStateException(
-								"Could not convert $element to KotlinTypeParameterElement even " +
+								"Could not convert $element to KotlinFunctionElement even " +
 								"though it is apparently a Kotlin element")
 
 			}

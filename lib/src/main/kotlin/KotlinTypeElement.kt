@@ -15,7 +15,7 @@ open class KotlinTypeElement internal constructor(
 		private val element: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(element, processingEnv), TypeElement, KotlinParameterizable {
+) : KotlinSyntacticElement(element, processingEnv), TypeElement, KotlinParameterizable {
 
 	protected val protoClass: ProtoBuf.Class = metadata.data.classProto
 	protected val protoNameResolver: NameResolver = metadata.data.nameResolver
@@ -47,7 +47,12 @@ open class KotlinTypeElement internal constructor(
 	 */
 	val isExpectClass: Boolean = protoClass.isExpectClass
 
-	//TODO(docs)
+	/**
+	 * Whether this class has the `external` keyword
+	 *
+	 * An external class is a class declaration with the actual definition in native
+	 * code, similar to the `native` keyword in Java
+	 */
 	val isExternalClass: Boolean = protoClass.isExternalClass
 
 	val isDataClass: Boolean = protoClass.isDataClass
@@ -63,7 +68,7 @@ open class KotlinTypeElement internal constructor(
 	/**
 	 * the companion object of this element if it has one
 	 */
-	val companionObject: KotlinElement? by lazy {
+	val companionObject: KotlinSyntacticElement? by lazy {
 		getCompanionSimpleName()?.let { companionSimpleName ->
 			val matchingChildElements = element.enclosedElements.filter {
 						it.kind == ElementKind.CLASS
@@ -166,12 +171,12 @@ open class KotlinTypeElement internal constructor(
 	val constructors: List<KotlinConstructorElement> by lazy {
 		protoClass.constructorList.map { protoCtor ->
 			getKotlinConstructor(protoCtor)
-			?: //if(kind != ElementKind.ENUM && kind != ElementKind.ANNOTATION_TYPE)
+			?: if(kind != ElementKind.ANNOTATION_TYPE)
 					throw IllegalStateException(
 					"Could not find matching ExecutableElement for ProtoBuf.Constructor \"${protoCtor.jvmSignature()}\"" +
 					" which is a sub-element of \"$this\"")
-			//else
-			//	 null
+			else
+				null
 		}
 				.filterNotNull()
 				.sortedBy { !it.isPrimary } // sort list by inverse of isPrimary so that the primary ctor will come first
@@ -186,7 +191,7 @@ open class KotlinTypeElement internal constructor(
 	}
 
 	/**
-	 * returns a [KotlinConstructorElement] for this [ExecutableElementElement] if it's a constructor
+	 * returns a [KotlinConstructorElement] for this [ExecutableElement] if it's a constructor
 	 * of this type element or null otherwise
 	 *
 	 * this function is mostly necessary to be used by [KotlinConstructorElement.get] because only the
@@ -227,7 +232,7 @@ open class KotlinTypeElement internal constructor(
 			?.let { protoMethod -> KotlinFunctionElement(methodElem, protoMethod, protoNameResolver, processingEnv) }
 
 	internal fun getKotlinMethod(protoMethod: ProtoBuf.Function): KotlinFunctionElement?
-			= element.enclosedElements.filter { kind == ElementKind.METHOD }.castList<ExecutableElement>()
+			= element.enclosedElements.filter { it.kind == ElementKind.METHOD }.castList<ExecutableElement>()
 			.singleOrNull { methodElem -> doFunctionsMatch(methodElem, protoMethod) }
 			?.let { methodElem -> KotlinFunctionElement(methodElem, protoMethod, protoNameResolver, processingEnv) }
 

@@ -2,15 +2,14 @@ package com.tschuchort.kotlinelements
 
 import com.google.auto.service.AutoService
 import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
-import me.eugeniomarletti.kotlin.metadata.KotlinMetadataUtils
+import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
-import me.eugeniomarletti.kotlin.processing.KotlinAbstractProcessor
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
-import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Parameterizable
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
@@ -62,13 +61,20 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
 			log("----------------------------------------------------------------------------------------------------")
 			log("$annotatedElem")
+			log("${(annotatedElem as? TypeElement)?.nestingKind}");
 			//log("enclosing: ${annotatedElem.enclosingElement}")
 			log("-             -                -               -                  -                      -")
 			with(processingEnv.kotlinMetadataUtils) {
-				annotatedElem.enclosedElements.forEach { log("    $it, kind: ${it.kind}, signature: \"${(it as? ExecutableElement)?.jvmMethodSignature}\"") }
+				log("typeParams: ${(annotatedElem as? Parameterizable)?.typeParameters}")
+				log("proto functions:")
+				(annotatedElem.kotlinMetadata as? KotlinClassMetadata)?.data?.classProto?.functionList?.forEach { log("${it.jvmMethodSignature}") }
+				log("enclosed elements:")
+				annotatedElem.enclosedElements.forEach { log("    $it, kind: ${it.kind}, " +
+															 "signature: \"${(it as? ExecutableElement)?.jvmMethodSignature}\", " +
+															 "typeParams: ${(it as? Parameterizable)?.typeParameters}") }
 			}
 
-			log(KotlinElement.get(annotatedElem, processingEnv)!!.printSummary().write())
+			log(KotlinSyntacticElement.get(annotatedElem, processingEnv)!!.printSummary().write())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
@@ -86,7 +92,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		return true
 	}
 
-	fun KotlinElement.printSummary(): StringWriter {
+	fun KotlinSyntacticElement.printSummary(): StringWriter {
 		return StringWriter() +
 			   """
 				   name: $this
@@ -113,6 +119,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			   when(this) {
 				   is KotlinTypeElement -> StringWriter() + """
 					   packageName: $packageName
+					   nestingKind: $nestingKind
 					   isExternalClass: $isExternalClass
 					   isDataClass: $isDataClass
 					   isExpectClass: $isExpectClass
@@ -155,7 +162,9 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   """.trimIndent()
 
 				   else -> StringWriter()
-			   }
+			   } +
+			   "enclosed Elements:" +
+			   enclosedElements.map { it.printSummary() }.combine().indent()
 	}
 }
 

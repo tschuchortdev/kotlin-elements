@@ -1,6 +1,5 @@
 package com.tschuchort.kotlinelements
 
-import me.eugeniomarletti.kotlin.metadata.KotlinMetadataUtils
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
@@ -11,7 +10,7 @@ open class KotlinTypeParameterElement internal constructor(
 		private val element: TypeParameterElement,
 		protected val protoTypeParam: ProtoBuf.TypeParameter,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(element, processingEnv), TypeParameterElement {
+) : KotlinSubelement(element, processingEnv), TypeParameterElement {
 
 	enum class Variance  { IN, OUT, INVARIANT }
 
@@ -26,9 +25,9 @@ open class KotlinTypeParameterElement internal constructor(
 	//TODO(bounds)
 	override fun getBounds(): List<TypeMirror> = element.bounds
 
-	override fun getGenericElement(): KotlinElement
+	override fun getGenericElement(): KotlinSyntacticElement
 			= element.genericElement.toKotlinElement(processingEnv)
-			?: throw IllegalStateException("Generic element of KotlinTypeParameterElement is not a KotlinElement")
+			?: throw IllegalStateException("Generic element of KotlinTypeParameterElement is not a KotlinSyntacticElement")
 
 	companion object {
 		fun get(element: TypeParameterElement, processingEnv: ProcessingEnvironment): KotlinTypeParameterElement? {
