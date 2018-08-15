@@ -7,7 +7,7 @@ import javax.lang.model.type.TypeMirror
 abstract class KotlinExecutableElement internal constructor(
 		private val element: ExecutableElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(element, processingEnv), ExecutableElement {
+) : KotlinElement(element, processingEnv), ExecutableElement, KotlinParameterizable {
 
 	companion object {
 		fun get(element: ExecutableElement, processingEnv: ProcessingEnvironment): KotlinExecutableElement? {
@@ -23,8 +23,6 @@ abstract class KotlinExecutableElement internal constructor(
 			}
 		}
 	}
-
-	abstract override fun getTypeParameters(): List<KotlinTypeParameterElement>
 
 	//TODO("handle Kotlin receiver type")
 	override fun getReceiverType(): TypeMirror? = element.receiverType

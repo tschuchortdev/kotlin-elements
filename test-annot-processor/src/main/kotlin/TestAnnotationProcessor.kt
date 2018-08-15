@@ -64,7 +64,10 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			log("$annotatedElem")
 			//log("enclosing: ${annotatedElem.enclosingElement}")
 			log("-             -                -               -                  -                      -")
-			annotatedElem.enclosedElements.forEach { log("    $it, kind: ${it.kind}") }
+			with(processingEnv.kotlinMetadataUtils) {
+				annotatedElem.enclosedElements.forEach { log("    $it, kind: ${it.kind}, signature: \"${(it as? ExecutableElement)?.jvmMethodSignature}\"") }
+			}
+
 			log(KotlinElement.get(annotatedElem, processingEnv)!!.printSummary().write())
 			log("----------------------------------------------------------------------------------------------------")
 		}

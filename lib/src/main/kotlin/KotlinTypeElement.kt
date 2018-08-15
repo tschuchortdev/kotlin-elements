@@ -2,6 +2,8 @@ package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.jvm.getJvmConstructorSignature
+import me.eugeniomarletti.kotlin.metadata.jvm.getJvmFieldSignature
+import me.eugeniomarletti.kotlin.metadata.jvm.getJvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
@@ -13,7 +15,7 @@ open class KotlinTypeElement internal constructor(
 		private val element: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(element, processingEnv), TypeElement {
+) : KotlinElement(element, processingEnv), TypeElement, KotlinParameterizable {
 
 	protected val protoClass: ProtoBuf.Class = metadata.data.classProto
 	protected val protoNameResolver: NameResolver = metadata.data.nameResolver
@@ -25,7 +27,7 @@ open class KotlinTypeElement internal constructor(
 	val visibility: ProtoBuf.Visibility = protoClass.visibility!!
 
 	/**
-	 * whether this is a (possibly anonymous) singleton class of the kind denoted by the `object` keyword
+	 * Whether this is a (possibly anonymous) singleton class of the kind denoted by the `object` keyword
 	 */
 	val isObject: Boolean = protoClass.classKind == ProtoBuf.Class.Kind.OBJECT
 
@@ -37,8 +39,15 @@ open class KotlinTypeElement internal constructor(
 	 */
 	val isInnerClass: Boolean = protoClass.isInnerClass
 
-	//TODO(docs)
+	/** Whether this class has the `expect` keyword
+	 *
+	 * An expect class is a class declaration with actual definition in a different
+	 * file, akin to a declaration in a header file in C++. They are used in multiplatform
+	 * projects where different implementations are needed depending on target platform
+	 */
 	val isExpectClass: Boolean = protoClass.isExpectClass
+
+	//TODO(docs)
 	val isExternalClass: Boolean = protoClass.isExternalClass
 
 	val isDataClass: Boolean = protoClass.isDataClass
@@ -155,18 +164,12 @@ open class KotlinTypeElement internal constructor(
 	 * The primary constructor will be the first one in the list
 	 */
 	val constructors: List<KotlinConstructorElement> by lazy {
-		val methodElements = element.enclosedElements.filter { it.kind == ElementKind.CONSTRUCTOR }
-				.castList<ExecutableElement>()
-
 		protoClass.constructorList.map { protoCtor ->
-			processingEnv.findMatchingConstructorElement(protoCtor, methodElements, protoNameResolver, protoTypeTable)
-					?.let { matchingMethodElem ->
-						KotlinConstructorElement(matchingMethodElem, protoCtor, protoNameResolver, processingEnv)
-					}
+			getKotlinConstructor(protoCtor)
 			?: //if(kind != ElementKind.ENUM && kind != ElementKind.ANNOTATION_TYPE)
 					throw IllegalStateException(
 					"Could not find matching ExecutableElement for ProtoBuf.Constructor \"${protoCtor.jvmSignature()}\"" +
-					"which is a sub-element of \"$this\"")
+					" which is a sub-element of \"$this\"")
 			//else
 			//	 null
 		}
@@ -191,21 +194,20 @@ open class KotlinTypeElement internal constructor(
 	 * function alone can not do it
 	 */
 	internal fun getKotlinConstructor(constructorElem: ExecutableElement): KotlinConstructorElement?
-			= processingEnv.findMatchingProtoConstructor(constructorElem, protoClass.constructorList, protoNameResolver, protoTypeTable)
+			= protoClass.constructorList.singleOrNull { protoCtor -> doConstructorsMatch(constructorElem, protoCtor) }
 			?.let { protoCtor -> KotlinConstructorElement(constructorElem, protoCtor, protoNameResolver, processingEnv) }
+
+	internal fun getKotlinConstructor(protoCtor: ProtoBuf.Constructor): KotlinConstructorElement?
+			= element.enclosedElements.filter { it.kind == ElementKind.CONSTRUCTOR }.castList<ExecutableElement>()
+			.singleOrNull { ctorElem -> doConstructorsMatch(ctorElem, protoCtor) }
+			?.let { ctorElem -> KotlinConstructorElement(ctorElem, protoCtor, protoNameResolver, processingEnv) }
 
 	/**
 	 * methods declared within this class
 	 */
 	val declaredMethods: List<KotlinFunctionElement> by lazy {
-		val methodElements = element.enclosedElements.filter { it.kind == ElementKind.METHOD }
-				.castList<ExecutableElement>()
-
 		protoClass.functionList.map { protoMethod ->
-			processingEnv.findMatchingFunctionElement(protoMethod, methodElements, protoNameResolver)
-					?.let { matchingMethodElem ->
-						KotlinFunctionElement(matchingMethodElem, protoMethod, protoNameResolver, processingEnv)
-					}
+			getKotlinMethod(protoMethod)
 			?: throw IllegalStateException(
 					"Could not find matching ExecutableElement for ProtoBuf.Function \"${protoMethod.jvmSignature()}\"" +
 					"which is a sub-element of \"$this\"")
@@ -220,9 +222,14 @@ open class KotlinTypeElement internal constructor(
 	 * enclosing class has enough information to create the [KotlinFunctionElement] and the factory
 	 * function alone can not do it
 	 */
-	internal fun getKotlinFunction(functionElem: ExecutableElement): KotlinFunctionElement?
-			= processingEnv.findMatchingProtoFunction(functionElem, protoClass.functionList, protoNameResolver)
-			?.let { protoFunc -> KotlinFunctionElement(functionElem, protoFunc, protoNameResolver, processingEnv) }
+	internal fun getKotlinMethod(methodElem: ExecutableElement): KotlinFunctionElement?
+			= protoClass.functionList.singleOrNull { protoMethod -> doFunctionsMatch(methodElem, protoMethod) }
+			?.let { protoMethod -> KotlinFunctionElement(methodElem, protoMethod, protoNameResolver, processingEnv) }
+
+	internal fun getKotlinMethod(protoMethod: ProtoBuf.Function): KotlinFunctionElement?
+			= element.enclosedElements.filter { kind == ElementKind.METHOD }.castList<ExecutableElement>()
+			.singleOrNull { methodElem -> doFunctionsMatch(methodElem, protoMethod) }
+			?.let { methodElem -> KotlinFunctionElement(methodElem, protoMethod, protoNameResolver, processingEnv) }
 
 	override fun getQualifiedName(): Name = element.qualifiedName
 
@@ -236,8 +243,38 @@ open class KotlinTypeElement internal constructor(
 	override fun getNestingKind(): NestingKind = element.nestingKind
 
 	protected fun ProtoBuf.Constructor.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
-		this@jvmSignature.getJvmConstructorSignature(protoNameResolver, protoTypeTable)
+		val signature = this@jvmSignature.getJvmConstructorSignature(protoNameResolver, protoTypeTable)
+						?: throw IllegalArgumentException("could not get JVM signature for ProtoBuf.Constructor")
+
+		if(this@KotlinTypeElement.kind == ElementKind.ENUM) {
+			/* for some reason the Kotlin compiler adds an implicit String and Int argument
+			to enum constructors (probably to call it's implicit super constructor
+			`Enum::<init>(name: String, ordinal: Int)`). The `ExecutableElement` that is
+			the actual constructor won't have those arguments, so we need to remove them
+			from the signature so they will match
+			 */
+			assert(signature.startsWith("<init>(Ljava/lang/String;I"))
+			signature.removeFirstOccurance("Ljava/lang/String;I")
+		}
+		else
+			signature
 	}
+
+	protected fun ProtoBuf.Function.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
+		this@jvmSignature.getJvmMethodSignature(protoNameResolver)
+		?: throw IllegalArgumentException("could not get JVM signature for ProtoBuf.Function")
+	}
+
+	protected fun ProtoBuf.Property.fieldJvmSignature() = with(processingEnv.kotlinMetadataUtils) {
+		this@fieldJvmSignature.getJvmFieldSignature(protoNameResolver, protoTypeTable)
+		?: throw IllegalArgumentException("could not get JVM signature for ProtoBuf.Property field")
+	}
+
+	protected fun doFunctionsMatch(functionElement: ExecutableElement, protoFunction: ProtoBuf.Function): Boolean
+			= functionElement.jvmSignature() == protoFunction.jvmSignature()
+
+	protected fun doConstructorsMatch(constructorElement: ExecutableElement, protoConstructor: ProtoBuf.Constructor): Boolean
+			= constructorElement.jvmSignature() == protoConstructor.jvmSignature()
 }
 
 fun TypeElement.isKotlinClass() = kotlinMetadata is KotlinClassMetadata

@@ -1,9 +1,6 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
-import me.eugeniomarletti.kotlin.metadata.jvm.getJvmConstructorSignature
-import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
@@ -15,10 +12,6 @@ open class KotlinElement internal constructor(
 
 	protected val typeUtils = processingEnv.typeUtils
 	protected val elementUtils = processingEnv.elementUtils
-
-	protected fun ProtoBuf.Function.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
-		this@jvmSignature.jvmMethodSignature
-	}
 
 	companion object {
 		fun get(element: Element, processingEnv: ProcessingEnvironment): KotlinElement? =
@@ -99,6 +92,10 @@ open class KotlinElement internal constructor(
 				"Can not convert enclosed element \"$enclosedElement\" with kind \"${enclosedElement.kind}\"" +
 				" of KotlinElement \"$this\" to KotlinElement but" +
 				"all enclosed elements of a kotlin element should also be kotlin elements")
+	}
+
+	protected fun ExecutableElement.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
+		this@jvmSignature.jvmMethodSignature
 	}
 
 	override fun toString() = element.toString()

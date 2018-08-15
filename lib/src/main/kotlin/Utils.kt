@@ -8,7 +8,7 @@ import javax.lang.model.element.TypeElement
 
 internal inline fun <reified R : Any> List<*>.castList() = map { it as R }
 
-internal val ProcessingEnvironment.kotlinMetadataUtils: KotlinMetadataUtils
+val ProcessingEnvironment.kotlinMetadataUtils: KotlinMetadataUtils
 	get() {
 		return object : KotlinMetadataUtils {
 			override val processingEnv = this@kotlinMetadataUtils
@@ -24,3 +24,5 @@ internal fun Element.asTypeElement(): TypeElement? = when(kind) {
 	ElementKind.INTERFACE, ElementKind.ANNOTATION_TYPE -> this as? TypeElement
 	else -> null
 }
+
+internal fun String.removeFirstOccurance(literal: String) = replaceFirst(Regex(Regex.escape(literal)), "")

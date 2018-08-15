@@ -41,54 +41,9 @@ class KotlinConstructorElement internal constructor(
 		}
 	}
 
-	override fun getTypeParameters(): List<KotlinTypeParameterElement> {
+	override fun getTypeParameters(): List<Nothing> {
 		// a constructor should never have type parameters
 		assert(element.typeParameters.isEmpty())
 		return emptyList()
 	}
-}
-
-internal fun ProcessingEnvironment.findMatchingProtoConstructor(
-		constructorElement: ExecutableElement,
-		protoConstructors: List<ProtoBuf.Constructor>,
-		nameResolver: NameResolver,
-		typeTable: ProtoBuf.TypeTable
-): ProtoBuf.Constructor? {
-	val matchingProtoCtors = protoConstructors.filter {
-		doConstructorsMatch(constructorElement, it, nameResolver, typeTable)
-	}
-
-	return when(matchingProtoCtors.size) {
-		0 -> null
-		1 -> matchingProtoCtors.single()
-		else -> throw IllegalStateException(
-				"More than one element in the list of protoConstructors matches the executable element's signature")
-	}
-}
-
-internal fun ProcessingEnvironment.findMatchingConstructorElement(
-		protoConstructor: ProtoBuf.Constructor,
-		functionElements: List<ExecutableElement>,
-		nameResolver: NameResolver,
-		typeTable: ProtoBuf.TypeTable
-): ExecutableElement? = with(this.kotlinMetadataUtils) {
-	val matchingCtorElems = functionElements.filter {
-		doConstructorsMatch(it, protoConstructor, nameResolver, typeTable)
-	}
-
-	return when(matchingCtorElems.size) {
-		0 -> null
-		1 -> matchingCtorElems.single()
-		else -> throw IllegalStateException(
-				"More than one element in the list of functionElements matches the protoConstructor's signature")
-	}
-}
-
-internal fun ProcessingEnvironment.doConstructorsMatch(
-		constructorElement: ExecutableElement,
-		protoConstructor: ProtoBuf.Constructor,
-		nameResolver: NameResolver,
-		typeTable: ProtoBuf.TypeTable
-): Boolean = with(this.kotlinMetadataUtils) {
-	constructorElement.jvmMethodSignature == protoConstructor.getJvmConstructorSignature(nameResolver, typeTable)
 }

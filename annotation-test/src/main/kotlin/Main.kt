@@ -55,14 +55,14 @@ class D {
 
 class SomeClass
 
-@ClassAnnotation
+//@ClassAnnotation
 enum class EnumClassWithCtor(x: SomeClass) {
 }
 
 //@ClassAnnotation
 enum class EnumClass { }
 
-//@ClassAnnotation
+@ClassAnnotation
 annotation class Ann(val x: String)
 
 //@FunctionAnnotation

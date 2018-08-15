@@ -1,13 +1,11 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
-import me.eugeniomarletti.kotlin.metadata.jvm.getJvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
-import javax.lang.model.type.TypeMirror
 
 open class KotlinFunctionElement internal constructor(
 		private val element: ExecutableElement,
@@ -21,7 +19,16 @@ open class KotlinFunctionElement internal constructor(
 	val isTailRec: Boolean = protoFunction.isTailRec
 	val isSuspend: Boolean = protoFunction.isSuspend
 	val isOperator: Boolean = protoFunction.isOperator
+
+	/** Whether this function has the `expect` keyword
+	 *
+	 * An expect function is a function declaration with actual definition in a different
+	 * file, akin to a declaration in a header file in C++. They are used in multiplatform
+	 * projects where different implementations are needed depending on target platform
+	 */
 	val isExpectFunction: Boolean = protoFunction.isExpectFunction
+
+	//TODO(docs)
 	val isExternalFunction: Boolean = protoFunction.isExternalFunction
 
 	/**
@@ -58,7 +65,7 @@ open class KotlinFunctionElement internal constructor(
 					// so the construction is delegated to the parent element
 					(element.enclosingElement.toKotlinElement(processingEnv)
 							as? KotlinTypeElement)
-							?.getKotlinFunction(element)
+							?.getKotlinMethod(element)
 						?: throw IllegalStateException(
 								"Could not convert $element to KotlinTypeParameterElement even " +
 								"though it is apparently a Kotlin element")
@@ -87,31 +94,3 @@ open class KotlinFunctionElement internal constructor(
 			= findMatchingProtoTypeParam(typeParamElem, protoFunction.typeParameterList, protoNameResolver)
 			?.let { protoTypeParam -> KotlinTypeParameterElement(typeParamElem, protoTypeParam, processingEnv) }
 }
-
-internal fun ProcessingEnvironment.findMatchingProtoFunction(
-		functionElement: ExecutableElement, protoFunctions: List<ProtoBuf.Function>, nameResolver: NameResolver
-): ProtoBuf.Function? = with(this.kotlinMetadataUtils) {
-	getFunctionOrNull(functionElement, nameResolver, protoFunctions)
-}
-
-internal fun ProcessingEnvironment.findMatchingFunctionElement(
-		protoFunction: ProtoBuf.Function, functionElements: List<ExecutableElement>, nameResolver: NameResolver
-): ExecutableElement? = with(this.kotlinMetadataUtils) {
-	val matchingFunctionElems = functionElements.filter { doFunctionsMatch(it, protoFunction, nameResolver) }
-
-	return when(matchingFunctionElems.size) {
-		0 -> null
-		1 -> matchingFunctionElems.single()
-		else -> throw IllegalStateException(
-				"More than one element in the list of functionElements matches the protoFunction's signature\n" +
-				"protoFunction signature: ${protoFunction.jvmMethodSignature}\n" +
-				"matching elements: $matchingFunctionElems")
-	}
-}
-
-internal fun ProcessingEnvironment.doFunctionsMatch(
-		functionElement: ExecutableElement, protoFunction: ProtoBuf.Function, nameResolver: NameResolver
-): Boolean = with(this.kotlinMetadataUtils) {
-	functionElement.jvmMethodSignature == protoFunction.getJvmMethodSignature(nameResolver)
-}
-
