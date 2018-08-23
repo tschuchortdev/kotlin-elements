@@ -53,7 +53,14 @@ class D {
 	}
 }
 
+@ClassAnnotation
+class E constructor(x: String, y: SomeClass){
+	fun foo(x: String, y: GenericClass<Int>, z: GenericClass<*>) {}
+}
+
 open class SomeClass
+
+open class GenericClass<T>
 
 //@ClassAnnotation
 enum class EnumClassWithCtor(x: SomeClass) {
@@ -66,7 +73,7 @@ enum class EnumClass { }
 annotation class Ann(val x: String, val y: String) {
 }
 
-@ClassAnnotation
+//@ClassAnnotation
 interface Interf<in T, S : SomeClass> {
 	fun foo()
 
@@ -79,7 +86,7 @@ interface Interf<in T, S : SomeClass> {
 inline fun <reified T, S : Integer, U : Int> foo() {}
 
 //@FunctionAnnotation
-fun bar() {
+fun bar(a: String, b: String = "test") {
 	// local annotations don't get processed :/
 	//@FunctionAnnotation
 	fun localBar() {}
@@ -89,7 +96,19 @@ fun bar() {
 	}
 }
 
-fun fooWithDefault(x: Int = 5) {
+fun bar(a: String) {
+
+}
+
+@JvmOverloads
+@FunctionAnnotation
+fun fooWithDefault(a: String, b: Int, y: String = "world") {
+
+}
+
+@JvmOverloads
+@FunctionAnnotation
+fun fooWithDefault(a: String, y: Float = 2.0f) {
 
 }
 

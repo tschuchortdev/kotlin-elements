@@ -6,20 +6,28 @@ import me.eugeniomarletti.kotlin.metadata.jvm.getJvmFieldSignature
 import me.eugeniomarletti.kotlin.metadata.jvm.getJvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
+import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.*
 import javax.lang.model.type.TypeMirror
 
-open class KotlinTypeElement internal constructor(
-		private val element: TypeElement,
+class KotlinTypeElement internal constructor(
+		val javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinSyntacticElement(element, processingEnv), TypeElement, KotlinParameterizable {
+) : KotlinElement(processingEnv), TypeElement by javaElement, KotlinParameterizable, HasKotlinModality {
 
 	protected val protoClass: ProtoBuf.Class = metadata.data.classProto
 	protected val protoNameResolver: NameResolver = metadata.data.nameResolver
 	protected val protoTypeTable: ProtoBuf.TypeTable = protoClass.typeTable
+
+	init {
+		val fqName: String = protoNameResolver.getString(protoClass.fqName).replace('/', '.')
+		val elementQualifiedName = javaElement.qualifiedName.toString()
+
+		assert(fqName == elementQualifiedName)
+	}
 
 	val packageName: String = protoNameResolver.getString(protoClass.fqName).substringBeforeLast('/').replace('/', '.')
 
@@ -29,7 +37,7 @@ open class KotlinTypeElement internal constructor(
 	/**
 	 * Whether this is a (possibly anonymous) singleton class of the kind denoted by the `object` keyword
 	 */
-	val isObject: Boolean = protoClass.classKind == ProtoBuf.Class.Kind.OBJECT
+	val isObject: Boolean = (protoClass.classKind == ProtoBuf.Class.Kind.OBJECT)
 
 	/**
 	 * Whether or not the class is an inner class
@@ -59,57 +67,35 @@ open class KotlinTypeElement internal constructor(
 
 	/**
 	 * class modality
-	 * one of: [ProtoBuf.Modality.FINAL], [ProtoBuf.Modality.OPEN],
-	 * [ProtoBuf.Modality.ABSTRACT], [ProtoBuf.Modality.SEALED]
-	 * //TODO("replace Modality with custom enum")
+	 * one of: [Modality.FINAL], [Modality.OPEN], [Modality.ABSTRACT], [Modality.ABSTRACT], [Modality.NONE]
 	 */
-	val modality: ProtoBuf.Modality = protoClass.modality!!
+	override val modality: Modality = when(protoClass.modality) {
+		ProtoBuf.Modality.FINAL -> Modality.FINAL
+		ProtoBuf.Modality.ABSTRACT -> Modality.ABSTRACT
+		ProtoBuf.Modality.OPEN -> Modality.OPEN
+		ProtoBuf.Modality.SEALED -> Modality.SEALED
+		null -> Modality.NONE
+	}
 
 	/**
 	 * the companion object of this element if it has one
 	 */
-	val companionObject: KotlinSyntacticElement? by lazy {
+	val companionObject: KotlinTypeElement? by lazy {
 		getCompanionSimpleName()?.let { companionSimpleName ->
-			val matchingChildElements = element.enclosedElements.filter {
+			val companionElement = javaElement.enclosedElements.single {
 						it.kind == ElementKind.CLASS
 						&& (it as TypeElement).simpleName.toString() == companionSimpleName
+			} as TypeElement
+
+			(companionElement.kotlinMetadata as? KotlinClassMetadata)?.let { metadata ->
+				KotlinTypeElement(companionElement, metadata, processingEnv)
 			}
-
-			when(matchingChildElements.size) {
-				1 -> {
-					val companionElement = matchingChildElements.single() as TypeElement
-
-					KotlinTypeElement.get(companionElement, processingEnv)
-					?: throw IllegalStateException("could not construct KotlinTypeElement from companion " +
-												   "TypeElement \"$companionElement\"")
-				}
-
-				0 -> throw IllegalStateException(
-						"no enclosed element of the parent element \"$element\" matches kind and " +
-						"qualified name of the companion object even though the metadata ProtoBuf.Class " +
-						"indicated that one exists with the simple name \"$companionSimpleName\"")
-
-				else -> throw IllegalStateException(
-						"more than one enclosed element of the parent element \"$element\" matches kind and" +
-						"simple name of the companion object.\n" +
-						"	name: \"$companionSimpleName\"\n" +
-						"	elements: ${matchingChildElements.joinToString(", ")}")
-			}
+			?: throw IllegalStateException(
+					"element \"$companionElement\" for companion object with simple name " +
+					"\"$companionSimpleName\" of \"$this\" doesn't have KotlinClassMetadata")
 		}
 	}
 
-
-	init {
-		val fqName: String = protoNameResolver.getString(protoClass.fqName).replace('/', '.')
-		val elementQualifiedName = element.qualifiedName.toString()
-
-		if(fqName != elementQualifiedName) {
-			throw IllegalStateException(
-					"fully qualified name of Proto.Class and TypeElement don't match:\n" +
-					"	Proto.Class fqName: $fqName\n" +
-					"	TypeElement::qualifiedName: $elementQualifiedName")
-		}
-	}
 
 	companion object {
 		fun get(element: TypeElement, processingEnv: ProcessingEnvironment): KotlinTypeElement?
@@ -128,28 +114,29 @@ open class KotlinTypeElement internal constructor(
 				null
 
 	//TODO(return kotlin superclass)
-	override fun getSuperclass(): TypeMirror = element.superclass
+	override fun getSuperclass(): TypeMirror = javaElement.superclass
 
 	override fun getTypeParameters(): List<KotlinTypeParameterElement>
-			= element.typeParameters
-			.map { typeParamElem ->
-				getKotlinTypeParameter(typeParamElem)
-				?: throw IllegalStateException(
-						"Could not find matching ProtoBuf.TypeParameter for TypeParameterElement" +
-						" \"$typeParamElem\" which is a sub-element of \"$this\"")
-			}
+			= protoClass.typeParameterList.zipWith(javaElement.typeParameters) { protoTypeParam, javaTypeParam ->
+		if(doTypeParamsMatch(javaTypeParam, protoTypeParam, protoNameResolver))
+			KotlinTypeParameterElement(javaTypeParam, protoTypeParam, processingEnv)
+		else
+			throw AssertionError(
+					"Kotlin ProtoBuf.TypeParameters should always match up with Java TypeParameterElements")
+	}
 
 	/**
 	 * Returns a [KotlinTypeParameterElement] for this [TypeParameterElement] if it's a type parameter
 	 * of this class or null otherwise
 	 *
-	 * this function is mostly necessary to be used by [KotlinTypeParameterElement.get] because only the
-	 * enclosing class has enough information to create the [KotlinTypeParameterElement] and the factory
-	 * function alone can not do it
+	 * this function is mostly necessary to be used when finding the corresponding [KotlinElement] for
+	 * some arbitrary Java [Element] since only the surrounding element of the type parameter has enough
+	 * information to construct it
 	 */
 	internal fun getKotlinTypeParameter(typeParamElem: TypeParameterElement): KotlinTypeParameterElement?
-			= findMatchingProtoTypeParam(typeParamElem, protoClass.typeParameterList, protoNameResolver)
-				?.let { protoTypeParam -> KotlinTypeParameterElement(typeParamElem, protoTypeParam, processingEnv) }
+			= protoClass.typeParameterList.filter { doTypeParamsMatch(typeParamElem, it, protoNameResolver) }
+			.singleOrNull()
+			?.let { protoTypeParam -> KotlinTypeParameterElement(typeParamElem, protoTypeParam, processingEnv) }
 
 
 	val primaryConstructor: KotlinConstructorElement? by lazy {
@@ -190,32 +177,157 @@ open class KotlinTypeElement internal constructor(
 				}
 	}
 
-	/**
-	 * returns a [KotlinConstructorElement] for this [ExecutableElement] if it's a constructor
-	 * of this type element or null otherwise
-	 *
-	 * this function is mostly necessary to be used by [KotlinConstructorElement.get] because only the
-	 * enclosing class has enough information to create the [KotlinConstructorElement] and the factory
-	 * function alone can not do it
-	 */
-	internal fun getKotlinConstructor(constructorElem: ExecutableElement): KotlinConstructorElement?
-			= protoClass.constructorList.singleOrNull { protoCtor -> doConstructorsMatch(constructorElem, protoCtor) }
-			?.let { protoCtor -> KotlinConstructorElement(constructorElem, protoCtor, protoNameResolver, processingEnv) }
 
-	internal fun getKotlinConstructor(protoCtor: ProtoBuf.Constructor): KotlinConstructorElement?
-			= element.enclosedElements.filter { it.kind == ElementKind.CONSTRUCTOR }.castList<ExecutableElement>()
-			.singleOrNull { ctorElem -> doConstructorsMatch(ctorElem, protoCtor) }
-			?.let { ctorElem -> KotlinConstructorElement(ctorElem, protoCtor, protoNameResolver, processingEnv) }
 
 	/**
 	 * methods declared within this class
 	 */
 	val declaredMethods: List<KotlinFunctionElement> by lazy {
-		protoClass.functionList.map { protoMethod ->
-			getKotlinMethod(protoMethod)
-			?: throw IllegalStateException(
-					"Could not find matching ExecutableElement for ProtoBuf.Function \"${protoMethod.jvmSignature()}\"" +
-					"which is a sub-element of \"$this\"")
+		// a Kotlin TypeElement should never have initializers
+		assert(javaElement.enclosedElements.none { it.kind == ElementKind.INSTANCE_INIT
+												   || it.kind == ElementKind.STATIC_INIT })
+
+		val methodElems = javaElement.enclosedElements.filter { it.kind == ElementKind.METHOD }
+				.castList<ExecutableElement>()
+
+		/*
+		When @JvmOverloads was used, there may be multiple executable elements correspond
+		to this Kotlin method but have different JVM signatures (with only a subset of the parameters)
+
+		First find all the Java executable elements that match the JVM signature of a ProtoBuf.Function
+		perfectly.
+		All the remaining Java executable elements must then be JVM-overloads of one of the matched
+		method elements.
+		 */
+		val matchedMethodElems = mutableListOf<Pair<ExecutableElement, ProtoBuf.Function>>()
+		val unmatchedMethodElems = mutableListOf<ExecutableElement>()
+
+		for(methodElem in methodElems) {
+			val matchingProtoMethod = protoClass.functionList.firstOrNull {
+				methodElem.jvmSignature() ==  it.jvmSignature()
+			}
+
+			if(matchingProtoMethod != null)
+				matchedMethodElems += Pair(methodElem, matchingProtoMethod)
+			else
+				unmatchedMethodElems += methodElem
+		}
+
+
+		val kotlinMethodElements = matchedMethodElems.map { (matchedMethodElem, protoMethod) ->
+			open class Parameter(param: VariableElement) {
+				val simpleName = param.simpleName.toString()
+				val type = param.asType()
+
+				override fun equals(other: Any?) =
+						if(other is Parameter)
+							other.simpleName == simpleName
+							&& processingEnv.typeUtils.isSameType(type, other.type)
+						else
+							false
+
+				override fun hashCode() = Objects.hash(simpleName, type)
+			}
+
+			/*
+			parameters of the method element and protoMethod should be in the exact same order,
+			so we can zip them together.
+			But better assert that they have the same name just to be sure
+			 */
+			val params = matchedMethodElem.parameters.zipWith(protoMethod.valueParameterList) { paramElem, protoParam ->
+				assert(paramElem.simpleName.toString() == protoNameResolver.getString(protoParam.name))
+
+				object : Parameter(paramElem) {
+					val required = protoParam.declaresDefaultValue
+				}
+			}
+
+			val methodSimpleName = protoNameResolver.getString(protoMethod.name)
+
+			// now find those other Java executable elements that are generated by @JvmOverloads
+			// and belong to this Kotlin method
+			val jvmOverloadElems = unmatchedMethodElems.filter { unmatchedElem ->
+				val unmatchedElemParams = unmatchedElem.parameters.map { Parameter(it) }
+
+				// overload executable element must have...
+				unmatchedElem.simpleName.toString() == methodSimpleName // ...the same name
+				&& params.containsAll(unmatchedElemParams) // ...a subset of the parameters
+				&& unmatchedElemParams.containsAll(params.filter { it.required }) // ...all the required (non-default) parameters
+			}
+
+			KotlinFunctionElement(matchedMethodElem, jvmOverloadElems, protoMethod, protoNameResolver, processingEnv)
+		}
+
+		return kotlinMethodElements
+	}
+
+
+	fun findCorrespondingExecutableElements(protoJvmSignature: String, protoParams: List<ProtoBuf.ValueParameter>,
+											executableElements: List<ExecutableElement>) {
+		/*
+		When @JvmOverloads was used, there may be multiple executable elements which correspond
+		to this Kotlin method/constructor but have different JVM signatures (with only a subset of the parameters)
+
+		First find all the Java executable elements that match the JVM signature of the ProtoBuf method perfecty
+
+		All the remaining Java executable elements must then be JVM-overloads of one of the matched
+		executable elements.
+		 */
+		val matchedMethodElems = mutableListOf<Pair<ExecutableElement, ProtoBuf.Function>>()
+		val unmatchedMethodElems = mutableListOf<ExecutableElement>()
+
+		for(execElem in executableElements) {
+			val matchingProtoMethod = protoClass.functionList.firstOrNull {
+				execElem.jvmSignature() ==  it.jvmSignature()
+			}
+
+			if(matchingProtoMethod != null)
+				matchedMethodElems += Pair(execElem, matchingProtoMethod)
+			else
+				unmatchedMethodElems += execElem
+		}
+
+
+		matchedMethodElems.map { (matchedMethodElem, protoMethod) ->
+			open class Parameter(param: VariableElement) {
+				val simpleName = param.simpleName.toString()
+				val type = param.asType()
+
+				override fun equals(other: Any?) =
+						if(other is Parameter)
+							other.simpleName == simpleName
+							&& processingEnv.typeUtils.isSameType(type, other.type)
+						else
+							false
+
+				override fun hashCode() = Objects.hash(simpleName, type)
+			}
+
+			/*
+			parameters of the method element and protoMethod should be in the exact same order,
+			so we can zip them together.
+			But better assert that they have the same name just to be sure
+			 */
+			val params = matchedMethodElem.parameters.zipWith(protoMethod.valueParameterList) { paramElem, protoParam ->
+				assert(paramElem.simpleName.toString() == protoNameResolver.getString(protoParam.name))
+
+				object : Parameter(paramElem) {
+					val required = protoParam.declaresDefaultValue
+				}
+			}
+
+			val methodSimpleName = protoNameResolver.getString(protoMethod.name)
+
+			// now find those other Java executable elements that are generated by @JvmOverloads
+			// and belong to this Kotlin method
+			val jvmOverloadElems = unmatchedMethodElems.filter { unmatchedElem ->
+				val unmatchedElemParams = unmatchedElem.parameters.map { Parameter(it) }
+
+				// overload executable element must have...
+				unmatchedElem.simpleName.toString() == methodSimpleName // ...the same name
+				&& params.containsAll(unmatchedElemParams) // ...a subset of the parameters
+				&& unmatchedElemParams.containsAll(params.filter { it.required }) // ...all the required (non-default) parameters
+			}
 		}
 	}
 
@@ -231,21 +343,13 @@ open class KotlinTypeElement internal constructor(
 			= protoClass.functionList.singleOrNull { protoMethod -> doFunctionsMatch(methodElem, protoMethod) }
 			?.let { protoMethod -> KotlinFunctionElement(methodElem, protoMethod, protoNameResolver, processingEnv) }
 
-	internal fun getKotlinMethod(protoMethod: ProtoBuf.Function): KotlinFunctionElement?
-			= element.enclosedElements.filter { it.kind == ElementKind.METHOD }.castList<ExecutableElement>()
-			.singleOrNull { methodElem -> doFunctionsMatch(methodElem, protoMethod) }
-			?.let { methodElem -> KotlinFunctionElement(methodElem, protoMethod, protoNameResolver, processingEnv) }
-
-	override fun getQualifiedName(): Name = element.qualifiedName
-
-	/*val properties: List<KotlinPropertyElement> by lazy {
-		protoClass.propertyList
-	}*/
 
 	//TODO(return kotlin interfaces)
-	override fun getInterfaces(): List<TypeMirror> = element.interfaces
+	override fun getInterfaces(): List<TypeMirror> = javaElement.interfaces
 
-	override fun getNestingKind(): NestingKind = element.nestingKind
+	override fun getEnclosedElements(): List<KotlinElement> {
+		TODO("type enclosed elements")
+	}
 
 	protected fun ProtoBuf.Constructor.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
 		val signature = this@jvmSignature.getJvmConstructorSignature(protoNameResolver, protoTypeTable)
@@ -256,8 +360,7 @@ open class KotlinTypeElement internal constructor(
 			to enum constructors (probably to call it's implicit super constructor
 			`Enum::<init>(name: String, ordinal: Int)`). The `ExecutableElement` that is
 			the actual constructor won't have those arguments, so we need to remove them
-			from the signature so they will match
-			 */
+			from the signature so they will match */
 			assert(signature.startsWith("<init>(Ljava/lang/String;I"))
 			signature.removeFirstOccurance("Ljava/lang/String;I")
 		}
@@ -280,6 +383,10 @@ open class KotlinTypeElement internal constructor(
 
 	protected fun doConstructorsMatch(constructorElement: ExecutableElement, protoConstructor: ProtoBuf.Constructor): Boolean
 			= constructorElement.jvmSignature() == protoConstructor.jvmSignature()
+
+	override fun toString() = javaElement.toString()
+	override fun hashCode() = javaElement.hashCode()
+	override fun equals(other: Any?) = javaElement.equals(other)
 }
 
 fun TypeElement.isKotlinClass() = kotlinMetadata is KotlinClassMetadata

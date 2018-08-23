@@ -6,11 +6,11 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeParameterElement
 import javax.lang.model.type.TypeMirror
 
-open class KotlinTypeParameterElement internal constructor(
-		private val element: TypeParameterElement,
+/*open class KotlinTypeParameterElement internal constructor(
+		val javaElement: TypeParameterElement,
 		protected val protoTypeParam: ProtoBuf.TypeParameter,
 		processingEnv: ProcessingEnvironment
-) : KotlinSubelement(element, processingEnv), TypeParameterElement {
+) : KotlinSubelement(processingEnv), TypeParameterElement by javaElement {
 
 	enum class Variance  { IN, OUT, INVARIANT }
 
@@ -23,69 +23,22 @@ open class KotlinTypeParameterElement internal constructor(
 	val reified: Boolean = protoTypeParam.reified
 
 	//TODO(bounds)
-	override fun getBounds(): List<TypeMirror> = element.bounds
+	override fun getBounds(): List<TypeMirror> = javaElement.bounds
 
-	override fun getGenericElement(): KotlinSyntacticElement
-			= element.genericElement.toKotlinElement(processingEnv)
-			?: throw IllegalStateException("Generic element of KotlinTypeParameterElement is not a KotlinSyntacticElement")
+	override fun getGenericElement(): KotlinElement
+			= javaElement.genericElement.toKotlinElement(processingEnv)
+			  ?: throw AssertionError("Generic element of KotlinTypeParameterElement should always be a KotlinElement")
 
-	companion object {
-		fun get(element: TypeParameterElement, processingEnv: ProcessingEnvironment): KotlinTypeParameterElement? {
-			return if (element is KotlinTypeParameterElement)
-				element
-			else
-				// to construct the KotlinTypeParameterElement, metadata of the parent element is needed
-				// so the construction is delegated to the parent element
-				element.enclosingElement.toKotlinElement(processingEnv)?.let { parentElem ->
-					when (parentElem) {
-						is KotlinTypeElement -> parentElem.getKotlinTypeParameter(element)
-						is KotlinFunctionElement -> parentElem.getKotlinTypeParameter(element)
-						//TODO("handle other kinds of Kotlin executable elements)
-						else -> null
-					} ?: throw IllegalStateException(
-							"Could not convert $element to KotlinTypeParameterElement even " +
-							"though it is apparently a Kotlin element")
-				}
-		}
+	override fun getEnclosedElements(): List<Nothing> {
+		// According to documentation (as of JDK 9), an ExecutableElement
+		// is not considered to enclose any elements
+		assert(javaElement.enclosedElements.isNotEmpty())
+		return emptyList()
 	}
-}
-
-internal fun findMatchingProtoTypeParam(
-		typeParamElem: TypeParameterElement,
-		protoTypeParams: List<ProtoBuf.TypeParameter>,
-		nameResolver: NameResolver
-): ProtoBuf.TypeParameter? {
-	val matchingProtoTypeParams = protoTypeParams.filter { protoTypeParam ->
-		doTypeParamsMatch(typeParamElem, protoTypeParam, nameResolver)
-	}
-
-	return when(matchingProtoTypeParams.size) {
-		0 -> null
-		1 -> matchingProtoTypeParams.single()
-		else -> throw IllegalStateException("More than one element in the list of protoTypeParams " +
-											"matches the name of the TypeParameterElement")
-	}
-}
-
-internal fun findMatchingTypeParamElement(
-		protoTypeParam: ProtoBuf.TypeParameter,
-		typeParamElems: List<TypeParameterElement>,
-		nameResolver: NameResolver
-): TypeParameterElement? {
-	val matchingTypeParamElems = typeParamElems.filter { typeParamElem ->
-		doTypeParamsMatch(typeParamElem, protoTypeParam, nameResolver)
-	}
-
-	return when(matchingTypeParamElems.size) {
-		0 -> null
-		1 -> matchingTypeParamElems.single()
-		else -> throw IllegalStateException("More than one element in the list of TypeParameterElements " +
-											"matches the name of the protoTypeParam")
-	}
-}
+}*/
 
 internal fun doTypeParamsMatch(
-		typeParamElem: TypeParameterElement, protoTypeParam: ProtoBuf.TypeParameter, nameResolver: NameResolver
-): Boolean
-		= typeParamElem.simpleName.toString() == nameResolver.getString(protoTypeParam.name)
+		typeParamElem: TypeParameterElement, protoTypeParam: ProtoBuf.TypeParameter,
+		nameResolver: NameResolver): Boolean
+		= (typeParamElem.simpleName.toString() == nameResolver.getString(protoTypeParam.name))
 

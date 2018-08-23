@@ -2,15 +2,17 @@ package com.tschuchort.kotlinelements
 
 import com.google.auto.service.AutoService
 import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
+import me.eugeniomarletti.kotlin.metadata.extractFullName
 import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.TypeTable
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.type
+import java.lang.annotation.RetentionPolicy
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
-import javax.lang.model.element.ExecutableElement
-import javax.lang.model.element.Parameterizable
-import javax.lang.model.element.TypeElement
+import javax.lang.model.element.*
 import javax.tools.Diagnostic
 
 @Target(AnnotationTarget.CLASS)
@@ -44,7 +46,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 	private val kaptKotlinGeneratedDir by lazy { processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME] }
 	private val generateErrors by lazy { processingEnv.options[GENERATE_ERRORS_OPTION] == "true" }
 	private val generateKotlinCode by lazy { processingEnv.options[GENERATE_KOTLIN_CODE_OPTION] == "true" }
-	private val generatedFilesSuffix by lazy { processingEnv.options[FILE_SUFFIX_OPTION] ?: "Generated"}
+	private val generatedFilesSuffix by lazy { processingEnv.options[FILE_SUFFIX_OPTION] ?: "Generated" }
 
 	private fun log(msg: String) = processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, msg)
 
@@ -59,29 +61,27 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		log("annotation processing... $annotations")
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
-			log("----------------------------------------------------------------------------------------------------")
-			log("$annotatedElem")
-			log("${(annotatedElem as? TypeElement)?.nestingKind}");
-			//log("enclosing: ${annotatedElem.enclosingElement}")
-			log("-             -                -               -                  -                      -")
-			with(processingEnv.kotlinMetadataUtils) {
-				log("typeParams: ${(annotatedElem as? Parameterizable)?.typeParameters}")
-				log("proto functions:")
-				(annotatedElem.kotlinMetadata as? KotlinClassMetadata)?.data?.classProto?.functionList?.forEach { log("${it.jvmMethodSignature}") }
-				log("enclosed elements:")
-				annotatedElem.enclosedElements.forEach { log("    $it, kind: ${it.kind}, " +
-															 "signature: \"${(it as? ExecutableElement)?.jvmMethodSignature}\", " +
-															 "typeParams: ${(it as? Parameterizable)?.typeParameters}") }
-			}
+			val classData = (annotatedElem.kotlinMetadata as KotlinClassMetadata).data
+			val (nameResolver, classProto) = classData
+			val method = classProto.functionList.first()
 
-			log(KotlinSyntacticElement.get(annotatedElem, processingEnv)!!.printSummary().write())
+			log("method")
+
+			log(method.valueParameterList.map {
+				"""
+					name: ${nameResolver.getString(it.name)}
+					getType: ${it.type.    extractFullName(classData)}
+					type from class typeTable: ${it.type(TypeTable(classProto.typeTable)).extractFullName(classData)}
+				"""
+			}.joinToString("\n"))
+
+			//log(annotatedElem.printSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FunctionAnnotation::class.java)) {
-			log("----------------------------------------------------------------------------------------------------")
-			log("$annotatedElem")
-			log("enclosing: ${annotatedElem.enclosingElement}")
+
+			//log(annotatedElem.printSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
@@ -92,7 +92,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		return true
 	}
 
-	fun KotlinSyntacticElement.printSummary(): StringWriter {
+	/*fun KotlinElement.printSummary(): StringWriter {
 		return StringWriter() +
 			   """
 				   name: $this
@@ -102,7 +102,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   modifiers: $modifiers
 				   isKotlinElement: ${isKotlinElement()}
 			   """.trimIndent() +
-			   if(this is KotlinExecutableElement) {
+			   if (this is KotlinExecutableElement) {
 				   StringWriter() + """
 					   isDefault: $isDefault
 					   isVarArgs: $isVarArgs
@@ -116,7 +116,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			   else {
 				   StringWriter()
 			   } +
-			   when(this) {
+			   when (this) {
 				   is KotlinTypeElement -> StringWriter() + """
 					   packageName: $packageName
 					   nestingKind: $nestingKind
@@ -165,39 +165,56 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			   } +
 			   "enclosed Elements:" +
 			   enclosedElements.map { it.printSummary() }.combine().indent()
+	}*/
+
+	fun Element.printSummary(): String {
+		return """
+			$this
+			simpleName: $simpleName
+			kind: $kind
+			modifiers: $modifiers
+			isKotlinElement: ${isKotlinElement()}
+			annotations: $annotationMirrors
+			""".trimIndent() + "\n" +
+			   when (this) {
+				   is ExecutableElement -> """
+						receiverType: $receiverType
+						returnType: $returnType
+						thrownTypes: $thrownTypes
+						isDefault: $isDefault
+						defaultValue: $defaultValue
+						isVarArgs: $isVarArgs
+						parameters:
+				   """.trimIndent() + "\n" +
+						parameters.printSummary().prependIndent("\t") +
+						"typeParameters:" +
+						typeParameters.printSummary().prependIndent("\t")
+				   is TypeElement -> """
+						nestingKind: $nestingKind
+						superclass: $superclass
+						interfaces: $interfaces
+						qualifiedName: $qualifiedName
+						asType: ${asType()}
+						isKotlinClass: ${isKotlinClass()}
+				   """.trimIndent() + "\n" +
+						"typeParameters:\n" +
+						typeParameters.printSummary().prependIndent("\t")
+				   is VariableElement -> """
+						constantValue: $constantValue
+				   """.trimIndent()
+				   is PackageElement -> """
+					   isUnnamed: $isUnnamed
+				   """.trimIndent()
+				   else -> ""
+			   } + "\n" +
+			   //"enclosingElement:" +
+			   //enclosingElement?.printSummary()?.prependIndent("\t") +
+			   "enclosedElements:\n" +
+			   enclosedElements.printSummary().prependIndent("\t")
 	}
+
+	fun List<Element>.printSummary() =
+			joinToString("\n--------------------------------\n") { it.printSummary() }
+
 }
-
-class StringWriter(var lines: List<String> = emptyList()) {
-	fun write() = lines.joinToString("\n")
-
-	fun mapLines(f: (String) -> String): StringWriter {
-		lines = lines.map(f)
-		return this
-	}
-
-	fun indent(): StringWriter {
-		mapLines { "\t" + it }
-		return this
-	}
-
-	operator fun plus(line: String?): StringWriter {
-		if(line != null)
-			lines += line.split("\n").filter(CharSequence::isNotEmpty)
-
-		return this
-	}
-
-	operator fun plus(writer: StringWriter?): StringWriter {
-		if(writer != null)
-			lines += writer.lines
-
-		return this
-	}
-}
-
-fun List<StringWriter>.combine() = StringWriter(fold(mutableListOf<String>()) { accLines, writer ->
-	accLines.addAll(writer.lines)
-	accLines
-})
 

@@ -5,6 +5,52 @@ import javax.lang.model.element.*
 
 internal inline fun <reified R : Any> List<*>.castList() = map { it as R }
 
+/**
+ * checks if all elements in the list are equal with respect to the comparator
+ */
+internal inline fun <T> List<T>.allEqualBy(crossinline areEqual: (T, T) -> Boolean): Boolean {
+	if(size < 2)
+		return true
+
+	val first = first()
+
+	for(other in this) {
+		if(!areEqual(first, other))
+			return false
+	}
+
+	return true
+}
+
+/**
+ * checks if all elements in the list are equal with respect to the metric (a property for example)
+ */
+internal inline fun <T,R> List<T>.allEqualBy(crossinline metric: T.() -> R): Boolean {
+	if(size < 2)
+		return true
+
+	val firstMetric = first().metric()
+
+	for(other in this) {
+		if(firstMetric != other.metric())
+			return false
+	}
+
+	return true
+}
+
+internal inline fun <T,S,R> List<T>.zipWith(other: List<S>, zipper: (T,S) -> R): List<R>
+		= zip(other).map { (fst, snd) -> zipper(fst, snd) }
+
+/**
+ * checks whether [this] is equal to a subset of [superset]
+ * i.e. every element of [this] is equal to some (not necessarily
+ * distinct) element in [superset]
+ */
+internal fun <T> List<T>.equalsSubset(superset: List<T>)
+		= superset.toHashSet().containsAll(this)
+
+//TODO("make internal for release")
 val ProcessingEnvironment.kotlinMetadataUtils: KotlinMetadataUtils
 	get() {
 		return object : KotlinMetadataUtils {

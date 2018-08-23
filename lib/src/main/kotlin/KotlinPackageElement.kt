@@ -9,11 +9,11 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Name
 import javax.lang.model.element.PackageElement
 
-open class KotlinPackageElement internal constructor(
+/*class KotlinPackageElement internal constructor(
 		private val element: PackageElement,
 		metadata: KotlinPackageMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinSyntacticElement(element, processingEnv), PackageElement {
+) : KotlinElement(processingEnv), PackageElement {
 
 	protected val protoPackage: ProtoBuf.Package = metadata.data.packageProto
 	protected val protoNameResolver: NameResolver = metadata.data.nameResolver
@@ -38,4 +38,4 @@ open class KotlinPackageElement internal constructor(
 	override fun toString() = element.toString()
 	override fun equals(other: Any?) = element.equals(other)
 	override fun hashCode() = element.hashCode()
-}
+}*/

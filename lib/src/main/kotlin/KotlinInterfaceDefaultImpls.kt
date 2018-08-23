@@ -12,7 +12,7 @@ import javax.lang.model.type.TypeMirror
  * a public static inner class `DefaultImpls` with a static method for each
  * default method implementation
  */
-class KotlinInterfaceDefaultImpls internal constructor(
+/*class KotlinInterfaceDefaultImpls internal constructor(
 		protected val element: TypeElement,
 		protected val interfaceElement: KotlinTypeElement,
 		processingEnv: ProcessingEnvironment
@@ -51,4 +51,4 @@ class KotlinInterfaceDefaultImpls internal constructor(
 		assert(element.typeParameters.isEmpty())
 		return emptyList()
 	}
-}
+}*/
