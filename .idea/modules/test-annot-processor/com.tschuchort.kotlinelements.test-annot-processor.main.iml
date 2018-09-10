@@ -20,9 +20,7 @@
             <array />
           </option>
           <option name="pluginClasspaths">
-            <array>
-              <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-annotation-processing-gradle/1.2.60/6b880300d011dfc5962e8f24b6f9b7218516108/kotlin-annotation-processing-gradle-1.2.60.jar" />
-            </array>
+            <array />
           </option>
         </compilerArguments>
       </configuration>
@@ -54,14 +52,14 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.60" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.61" level="project" />
     <orderEntry type="library" name="Gradle: com.squareup:kotlinpoet:1.0.0-RC1" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.60" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.61" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.2.50" level="project" />
     <orderEntry type="library" name="Gradle: me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0" level="project" />
     <orderEntry type="library" name="Gradle: me.eugeniomarletti.kotlin.metadata:kotlin-compiler-lite:1.0.3-k-1.2.40" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.60" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.2.60" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.61" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.2.61" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains:annotations:13.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Gradle: com.google.auto.service:auto-service:1.0-rc2" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Gradle: com.google.auto:auto-common:0.3" level="project" />

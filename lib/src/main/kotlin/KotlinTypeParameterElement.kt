@@ -6,7 +6,7 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeParameterElement
 import javax.lang.model.type.TypeMirror
 
-/*open class KotlinTypeParameterElement internal constructor(
+open class KotlinTypeParameterElement internal constructor(
 		val javaElement: TypeParameterElement,
 		protected val protoTypeParam: ProtoBuf.TypeParameter,
 		processingEnv: ProcessingEnvironment
@@ -25,6 +25,8 @@ import javax.lang.model.type.TypeMirror
 	//TODO(bounds)
 	override fun getBounds(): List<TypeMirror> = javaElement.bounds
 
+	override fun getEnclosingElement(): KotlinElement = genericElement
+
 	override fun getGenericElement(): KotlinElement
 			= javaElement.genericElement.toKotlinElement(processingEnv)
 			  ?: throw AssertionError("Generic element of KotlinTypeParameterElement should always be a KotlinElement")
@@ -35,7 +37,17 @@ import javax.lang.model.type.TypeMirror
 		assert(javaElement.enclosedElements.isNotEmpty())
 		return emptyList()
 	}
-}*/
+
+	override fun equals(other: Any?) =
+			if(other is KotlinTypeParameterElement)
+				other.javaElement == javaElement
+			else
+				false
+
+	override fun toString() = javaElement.toString()
+
+	override fun hashCode() = javaElement.hashCode()
+}
 
 internal fun doTypeParamsMatch(
 		typeParamElem: TypeParameterElement, protoTypeParam: ProtoBuf.TypeParameter,

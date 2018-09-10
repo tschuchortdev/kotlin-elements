@@ -70,18 +70,18 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			log(method.valueParameterList.map {
 				"""
 					name: ${nameResolver.getString(it.name)}
-					getType: ${it.type.    extractFullName(classData)}
+					getType: ${it.type.extractFullName(classData)}
 					type from class typeTable: ${it.type(TypeTable(classProto.typeTable)).extractFullName(classData)}
 				"""
 			}.joinToString("\n"))
 
-			//log(annotatedElem.printSummary())
+			log(annotatedElem.printSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FunctionAnnotation::class.java)) {
 
-			//log(annotatedElem.printSummary())
+			log(annotatedElem.printSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
@@ -173,7 +173,8 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			simpleName: $simpleName
 			kind: $kind
 			modifiers: $modifiers
-			isKotlinElement: ${isKotlinElement()}
+			origin: ${processingEnv.elementUtils.getOrigin(this)}
+			originatesFromKotlin: ${originatesFromKotlinCode()}
 			annotations: $annotationMirrors
 			""".trimIndent() + "\n" +
 			   when (this) {

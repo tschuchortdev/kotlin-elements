@@ -9,7 +9,7 @@ import me.eugeniomarletti.kotlin.metadata.visibility
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.ExecutableElement
 
-/*class KotlinConstructorElement internal constructor(
+class KotlinConstructorElement internal constructor(
 		javaElement: ExecutableElement,
 		jvmOverloadElements: List<ExecutableElement>,
 		private val protoConstructor: ProtoBuf.Constructor,
@@ -30,4 +30,4 @@ import javax.lang.model.element.ExecutableElement
 		assert(javaElement.typeParameters.isEmpty())
 		return emptyList()
 	}
-}*/
+}

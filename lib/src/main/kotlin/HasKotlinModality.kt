@@ -1,19 +1,32 @@
 package com.tschuchort.kotlinelements
 
+import me.eugeniomarletti.kotlin.metadata.modality
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import javax.lang.model.element.Element
 
 /**
- * An element that is overridable or derivable (i.e. classes,
- * functions and properties but not constructors)
+ * An element that is overridable or derivable and has a modality modifier
+ * (i.e. classes, functions and properties but not constructors)
  */
 interface HasKotlinModality : Element {
 	/**
 	 * modality
-	 * one of: [Modality.FINAL], [Modality.OPEN], [Modality.ABSTRACT], [Modality.ABSTRACT], [Modality.NONE]
+	 * one of: [KotlinModality.FINAL], [KotlinModality.OPEN], [KotlinModality.ABSTRACT], [KotlinModality.ABSTRACT], [KotlinModality.NONE]
 	 */
-	val modality: Modality
+	val modality: KotlinModality
 }
 
-enum class Modality {
+enum class KotlinModality {
 	FINAL, OPEN, ABSTRACT, SEALED, NONE;
+
+	companion object {
+		internal fun fromProtoBuf(protoModality: ProtoBuf.Modality?): KotlinModality
+				= when(protoModality) {
+			ProtoBuf.Modality.FINAL -> FINAL
+			ProtoBuf.Modality.ABSTRACT -> ABSTRACT
+			ProtoBuf.Modality.OPEN -> OPEN
+			ProtoBuf.Modality.SEALED -> SEALED
+			null -> NONE
+		}
+	}
 }

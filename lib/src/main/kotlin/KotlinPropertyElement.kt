@@ -1,38 +1,59 @@
 package com.tschuchort.kotlinelements
 
+import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
+import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.VariableElement
 
 /*open class KotlinPropertyElement internal constructor(
-		private val fieldElement: VariableElement,
-		private val setterElement: KotlinSyntacticElement?,
-		private val getterElement: ExecutableElement?,
-		private val protoProperty: ProtoBuf.Property,
+		val javaFieldElement: VariableElement?,
+		val javaSetterElement: ExecutableElement?,
+		val javaGetterElement: ExecutableElement?,
+		protoProperty: ProtoBuf.Property,
 		processingEnv: ProcessingEnvironment
-) : KotlinSyntacticElement(fieldElement, processingEnv) {
+) : KotlinElement(processingEnv), HasKotlinVisibility, HasKotlinModality {
 
-	companion object {
-		fun get(fieldElement: VariableElement, processingEnv: ProcessingEnvironment): KotlinPropertyElement? {
+	init {
+		require(arrayListOf(javaFieldElement, javaSetterElement, javaGetterElement).any { it != null })
 
-		}
-
-		fun get(setterElement: ExecutableElement, processingEnv: ProcessingEnvironment): KotlinPropertyElement? {
-
-		}
-
-		fun get(getterElement: ExecutableElement, processingEnv: ProcessingEnvironment): KotlinPropertyElement? {
-
-		}
+		assert(protoProperty.isVal || protoProperty.isVar)
 	}
 
-	override fun toString() = fieldElement.toString()
+	val isConst: Boolean = protoProperty.isConst
+
+	val isDelegated: Boolean = protoProperty.isDelegated
+
+	/** Whether this property has the `expect` keyword
+	 *
+	 * An expect property is a property declaration with actual definition in a different
+	 * file, akin to a declaration in a header file in C++. They are used in multiplatform
+	 * projects where different implementations are needed depending on target platform
+	 */
+	val isExpect: Boolean = protoProperty.isExpectProperty
+
+	/**
+	 * Whether this property has the `external` keyword
+	 *
+	 * An external property is a property declaration with the actual definition in native
+	 * code, similar to the `native` keyword in Java
+	 */
+	val isExternal: Boolean = protoProperty.isExternalProperty
+
+	val isLateInit: Boolean = protoProperty.isLateInit
+
+	val isReadOnly: Boolean = protoProperty.isVal
+
+
+	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoProperty.visibility)
+
+	override fun toString() = TODO("property toString")
 
 	override fun equals(other: Any?)
-			= fieldElement.equals(other)
-			  || setterElement?.equals(other) ?: false
-			  || getterElement?.equals(other) ?: false
+			= javaFieldElement?.equals(other)
+			  || javaSetterElement?.equals(other) ?: false
+			  || javaGetterElement?.equals(other) ?: false
 
-	override fun hashCode() = fieldElement.hashCode()
+	override fun hashCode() = Objects.hash(javaFieldElement, javaSetterElement, javaGetterElement)
 }*/

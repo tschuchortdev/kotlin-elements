@@ -4,12 +4,13 @@ import me.eugeniomarletti.kotlin.metadata.declaresDefaultValue
 import me.eugeniomarletti.kotlin.metadata.isCrossInline
 import me.eugeniomarletti.kotlin.metadata.isNoInline
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
+import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.VariableElement
 
 class KotlinParameterElement internal constructor(
 		val javaElement: VariableElement,
-		protected val protoParam: ProtoBuf.ValueParameter,
+		private val protoParam: ProtoBuf.ValueParameter,
 		processingEnv: ProcessingEnvironment
 ) : KotlinSubelement(processingEnv), VariableElement by javaElement {
 
@@ -25,4 +26,22 @@ class KotlinParameterElement internal constructor(
 	val isCrossInline: Boolean = protoParam.isCrossInline
 
 	val isNoInline: Boolean = protoParam.isNoInline
+
+	override fun getEnclosingElement(): KotlinElement {
+		return javaElement.enclosingElement.toKotlinElement(processingEnv)!!
+	}
+
+	override fun getEnclosedElements(): List<Nothing> {
+		// a parameter element shouldn't enclose anything
+		assert(javaElement.enclosedElements.isEmpty())
+		return emptyList()
+	}
+
+	override fun equals(other: Any?): Boolean
+			= (other as? KotlinParameterElement)?.javaElement == javaElement
+
+	override fun hashCode() = Objects.hash(javaElement, protoParam)
+
+	override fun toString() = javaElement.toString()
 }
+

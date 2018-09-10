@@ -53,7 +53,7 @@ class D {
 	}
 }
 
-@ClassAnnotation
+//@ClassAnnotation
 class E constructor(x: String, y: SomeClass){
 	fun foo(x: String, y: GenericClass<Int>, z: GenericClass<*>) {}
 }
@@ -107,8 +107,13 @@ fun fooWithDefault(a: String, b: Int, y: String = "world") {
 }
 
 @JvmOverloads
-@FunctionAnnotation
+//@FunctionAnnotation
 fun fooWithDefault(a: String, y: Float = 2.0f) {
+
+}
+
+@FunctionAnnotation
+fun SomeClass.ext(a: String) {
 
 }
 

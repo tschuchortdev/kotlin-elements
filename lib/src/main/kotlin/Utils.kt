@@ -39,7 +39,7 @@ internal inline fun <T,R> List<T>.allEqualBy(crossinline metric: T.() -> R): Boo
 	return true
 }
 
-internal inline fun <T,S,R> List<T>.zipWith(other: List<S>, zipper: (T,S) -> R): List<R>
+internal inline fun <T,S,R> List<T>.zipWith(other: List<S>, crossinline zipper: (T,S) -> R): List<R>
 		= zip(other).map { (fst, snd) -> zipper(fst, snd) }
 
 /**

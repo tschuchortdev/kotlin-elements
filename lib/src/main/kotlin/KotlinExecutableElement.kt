@@ -9,7 +9,7 @@ import javax.lang.model.element.*
  *  in Kotlin source code, but may correspond to several Java [ExecutableElement]s that are
  *  generated when @[JvmOverloads] is used
  */
-/*abstract class KotlinExecutableElement internal constructor(
+abstract class KotlinExecutableElement internal constructor(
 		/**
 		 * the Java method associated with this Kotlin method or the one that
 		 * has the same signature (all parameters) if there are multiple associated
@@ -86,4 +86,4 @@ import javax.lang.model.element.*
 	override fun hashCode() = Objects.hash(simpleName, enclosingElement, javaElement.jvmSignature())
 
 	override fun toString() = javaElement.toString()
-}*/
+}
