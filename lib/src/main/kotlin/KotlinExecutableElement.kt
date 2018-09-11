@@ -63,11 +63,7 @@ abstract class KotlinExecutableElement internal constructor(
 	//TODO("handle Kotlin return types")
 
 	override fun getEnclosingElement(): KotlinElement
-			=  javaElement.enclosingElement.let {
-		it.toKotlinElement(processingEnv)
-		?: throw IllegalStateException("Enclosing element \"$it\" " +
-									   "of \"$this\" is not a KotlinElement")
-	}
+			= javaElement.enclosingElement.correspondingKotlinElement(processingEnv)!!
 
 	override fun getEnclosedElements(): List<Nothing> {
 		// According to documentation (as of JDK 9), an ExecutableElement
@@ -77,6 +73,8 @@ abstract class KotlinExecutableElement internal constructor(
 	}
 
 	abstract override fun getTypeParameters(): List<KotlinTypeParameterElement>
+
+	abstract override fun getParameters(): List<KotlinParameterElement>
 
 	override fun equals(other: Any?)
 		= (other is KotlinExecutableElement

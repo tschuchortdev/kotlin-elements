@@ -5,6 +5,8 @@ import javax.lang.model.element.*
 
 internal inline fun <reified R : Any> List<*>.castList() = map { it as R }
 
+internal inline fun <T> List<T>.allEqual(): Boolean = distinct().size == 1
+
 /**
  * checks if all elements in the list are equal with respect to the comparator
  */

@@ -58,7 +58,11 @@ class E constructor(x: String, y: SomeClass){
 	fun foo(x: String, y: GenericClass<Int>, z: GenericClass<*>) {}
 }
 
-open class SomeClass
+open class SomeClass {
+	init {
+		println("init SomeClass")
+	}
+}
 
 open class GenericClass<T>
 

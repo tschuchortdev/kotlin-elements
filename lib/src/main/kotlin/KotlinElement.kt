@@ -16,6 +16,8 @@ abstract class KotlinElement internal constructor(
 		protected val processingEnv: ProcessingEnvironment
 ) : Element {
 	companion object {
+
+
 		/**
 		 * Returns the [NameResolver] of the closest parent element (or this element) that has one
 		 */
@@ -79,53 +81,99 @@ fun Element.originatesFromKotlinCode(): Boolean = KotlinElement.getNameResolver(
  */
 interface KotlinSyntheticElement : Element
 
+fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): KotlinElement? {
+	return if(this is KotlinElement)
+		this
+	else if(!originatesFromKotlinCode())
+		null
+	else when (kind) {
+		ElementKind.CLASS,
+		ElementKind.ENUM,
+		ElementKind.INTERFACE,
+		ElementKind.ANNOTATION_TYPE -> with(this as TypeElement) {
+			val metadata = kotlinMetadata
 
-fun Element.toKotlinElement(processingEnv: ProcessingEnvironment): KotlinElement? {
-	return TODO()
-
-	/*if(this is KotlinElement)
-		return this
-
-	if(!this.originatesFromKotlinCode())
-		return null
-
-	when (kind) {
-		ElementKind.CLASS, ElementKind.ENUM,
-		ElementKind.INTERFACE, ElementKind.ANNOTATION_TYPE -> with(this as TypeElement) {
-			(kotlinMetadata as? KotlinClassMetadata)?.let { metadata ->
-				KotlinTypeElement(this, metadata, processingEnv)
-			}
-			?: (enclosingElement?.toKotlinElement(processingEnv) as? KotlinTypeElement)
-					?.let { enclosingTypeElem ->
-				if (qualifiedName.toString() == enclosingTypeElem.qualifiedName.toString() + ".DefaultImpl"
-					&& enclosingTypeElem.kind == ElementKind.INTERFACE) {
-					KotlinInterfaceDefaultImpls(this, enclosingTypeElem, processingEnv)
-				}
+			when {
+				metadata is KotlinClassMetadata -> KotlinTypeElement(this, metadata, processingEnv)
+				metadata is KotlinFileMetadata -> TODO("Kotlin file element")
+				this.isInterfaceDefaultImpl(processingEnv) -> TODO("Kotlin Interface DefaultImpl")
+				else -> throw AssertionError("Element originates from Kotlin code and is type-kind but not a KotlinTypeElement, " +
+											 "KotlinFileElement or Kotlin Interface DefaultImpl")
 			}
 		}
 
-		ElementKind.METHOD, ElementKind.CONSTRUCTOR,
-		ElementKind.INSTANCE_INIT, ElementKind.STATIC_INIT ->
-			KotlinExecutableElement.get(element as ExecutableElement, processingEnv)
+		ElementKind.CONSTRUCTOR ->
+			(enclosingElement as KotlinTypeElement).constructors.single {
+				it.javaElement == this || it.jvmOverloadElements.any { it == this }
+			}
 
-		ElementKind.TYPE_PARAMETER ->
-			KotlinTypeParameterElement.get(element as TypeParameterElement, processingEnv)
 
-		ElementKind.FIELD, ElementKind.ENUM_CONSTANT, ElementKind.PARAMETER,
-		ElementKind.LOCAL_VARIABLE, ElementKind.RESOURCE_VARIABLE,
-		ElementKind.EXCEPTION_PARAMETER -> TODO("implement KotlinVariableElement")
+		ElementKind.METHOD -> {
+			val enclosingElem = (enclosingElement as KotlinTypeElement)
+
+			if(simpleName.startsWith("set"))
+				enclosingElem.declaredProperties.single { it.javaSetterElement == this }
+			else if(simpleName.startsWith("get") || simpleName.startsWith("is"))
+				enclosingElem.declaredProperties.single { it.javaGetterElement == this }
+			else
+				enclosingElem.declaredMethods.single {
+					it.javaElement == this || it.jvmOverloadElements.any { it == this }
+				}
+		}
+
+		ElementKind.INSTANCE_INIT,
+		ElementKind.STATIC_INIT -> throw AssertionError(
+				"element originating from Kotlin code should never be of kind INSTANCE_INIT or STATIC_INIT"
+		)
+
+		ElementKind.TYPE_PARAMETER -> {
+			val enclosingElem = enclosingElement.correspondingKotlinElement(processingEnv)
+
+			if(enclosingElem is KotlinParameterizable)
+				enclosingElem.typeParameters.single { it.javaElement == this }
+			else
+				throw AssertionError("enclosing element of TYPE_PARAMETER element originating " +
+									 "from Kotlin is not KotlinParameterizable")
+		}
+
+		ElementKind.PARAMETER -> {
+			(enclosingElement.correspondingKotlinElement(processingEnv) as KotlinExecutableElement)
+					.parameters.single {
+
+			}
+		}
+
+		ElementKind.FIELD ->
+			(enclosingElement as KotlinTypeElement).declaredProperties.single { it.javaFieldElement == this }
+
+		ElementKind.ENUM_CONSTANT -> TODO("handle ElementKind.ENUM_CONSTANT")
+
+		ElementKind.RESOURCE_VARIABLE,
+		ElementKind.EXCEPTION_PARAMETER,
+		ElementKind.LOCAL_VARIABLE -> throw AssertionError(
+				"Element to be converted is local but this library was written under the assumption " +
+				"that it is impossible to get a local Element during annotation processing (which will probably " +
+				"change in the future)"
+		)
 
 		ElementKind.MODULE -> TODO("handle module elements gracefully")
 
-		ElementKind.PACKAGE -> KotlinPackageElement(this as PackageElement, (kotlinMetadata as KotlinPackageMetadata), processingEnv)
+		ElementKind.PACKAGE -> TODO("implement kotlin package element")
 
 		ElementKind.OTHER -> throw UnsupportedOperationException(
-				"Can not convert element \"$element\" of unsupported kind \"${element.kind}\" to KotlinSyntacticElement")
+				"Can not convert element \"$this\" of unsupported kind \"$kind\" to KotlinSyntacticElement")
 
-		null -> throw NullPointerException("Can not convert to KotlinSyntacticElement: kind of element \"$element\" was null")
+		null -> throw NullPointerException("Can not convert to KotlinSyntacticElement: kind of element \"$this\" was null")
 
 		else -> throw UnsupportedOperationException(
-				"Can not convert element \"$element\" of unsupported kind \"${element.kind}\" to KotlinSyntacticElement.\n" +
+				"Can not convert element \"$this\" of unsupported kind \"$kind\" to KotlinSyntacticElement.\n" +
 				"Element ElementKind was probably added to the Java language at a later date")
-	}*/
+	}
+}
+
+fun TypeElement.isInterfaceDefaultImpl(processingEnv: ProcessingEnvironment): Boolean {
+	val enclosingTypeElem =  enclosingElement?.correspondingKotlinElement(processingEnv) as? KotlinTypeElement
+
+	return (qualifiedName.toString() == enclosingTypeElem?.qualifiedName.toString() + ".DefaultImpl"
+			&& enclosingTypeElem?.kind == ElementKind.INTERFACE)
 }

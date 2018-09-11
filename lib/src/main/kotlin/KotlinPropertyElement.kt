@@ -2,21 +2,29 @@ package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
-import javax.lang.model.element.ExecutableElement
-import javax.lang.model.element.VariableElement
+import javax.lang.model.element.*
+import javax.lang.model.type.TypeMirror
 
-/*open class KotlinPropertyElement internal constructor(
+open class KotlinPropertyElement internal constructor(
 		val javaFieldElement: VariableElement?,
 		val javaSetterElement: ExecutableElement?,
 		val javaGetterElement: ExecutableElement?,
-		protoProperty: ProtoBuf.Property,
+		private val protoProperty: ProtoBuf.Property,
+		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), HasKotlinVisibility, HasKotlinModality {
+) : KotlinSubelement(processingEnv) {
 
 	init {
 		require(arrayListOf(javaFieldElement, javaSetterElement, javaGetterElement).any { it != null })
+
+		// all non-null java elements must have the same enclosing element
+		assert(arrayListOf(javaFieldElement?.enclosingElement, javaSetterElement?.enclosingElement, javaGetterElement?.enclosingElement)
+				.filterNotNull()
+				.allEqual()
+		)
 
 		assert(protoProperty.isVal || protoProperty.isVar)
 	}
@@ -45,15 +53,76 @@ import javax.lang.model.element.VariableElement
 
 	val isReadOnly: Boolean = protoProperty.isVal
 
+	val modality = protoProperty.modality
 
-	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoProperty.visibility)
+	val visibility = protoProperty.visibility
+
+	val isGetterDefault: Boolean = protoProperty.isGetterDefault
+	val isGetterNotDefault: Boolean = protoProperty.isGetterNotDefault
+	val isGetterExternal: Boolean = protoProperty.isGetterExternal
+	val isGetterInline: Boolean = protoProperty.isGetterInline
+	val hasGetter: Boolean = protoProperty.hasGetter
+	val getterModality = protoProperty.getterModality
+	val getterVisibility = protoProperty.getterVisibility
+	val getterHasAnnotations = protoProperty.getterHasAnnotations
+
+	val isSetterDefault: Boolean = protoProperty.isSetterDefault
+	val isSetterNotDefault: Boolean = protoProperty.isSetterNotDefault
+	val isSetterExternal: Boolean = protoProperty.isSetterExternal
+	val isSetterInline: Boolean = protoProperty.isSetterInline
+	val hasSetter: Boolean = protoProperty.hasSetter
+	val setterModality = protoProperty.setterModality
+	val setterVisibility = protoProperty.setterVisibility
+	val setterHasAnnotations = protoProperty.setterHasAnnotations
+
+	val hasConstant = protoProperty.hasConstant
+
+
+	override fun getModifiers(): MutableSet<Modifier> = TODO("property modifiers")
+
+	override fun getSimpleName(): Name
+			= processingEnv.elementUtils.getName(protoNameResolver.getString(protoProperty.name))
+
+	override fun getKind(): ElementKind = ElementKind.OTHER
+
+	override fun asType(): TypeMirror = TODO("KotlinPropertyElement asType")
+
+	/**
+	 * To be consistent with [Element], a [KotlinPropertyElement] is not considered to enclose anything
+	 */
+	override fun getEnclosedElements(): List<Nothing> = emptyList()
+
+	override fun getEnclosingElement(): KotlinElement {
+		val nonNullJavaElem = javaFieldElement ?: javaGetterElement ?: javaSetterElement
+			?: throw AssertionError("at least one java element must be non-null")
+
+		return nonNullJavaElem.enclosingElement!!.correspondingKotlinElement(processingEnv)!!
+	}
+
+	override fun <R : Any?, P : Any?> accept(v: ElementVisitor<R, P>, p: P): R {
+		return v.visitUnknown(this, p)
+	}
+
+	override fun <A : Annotation?> getAnnotationsByType(annotationType: Class<A>?): Array<A> {
+		TODO("property annotations")
+	}
+
+	override fun <A : Annotation?> getAnnotation(annotationType: Class<A>?): A {
+		TODO("property annotations")
+	}
+
+	override fun getAnnotationMirrors(): MutableList<out AnnotationMirror> {
+		TODO("property annotations")
+	}
 
 	override fun toString() = TODO("property toString")
 
-	override fun equals(other: Any?)
-			= javaFieldElement?.equals(other)
-			  || javaSetterElement?.equals(other) ?: false
-			  || javaGetterElement?.equals(other) ?: false
+	override fun equals(other: Any?) = (other as? KotlinPropertyElement)?.let { other ->
+		javaFieldElement?.equals(other.javaFieldElement) ?: true
+		&& javaSetterElement?.equals(other.javaSetterElement) ?: true
+		&& javaGetterElement?.equals(other.javaGetterElement) ?: true
+	} ?: false
+
 
 	override fun hashCode() = Objects.hash(javaFieldElement, javaSetterElement, javaGetterElement)
-}*/
+}

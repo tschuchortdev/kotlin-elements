@@ -2,13 +2,14 @@ package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
+import me.eugeniomarletti.kotlin.metadata.shadow.serialization.deserialization.getName
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeParameterElement
 import javax.lang.model.type.TypeMirror
 
-open class KotlinTypeParameterElement internal constructor(
+class KotlinTypeParameterElement internal constructor(
 		val javaElement: TypeParameterElement,
-		protected val protoTypeParam: ProtoBuf.TypeParameter,
+		protoTypeParam: ProtoBuf.TypeParameter,
 		processingEnv: ProcessingEnvironment
 ) : KotlinSubelement(processingEnv), TypeParameterElement by javaElement {
 
@@ -25,11 +26,10 @@ open class KotlinTypeParameterElement internal constructor(
 	//TODO(bounds)
 	override fun getBounds(): List<TypeMirror> = javaElement.bounds
 
-	override fun getEnclosingElement(): KotlinElement = genericElement
+	override fun getEnclosingElement(): KotlinElement
+			= javaElement.enclosingElement.correspondingKotlinElement(processingEnv)!!
 
-	override fun getGenericElement(): KotlinElement
-			= javaElement.genericElement.toKotlinElement(processingEnv)
-			  ?: throw AssertionError("Generic element of KotlinTypeParameterElement should always be a KotlinElement")
+	override fun getGenericElement(): KotlinElement = enclosingElement
 
 	override fun getEnclosedElements(): List<Nothing> {
 		// According to documentation (as of JDK 9), an ExecutableElement
@@ -49,8 +49,7 @@ open class KotlinTypeParameterElement internal constructor(
 	override fun hashCode() = javaElement.hashCode()
 }
 
-internal fun doTypeParamsMatch(
-		typeParamElem: TypeParameterElement, protoTypeParam: ProtoBuf.TypeParameter,
-		nameResolver: NameResolver): Boolean
+internal fun doTypeParamsMatch(typeParamElem: TypeParameterElement, protoTypeParam: ProtoBuf.TypeParameter,
+							   nameResolver: NameResolver): Boolean
 		= (typeParamElem.simpleName.toString() == nameResolver.getString(protoTypeParam.name))
-
+		//TODO("also check if bounds of type parameters match")

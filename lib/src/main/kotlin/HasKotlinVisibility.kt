@@ -19,7 +19,7 @@ enum class KotlinVisibility {
 	INTERNAL, PRIVATE, PROTECTED, PUBLIC, PRIVATE_TO_THIS, LOCAL;
 
 	companion object {
-		internal fun fromProtoBuf(protoVisibility: ProtoBuf.Visibility?): KotlinVisibility
+		internal fun fromProtoBuf(protoVisibility: ProtoBuf.Visibility): KotlinVisibility
 				= when(protoVisibility) {
 			ProtoBuf.Visibility.INTERNAL -> INTERNAL
 			ProtoBuf.Visibility.PRIVATE -> PRIVATE
@@ -27,7 +27,6 @@ enum class KotlinVisibility {
 			ProtoBuf.Visibility.PUBLIC -> PUBLIC
 			ProtoBuf.Visibility.PRIVATE_TO_THIS -> PRIVATE_TO_THIS
 			ProtoBuf.Visibility.LOCAL -> LOCAL
-			null -> PUBLIC
 		}
 	}
 }

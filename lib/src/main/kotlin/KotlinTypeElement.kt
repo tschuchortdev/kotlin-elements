@@ -89,48 +89,23 @@ class KotlinTypeElement internal constructor(
 		}
 	}
 
-
-	companion object {
-		fun get(element: TypeElement, processingEnv: ProcessingEnvironment): KotlinTypeElement?
-				= if(element is KotlinTypeElement)
-					element
-				else
-					(element.kotlinMetadata as? KotlinClassMetadata)?.let { metadata ->
-						KotlinTypeElement(element, metadata, processingEnv)
-					}
-	}
-
 	private fun getCompanionSimpleName(): String? =
 			if (protoClass.hasCompanionObjectName())
 				protoNameResolver.getString(protoClass.companionObjectName)
 			else
 				null
 
-	//TODO(return kotlin superclass)
-	override fun getSuperclass(): TypeMirror = javaElement.superclass
+	override fun getSuperclass(): TypeMirror = TODO("return kotlin superclass")
 
 	override fun getTypeParameters(): List<KotlinTypeParameterElement>
 			= protoClass.typeParameterList.zipWith(javaElement.typeParameters) { protoTypeParam, javaTypeParam ->
-		if(doTypeParamsMatch(javaTypeParam, protoTypeParam, protoNameResolver))
+
+		if (doTypeParamsMatch(javaTypeParam, protoTypeParam, protoNameResolver))
 			KotlinTypeParameterElement(javaTypeParam, protoTypeParam, processingEnv)
 		else
-			throw AssertionError(
-					"Kotlin ProtoBuf.TypeParameters should always match up with Java TypeParameterElements")
+			throw AssertionError("Kotlin ProtoBuf.TypeParameters should always " +
+								 "match up with Java TypeParameterElements")
 	}
-
-	/**
-	 * Returns a [KotlinTypeParameterElement] for this [TypeParameterElement] if it's a type parameter
-	 * of this class or null otherwise
-	 *
-	 * this function is mostly necessary to be used when finding the corresponding [KotlinElement] for
-	 * some arbitrary Java [Element] since only the surrounding element of the type parameter has enough
-	 * information to construct it
-	 */
-	internal fun getKotlinTypeParameter(typeParamElem: TypeParameterElement): KotlinTypeParameterElement?
-			= protoClass.typeParameterList.filter { doTypeParamsMatch(typeParamElem, it, protoNameResolver) }
-			.singleOrNull()
-			?.let { protoTypeParam -> KotlinTypeParameterElement(typeParamElem, protoTypeParam, processingEnv) }
-
 
 	val primaryConstructor: KotlinConstructorElement? by lazy {
 		constructors.firstOrNull { it.isPrimary }
@@ -311,5 +286,3 @@ class KotlinTypeElement internal constructor(
 	override fun equals(other: Any?)
 			= (other as? KotlinTypeElement)?.javaElement == javaElement
 }
-
-fun TypeElement.isKotlinClass() = kotlinMetadata is KotlinClassMetadata

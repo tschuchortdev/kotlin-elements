@@ -12,7 +12,7 @@ class KotlinFunctionElement internal constructor(
 		private val protoFunction: ProtoBuf.Function,
 		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinExecutableElement(javaElement, jvmOverloadElements, processingEnv), HasKotlinModality {
+) : KotlinExecutableElement(javaElement, jvmOverloadElements, processingEnv), HasKotlinModality, HasKotlinVisibility {
 
 	val isInline: Boolean = protoFunction.isInline
 	val isInfix: Boolean = protoFunction.isInfix
@@ -42,35 +42,29 @@ class KotlinFunctionElement internal constructor(
 	 * modality
 	 * one of: [KotlinModality.FINAL], [KotlinModality.OPEN], [KotlinModality.ABSTRACT], [KotlinModality.NONE]
 	 */
-	override val modality: KotlinModality = when(protoFunction.modality) {
-		ProtoBuf.Modality.FINAL -> KotlinModality.FINAL
-		ProtoBuf.Modality.ABSTRACT -> KotlinModality.ABSTRACT
-		ProtoBuf.Modality.OPEN -> KotlinModality.OPEN
-		ProtoBuf.Modality.SEALED -> throw AssertionError("Function modality should never be SEALED")
-		null -> KotlinModality.NONE
-	}
+	override val modality: KotlinModality = KotlinModality.fromProtoBuf(protoFunction.modality)
+			.also { assert(it != KotlinModality.SEALED) }
 
-	val visibility: ProtoBuf.Visibility = protoFunction.visibility!!
+
+	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoFunction.visibility)
+
+	override fun getParameters(): List<KotlinParameterElement>
+			= protoFunction.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->
+
+		if (doParametersMatch(javaParam, protoParam, protoNameResolver))
+			KotlinParameterElement(javaParam, protoParam, processingEnv)
+		else
+			throw AssertionError("Kotlin ProtoBuf.Parameters should always " +
+								 "match up with Java VariableElements")
+	}
 
 	override fun getTypeParameters(): List<KotlinTypeParameterElement>
 			= protoFunction.typeParameterList.zipWith(javaElement.typeParameters) { protoTypeParam, javaTypeParam ->
-		if(doTypeParamsMatch(javaTypeParam, protoTypeParam, protoNameResolver))
+
+		if (doTypeParamsMatch(javaTypeParam, protoTypeParam, protoNameResolver))
 			KotlinTypeParameterElement(javaTypeParam, protoTypeParam, processingEnv)
 		else
-			throw AssertionError(
-					"Kotlin ProtoBuf.TypeParameters should always match up with Java TypeParameterElements")
+			throw AssertionError("Kotlin ProtoBuf.TypeParameters should always " +
+								 "match up with Java TypeParameterElements")
 	}
-
-	/**
-	 * Returns a [KotlinTypeParameterElement] for this [TypeParameterElement] if it's a type parameter
-	 * of this function or null otherwise
-	 *
-	 * this function is mostly necessary to be used when finding the corresponding [KotlinElement] for
-	 * some arbitrary Java [Element] since only the surrounding element of the type parameter has enough
-	 * information to construct it
-	 */
-	internal fun getKotlinTypeParameter(typeParamElem: TypeParameterElement): KotlinTypeParameterElement?
-			= protoFunction.typeParameterList.filter { doTypeParamsMatch(typeParamElem, it, protoNameResolver) }
-			.singleOrNull()
-			?.let { protoTypeParam -> KotlinTypeParameterElement(typeParamElem, protoTypeParam, processingEnv) }
 }

@@ -7,6 +7,7 @@ import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.TypeTable
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.type
+import java.io.StringWriter
 import java.lang.annotation.RetentionPolicy
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
@@ -92,32 +93,33 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		return true
 	}
 
-	/*fun KotlinElement.printSummary(): StringWriter {
-		return StringWriter() +
-			   """
+	fun KotlinElement.printSummary(): String {
+		return """
 				   name: $this
 				   simpleName: $simpleName
 				   isTopLevel: $isTopLevel
 				   kind: $kind
 				   modifiers: $modifiers
-				   isKotlinElement: ${isKotlinElement()}
+				   javaElement:
 			   """.trimIndent() +
 			   if (this is KotlinExecutableElement) {
-				   StringWriter() + """
+				    """
 					   isDefault: $isDefault
 					   isVarArgs: $isVarArgs
 					   receiverType: $receiverType
 					   returnType: $returnType
 					   thrownTypes: $thrownTypes
 					   typeParameters:
-				   """.trimIndent() +
-				   typeParameters.map { it.printSummary() }.combine().indent()
+					""".trimIndent() +
+				   		typeParameters.printSummary().prependIndent("\t") +
+					"javaElement:"
+				        javaElement.printSummary().prependIndent("\t") +
+					"jvmOverloads:"
+				   		jvmOverloadElements.printSummary().prependIndent("\t")
 			   }
-			   else {
-				   StringWriter()
-			   } +
+			   else "" +
 			   when (this) {
-				   is KotlinTypeElement -> StringWriter() + """
+				   is KotlinTypeElement -> """
 					   packageName: $packageName
 					   nestingKind: $nestingKind
 					   isExternalClass: $isExternalClass
@@ -129,17 +131,17 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   visibility: $visibility
 					   constructors:
 				   """.trimIndent() +
-										   constructors.map { it.printSummary() }.combine().indent() +
-										   "declaredMethods:" +
-										   declaredMethods.map { it.printSummary() }.combine().indent() +
-										   "typeParams:" +
-										   typeParameters.map { it.printSummary() }.combine().indent() +
-										   "companionObject:" +
-										   companionObject?.printSummary()?.indent()
+							constructors.printSummary().prependIndent("\t") +
+						"declaredMethods:" +
+							declaredMethods.printSummary().prependIndent("\t") +
+						"typeParams:" +
+							typeParameters.printSummary().prependIndent("\t") +
+						"companionObject:" +
+							companionObject?.printSummary()?.prependIndent("\t")
 
-				   is KotlinFunctionElement -> StringWriter() + """
-					   isExpectFunc: $isExpectFunction
-					   isExternalFunc: $isExternalFunction
+				   is KotlinFunctionElement -> """
+					   isExpectFunc: $isExpect
+					   isExternalFunc: $isExternal
 					   isInfix: $isInfix
 					   isInline: $isInline
 					   isOperator: $isOperator
@@ -147,25 +149,21 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   isTailRec: $isTailRec
 				   """.trimIndent()
 
-				   is KotlinConstructorElement -> StringWriter() + """
+				   is KotlinConstructorElement -> """
 					   isPrimary: $isPrimary
 				   """.trimIndent()
 
-				   is KotlinTypeParameterElement -> StringWriter() + """
+				   is KotlinTypeParameterElement -> """
 					   reified: $reified
 					   variance: $variance
 					   bounds: $bounds
 				   """.trimIndent()
 
-				   is KotlinPackageElement -> StringWriter() + """
-					   jvmPackageModuleName: $jvmPackageModuleName
-				   """.trimIndent()
-
-				   else -> StringWriter()
+				   else -> ""
 			   } +
 			   "enclosed Elements:" +
-			   enclosedElements.map { it.printSummary() }.combine().indent()
-	}*/
+			       enclosedElements.printSummary().prependIndent("\t")
+	}
 
 	fun Element.printSummary(): String {
 		return """
@@ -175,6 +173,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			modifiers: $modifiers
 			origin: ${processingEnv.elementUtils.getOrigin(this)}
 			originatesFromKotlin: ${originatesFromKotlinCode()}
+			asType: ${asType()}
 			annotations: $annotationMirrors
 			""".trimIndent() + "\n" +
 			   when (this) {
@@ -196,7 +195,6 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 						interfaces: $interfaces
 						qualifiedName: $qualifiedName
 						asType: ${asType()}
-						isKotlinClass: ${isKotlinClass()}
 				   """.trimIndent() + "\n" +
 						"typeParameters:\n" +
 						typeParameters.printSummary().prependIndent("\t")
