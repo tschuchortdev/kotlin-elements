@@ -112,6 +112,8 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 		ElementKind.METHOD -> with(this as ExecutableElement) {
 			val enclosingElem = (enclosingElement.correspondingKotlinElement(processingEnv) as KotlinTypeElement)
 
+			processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "elem___: " + this)
+
 			if(this.maybeKotlinSetter())
 				enclosingElem.declaredProperties.single { it.javaSetterElement == this }
 			else if(this.maybeKotlinSetter())
@@ -141,9 +143,7 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 
 		ElementKind.PARAMETER -> {
 			(enclosingElement.correspondingKotlinElement(processingEnv) as KotlinExecutableElement)
-					.parameters.single {
-				TODO()
-			}
+					.parameters.single { it.simpleName == simpleName }
 		}
 
 		ElementKind.FIELD ->

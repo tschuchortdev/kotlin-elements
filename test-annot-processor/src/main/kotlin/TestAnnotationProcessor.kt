@@ -107,6 +107,16 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
+		for (annotatedElem in roundEnv.getElementsAnnotatedWith(SetterAnnotation::class.java)) {
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log("----------------------------------------------------------------------------------------------------")
+		}
+
+		for (annotatedElem in roundEnv.getElementsAnnotatedWith(GetterAnnotation::class.java)) {
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log("----------------------------------------------------------------------------------------------------")
+		}
+
 		return true
 	}
 
@@ -160,10 +170,10 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   setterHasAnnotations: $setterHasAnnotations
 					   setterModality: $setterModality
 					   setterVisibility: $setterVisibility
-					   isGetterInline: $isGetterInline
-					   isGetterExternal: $isGetterExternal
-					   isGetterDefault: $isGetterDefault
-					   isGetterNotDefault: $isGetterNotDefault
+					   isSetterInline: $isSetterInline
+					   isSetterExternal: $isSetterExternal
+					   isSetterDefault: $isSetterDefault
+					   isSetterNotDefault: $isSetterNotDefault
 				   """.trimIndent() +
 											   "\njavaField:" +
 											   javaFieldElement?.printSummary()?.prependIndent("\t") +

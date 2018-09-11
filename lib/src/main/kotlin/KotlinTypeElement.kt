@@ -120,24 +120,27 @@ class KotlinTypeElement internal constructor(
 		val possibleFieldElems = javaElement.enclosedElements.filter { it.kind == ElementKind.FIELD }
 				.castList<VariableElement>()
 
-		/**
-		 * If the Kotlin property has annotations with target [AnnotationTarget.PROPERTY]
-		 * the Kotlin compiler will generate an empty parameterless void-returning
-		 * synthetic method named "propertyName$annotations" to hold the annotations that
-		 * are targeted at the property and not backing field, getter or setter
-		 */
+		/* If the Kotlin property has annotations with target [AnnotationTarget.PROPERTY]
+		 the Kotlin compiler will generate an empty parameterless void-returning
+		 synthetic method named "propertyName$annotations" to hold the annotations that
+		 are targeted at the property and not backing field, getter or setter */
 		val possibleSyntheticAnnotHolderElems = methodElems.filter(ExecutableElement::maybeSyntheticPropertyAnnotHolder)
 
 		protoClass.propertyList.map { protoProperty ->
 			val propSimpleName = protoNameResolver.getString(protoProperty.name)
 
-			val setterElem = if (protoProperty.hasSetter)
-				possibleSetterElems.single { it.simpleName.toString() == kotlinSetterName(propSimpleName) }
+			/* If the property is private and doesn't use a custom getter/setter, the java getter/setter is actually not
+			generated even though `protoProperty.hasSetter` is true */
+			val setterElem = if (protoProperty.hasSetter && protoProperty.visibility != ProtoBuf.Visibility.PRIVATE
+								 || !protoProperty.isSetterDefault)
+				possibleSetterElems.singleOrNull { it.simpleName.toString() == kotlinSetterName(propSimpleName) }
 			else
 				null
 
-			val getterElem = if (protoProperty.hasGetter)
-				possibleGetterElems.single { it.simpleName.toString() == kotlinGetterName(propSimpleName) }
+			//TODO("handle the trick where people use a getter with DeprecationLevel.HIDDEN to create properties with inaccessible getter")
+			val getterElem = if (protoProperty.hasGetter && protoProperty.visibility != ProtoBuf.Visibility.PRIVATE
+								 || !protoProperty.isGetterDefault)
+				possibleGetterElems.singleOrNull { it.simpleName.toString() == kotlinGetterName(propSimpleName) }
 			else
 				null
 
