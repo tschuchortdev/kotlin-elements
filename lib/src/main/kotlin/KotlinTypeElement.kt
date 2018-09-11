@@ -10,7 +10,9 @@ import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.*
+import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
+import javax.tools.Diagnostic
 
 class KotlinTypeElement internal constructor(
 		val javaElement: TypeElement,
@@ -105,6 +107,49 @@ class KotlinTypeElement internal constructor(
 		else
 			throw AssertionError("Kotlin ProtoBuf.TypeParameters should always " +
 								 "match up with Java TypeParameterElements")
+	}
+
+	val declaredProperties: List<KotlinPropertyElement> by lazy {
+		val methodElems = javaElement.enclosedElements.filter { it.kind == ElementKind.METHOD }
+				.castList<ExecutableElement>()
+
+		val possibleSetterElems = methodElems.filter(ExecutableElement::maybeKotlinSetter)
+
+		val possibleGetterElems = methodElems.filter(ExecutableElement::maybeKotlinGetter)
+
+		val possibleFieldElems = javaElement.enclosedElements.filter { it.kind == ElementKind.FIELD }
+				.castList<VariableElement>()
+
+		/**
+		 * If the Kotlin property has annotations with target [AnnotationTarget.PROPERTY]
+		 * the Kotlin compiler will generate an empty parameterless void-returning
+		 * synthetic method named "propertyName$annotations" to hold the annotations that
+		 * are targeted at the property and not backing field, getter or setter
+		 */
+		val possibleSyntheticAnnotHolderElems = methodElems.filter(ExecutableElement::maybeSyntheticPropertyAnnotHolder)
+
+		protoClass.propertyList.map { protoProperty ->
+			val propSimpleName = protoNameResolver.getString(protoProperty.name)
+
+			val setterElem = if (protoProperty.hasSetter)
+				possibleSetterElems.single { it.simpleName.toString() == kotlinSetterName(propSimpleName) }
+			else
+				null
+
+			val getterElem = if (protoProperty.hasGetter)
+				possibleGetterElems.single { it.simpleName.toString() == kotlinGetterName(propSimpleName) }
+			else
+				null
+
+			val fieldElem = possibleFieldElems.singleOrNull { it.simpleName.toString() == propSimpleName }
+
+			val syntheticAnnotHolderElem = possibleSyntheticAnnotHolderElems.singleOrNull {
+				it.simpleName.toString().removeSuffix("\$annotations") == propSimpleName
+			}
+
+			KotlinPropertyElement(fieldElem, setterElem, getterElem, syntheticAnnotHolderElem,
+					protoProperty, protoNameResolver, processingEnv)
+		}
 	}
 
 	val primaryConstructor: KotlinConstructorElement? by lazy {
@@ -245,6 +290,10 @@ class KotlinTypeElement internal constructor(
 	override fun getEnclosedElements(): List<KotlinElement> {
 		TODO("type enclosed elements")
 	}
+
+	override fun getEnclosingElement(): Element?
+			= javaElement.enclosingElement.correspondingKotlinElement(processingEnv)
+			  ?: javaElement.enclosingElement
 
 	protected fun ProtoBuf.Constructor.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
 		val signature = this@jvmSignature.getJvmConstructorSignature(protoNameResolver, protoTypeTable)

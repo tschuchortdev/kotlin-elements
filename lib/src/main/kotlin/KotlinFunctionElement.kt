@@ -46,7 +46,7 @@ class KotlinFunctionElement internal constructor(
 			.also { assert(it != KotlinModality.SEALED) }
 
 
-	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoFunction.visibility)
+	override val visibility: KotlinVisibility = TODO("KotlinVisibility.fromProtoBuf(protoFunction.visibility")
 
 	override fun getParameters(): List<KotlinParameterElement>
 			= protoFunction.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->

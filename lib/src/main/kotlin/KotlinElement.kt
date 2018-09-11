@@ -4,6 +4,7 @@ import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
+import javax.tools.Diagnostic
 
 /**
  * An [Element] that has a 1:1 correspondence to an actual syntactic element
@@ -47,7 +48,7 @@ abstract class KotlinElement internal constructor(
 	 * [PackageElement]s are also considered top level
 	 */
 	//TODO(make sure isTopLevel handles multifile class facades and all that stuff correctly)
-	val isTopLevel =
+	fun isTopLevel(): Boolean =
 			enclosingElement?.run { kind == ElementKind.PACKAGE || kotlinMetadata is KotlinPackageMetadata }
 			?: true
 
@@ -108,13 +109,15 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 			}
 
 
-		ElementKind.METHOD -> {
-			val enclosingElem = (enclosingElement as KotlinTypeElement)
+		ElementKind.METHOD -> with(this as ExecutableElement) {
+			val enclosingElem = (enclosingElement.correspondingKotlinElement(processingEnv) as KotlinTypeElement)
 
-			if(simpleName.startsWith("set"))
+			if(this.maybeKotlinSetter())
 				enclosingElem.declaredProperties.single { it.javaSetterElement == this }
-			else if(simpleName.startsWith("get") || simpleName.startsWith("is"))
+			else if(this.maybeKotlinSetter())
 				enclosingElem.declaredProperties.single { it.javaGetterElement == this }
+			else if(this.maybeSyntheticPropertyAnnotHolder())
+				enclosingElem.declaredProperties.single { it.javaSyntheticAnnotationHolderElement == this }
 			else
 				enclosingElem.declaredMethods.single {
 					it.javaElement == this || it.jvmOverloadElements.any { it == this }
@@ -139,12 +142,13 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 		ElementKind.PARAMETER -> {
 			(enclosingElement.correspondingKotlinElement(processingEnv) as KotlinExecutableElement)
 					.parameters.single {
-
+				TODO()
 			}
 		}
 
 		ElementKind.FIELD ->
-			(enclosingElement as KotlinTypeElement).declaredProperties.single { it.javaFieldElement == this }
+			(enclosingElement.correspondingKotlinElement(processingEnv) as KotlinTypeElement)
+					.declaredProperties.single { it.javaFieldElement == this }
 
 		ElementKind.ENUM_CONSTANT -> TODO("handle ElementKind.ENUM_CONSTANT")
 

@@ -52,6 +52,8 @@ internal inline fun <T,S,R> List<T>.zipWith(other: List<S>, crossinline zipper: 
 internal fun <T> List<T>.equalsSubset(superset: List<T>)
 		= superset.toHashSet().containsAll(this)
 
+internal fun String.removeFirstOccurance(literal: String) = replaceFirst(Regex(Regex.escape(literal)), "")
+
 //TODO("make internal for release")
 val ProcessingEnvironment.kotlinMetadataUtils: KotlinMetadataUtils
 	get() {
@@ -83,5 +85,3 @@ internal fun Element.asExecutableElement(): ExecutableElement? = when(kind) {
 	ElementKind.STATIC_INIT, ElementKind.INSTANCE_INIT -> this as? ExecutableElement
 	else -> null
 }
-
-internal fun String.removeFirstOccurance(literal: String) = replaceFirst(Regex(Regex.escape(literal)), "")

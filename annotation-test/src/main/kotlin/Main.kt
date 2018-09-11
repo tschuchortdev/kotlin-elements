@@ -6,6 +6,8 @@ data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 	}
 }
 
+
+
 //@ClassAnnotation
 open class B(val a: Integer) {
 	companion object {
@@ -59,6 +61,20 @@ class E constructor(x: String, y: SomeClass){
 }
 
 open class SomeClass {
+	@PropertyAnnotation
+	@get:GetterAnnotation
+	@set:SetterAnnotation
+	var varrr = 3
+		get() = 4
+		private set
+
+
+	//@PropertyAnnotation
+	inline val inlineVal get() = 5
+
+	//@PropertyAnnotation
+	val delegatedVal by lazy { 6 }
+
 	init {
 		println("init SomeClass")
 	}
@@ -105,7 +121,7 @@ fun bar(a: String) {
 }
 
 @JvmOverloads
-@FunctionAnnotation
+//@FunctionAnnotation
 fun fooWithDefault(a: String, b: Int, y: String = "world") {
 
 }
@@ -116,15 +132,14 @@ fun fooWithDefault(a: String, y: Float = 2.0f) {
 
 }
 
-@FunctionAnnotation
+//@FunctionAnnotation
 fun SomeClass.ext(a: String) {
 
 }
 
-var x: @TypeAnnotation Integer? = null
+//var x: @TypeAnnotation Integer? = null
 
 fun main(args: Array<String>) {
 	println("hello")
 	A<Int, Int, Integer, Int, Int>(Integer(1))
-	x = null
 }

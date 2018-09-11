@@ -3,12 +3,9 @@ package com.tschuchort.kotlinelements
 import com.google.auto.service.AutoService
 import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
 import me.eugeniomarletti.kotlin.metadata.extractFullName
-import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.TypeTable
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.type
-import java.io.StringWriter
-import java.lang.annotation.RetentionPolicy
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
@@ -29,7 +26,19 @@ annotation class FunctionAnnotation
 annotation class TypeAliasAnnotation
 
 @Target(AnnotationTarget.LOCAL_VARIABLE)
-annotation class VariableAnnotation
+annotation class LocalVarAnnotation
+
+@Target(AnnotationTarget.FIELD)
+annotation class FieldAnnotation
+
+@Target(AnnotationTarget.PROPERTY)
+annotation class PropertyAnnotation
+
+@Target(AnnotationTarget.PROPERTY_SETTER)
+annotation class SetterAnnotation
+
+@Target(AnnotationTarget.PROPERTY_GETTER)
+annotation class GetterAnnotation
 
 @Target(AnnotationTarget.VALUE_PARAMETER)
 annotation class ParameterAnnotation
@@ -53,7 +62,9 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 
 	override fun getSupportedAnnotationTypes() = setOf(
 			ClassAnnotation::class.java.name, FunctionAnnotation::class.java.name, TypeAliasAnnotation::class.java.name,
-			VariableAnnotation::class.java.name, TypeAnnotation::class.java.name, ParameterAnnotation::class.java.name)
+			LocalVarAnnotation::class.java.name, TypeAnnotation::class.java.name, ParameterAnnotation::class.java.name,
+			FieldAnnotation::class.java.name, PropertyAnnotation::class.java.name, SetterAnnotation::class.java.name,
+			GetterAnnotation::class.java.name)
 
 	override fun getSupportedOptions() = setOf(KAPT_KOTLIN_GENERATED_OPTION_NAME, GENERATE_KOTLIN_CODE_OPTION, GENERATE_ERRORS_OPTION)
 	override fun getSupportedSourceVersion() = SourceVersion.latestSupported()!!
@@ -76,18 +87,24 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				"""
 			}.joinToString("\n"))
 
-			log(annotatedElem.printSummary())
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FunctionAnnotation::class.java)) {
 
-			log(annotatedElem.printSummary())
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
-		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ParameterAnnotation::class.java)) {
+		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FieldAnnotation::class.java)) {
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log("----------------------------------------------------------------------------------------------------")
+		}
 
+		for (annotatedElem in roundEnv.getElementsAnnotatedWith(PropertyAnnotation::class.java)) {
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		return true
@@ -97,10 +114,9 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		return """
 				   name: $this
 				   simpleName: $simpleName
-				   isTopLevel: $isTopLevel
+				   isTopLevel: ${isTopLevel()}
 				   kind: $kind
 				   modifiers: $modifiers
-				   javaElement:
 			   """.trimIndent() +
 			   if (this is KotlinExecutableElement) {
 				    """
@@ -119,6 +135,42 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			   }
 			   else "" +
 			   when (this) {
+				   is KotlinPropertyElement -> """
+
+					   visibility:$visibility
+					   modality: $modality
+					   hasConstant: $hasConstant
+					   isConst: $isConst
+					   isExternal: $isExternal
+					   isReadOnly: $isReadOnly
+					   isDelegated:	$isDelegated
+					   isExpect: $isExpect
+					   isLateInit: $isLateInit
+
+					   hasGetter: $hasGetter
+					   getterHasAnnotations: $getterHasAnnotations
+					   getterModality: $getterModality
+					   getterVisibility: $getterVisibility
+					   isGetterDefault:	$isGetterDefault
+					   isGetterNotDefault: $isGetterNotDefault
+					   isGetterExternal: $isGetterExternal
+					   isGetterInline: $isGetterInline
+
+					   hasSetter: $hasSetter
+					   setterHasAnnotations: $setterHasAnnotations
+					   setterModality: $setterModality
+					   setterVisibility: $setterVisibility
+					   isGetterInline: $isGetterInline
+					   isGetterExternal: $isGetterExternal
+					   isGetterDefault: $isGetterDefault
+					   isGetterNotDefault: $isGetterNotDefault
+				   """.trimIndent() +
+											   "\njavaField:" +
+											   javaFieldElement?.printSummary()?.prependIndent("\t") +
+											   "\njavaSetter:" +
+											   javaSetterElement?.printSummary()?.prependIndent("\t") +
+											   "\njavaGetter:" +
+											   javaGetterElement?.printSummary()?.prependIndent("\t")
 				   is KotlinTypeElement -> """
 					   packageName: $packageName
 					   nestingKind: $nestingKind
@@ -161,7 +213,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 
 				   else -> ""
 			   } +
-			   "enclosed Elements:" +
+			   "\nenclosed Elements:" +
 			       enclosedElements.printSummary().prependIndent("\t")
 	}
 
