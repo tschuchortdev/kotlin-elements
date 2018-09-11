@@ -1,6 +1,6 @@
 package com.tschuchort.kotlinelements
 
-//@ClassAnnotation
+@ClassAnnotation
 data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 	companion object Comp {
 	}
@@ -15,15 +15,10 @@ open class B(val a: Integer) {
 
 	private var x = 3
 
-	@PropertyAnnotation
+	//@PropertyAnnotation
 	var y = 4
 	   @Deprecated("", level = DeprecationLevel.HIDDEN) get
 	   set(value) {}
-
-	init {
-		val z = y
-	}
-
 }
 
 class C : B(Integer(1)) {
@@ -73,6 +68,7 @@ class E constructor(x: String, y: SomeClass){
 }
 
 open class SomeClass {
+	//@PropertyAnnotation
 	//@get:GetterAnnotation
 	//@set:SetterAnnotation
 	val varrr
@@ -89,7 +85,8 @@ open class SomeClass {
 	}
 }
 
-open class GenericClass<T>
+//@ClassAnnotation
+class GenericClass<T>
 
 //@ClassAnnotation
 enum class EnumClassWithCtor(x: SomeClass) {

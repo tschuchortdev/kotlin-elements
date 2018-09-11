@@ -19,8 +19,8 @@ class KotlinFunctionElement internal constructor(
 	val isTailRec: Boolean = protoFunction.isTailRec
 	val isSuspend: Boolean = protoFunction.isSuspend
 	val isOperator: Boolean = protoFunction.isOperator
-	val isFree: Boolean = TODO("is free function")
-	val isExtension: Boolean = TODO("is extension function")
+	//TODO("is free function")
+	//TODO("is extension function")
 
 	/** Whether this function has the `expect` keyword
 	 *
@@ -40,13 +40,13 @@ class KotlinFunctionElement internal constructor(
 
 	/**
 	 * modality
-	 * one of: [KotlinModality.FINAL], [KotlinModality.OPEN], [KotlinModality.ABSTRACT], [KotlinModality.NONE]
+	 * one of: [KotlinModality.FINAL], [KotlinModality.OPEN], [KotlinModality.ABSTRACT]
 	 */
-	override val modality: KotlinModality = KotlinModality.fromProtoBuf(protoFunction.modality)
+	override val modality: KotlinModality = KotlinModality.fromProtoBuf(protoFunction.modality!!)
 			.also { assert(it != KotlinModality.SEALED) }
 
 
-	override val visibility: KotlinVisibility = TODO("KotlinVisibility.fromProtoBuf(protoFunction.visibility")
+	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoFunction.visibility!!)
 
 	override fun getParameters(): List<KotlinParameterElement>
 			= protoFunction.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->

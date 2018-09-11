@@ -27,7 +27,7 @@ class KotlinPropertyElement internal constructor(
 		private val protoProperty: ProtoBuf.Property,
 		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinSubelement(processingEnv) {
+) : KotlinSubelement(processingEnv), HasKotlinVisibility, HasKotlinModality {
 
 	init {
 		val presentJavaElems = arrayListOf(javaFieldElement, javaSetterElement, javaGetterElement).filterNotNull()
@@ -68,9 +68,9 @@ class KotlinPropertyElement internal constructor(
 
 	val isReadOnly: Boolean = protoProperty.isVal
 
-	val modality = protoProperty.modality
+	override val modality: KotlinModality = KotlinModality.fromProtoBuf(protoProperty.modality!!)
 
-	val visibility = protoProperty.visibility
+	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoProperty.visibility!!)
 
 	val isGetterDefault: Boolean = protoProperty.isGetterDefault
 	val isGetterNotDefault: Boolean = protoProperty.isGetterNotDefault

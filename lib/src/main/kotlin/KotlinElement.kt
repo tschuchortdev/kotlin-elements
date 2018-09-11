@@ -112,8 +112,6 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 		ElementKind.METHOD -> with(this as ExecutableElement) {
 			val enclosingElem = (enclosingElement.correspondingKotlinElement(processingEnv) as KotlinTypeElement)
 
-			processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "elem___: " + this)
-
 			if(this.maybeKotlinSetter())
 				enclosingElem.declaredProperties.single { it.javaSetterElement == this }
 			else if(this.maybeKotlinSetter())
@@ -124,6 +122,8 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 				enclosingElem.declaredMethods.single {
 					it.javaElement == this || it.jvmOverloadElements.any { it == this }
 				}
+			as KotlinElement // unnecessary cast here because the compiler is going crazy again
+							// and would rather infer one of the less specific shared interfaces
 		}
 
 		ElementKind.INSTANCE_INIT,

@@ -1,11 +1,6 @@
 package com.tschuchort.kotlinelements
 
 import com.google.auto.service.AutoService
-import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
-import me.eugeniomarletti.kotlin.metadata.extractFullName
-import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.TypeTable
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.type
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
@@ -73,7 +68,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		log("annotation processing... $annotations")
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
-			val classData = (annotatedElem.kotlinMetadata as KotlinClassMetadata).data
+			/*val classData = (annotatedElem.kotlinMetadata as KotlinClassMetadata).data
 			val (nameResolver, classProto) = classData
 			val method = classProto.functionList.first()
 
@@ -85,42 +80,42 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					getType: ${it.type.extractFullName(classData)}
 					type from class typeTable: ${it.type(TypeTable(classProto.typeTable)).extractFullName(classData)}
 				"""
-			}.joinToString("\n"))
+			}.joinToString("\n"))*/
 
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FunctionAnnotation::class.java)) {
 
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FieldAnnotation::class.java)) {
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(PropertyAnnotation::class.java)) {
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(SetterAnnotation::class.java)) {
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(GetterAnnotation::class.java)) {
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printSummary())
+			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
 			log("----------------------------------------------------------------------------------------------------")
 		}
 
 		return true
 	}
 
-	fun KotlinElement.printSummary(): String {
+	fun KotlinElement.printKotlinSummary(): String {
 		return """
 				   name: $this
 				   simpleName: $simpleName
@@ -137,7 +132,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   thrownTypes: $thrownTypes
 					   typeParameters:
 					""".trimIndent() +
-				   		typeParameters.printSummary().prependIndent("\t") +
+				   		typeParameters.printKotlinSummary().prependIndent("\t") +
 					"javaElement:"
 				        javaElement.printSummary().prependIndent("\t") +
 					"jvmOverloads:"
@@ -146,7 +141,6 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			   else "" +
 			   when (this) {
 				   is KotlinPropertyElement -> """
-
 					   visibility:$visibility
 					   modality: $modality
 					   hasConstant: $hasConstant
@@ -193,13 +187,13 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   visibility: $visibility
 					   constructors:
 				   """.trimIndent() +
-							constructors.printSummary().prependIndent("\t") +
-						"declaredMethods:" +
-							declaredMethods.printSummary().prependIndent("\t") +
-						"typeParams:" +
-							typeParameters.printSummary().prependIndent("\t") +
-						"companionObject:" +
-							companionObject?.printSummary()?.prependIndent("\t")
+							constructors.printKotlinSummary().prependIndent("\t") +
+						"\ndeclaredMethods:" +
+							declaredMethods.printKotlinSummary().prependIndent("\t") +
+						"\ntypeParams:" +
+							typeParameters.printKotlinSummary().prependIndent("\t") +
+						"\ncompanionObject:" +
+							companionObject?.printKotlinSummary()?.prependIndent("\t")
 
 				   is KotlinFunctionElement -> """
 					   isExpectFunc: $isExpect
@@ -222,10 +216,13 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   """.trimIndent()
 
 				   else -> ""
-			   } +
-			   "\nenclosed Elements:" +
-			       enclosedElements.printSummary().prependIndent("\t")
+			   } //+
+			   //"\nenclosed Elements:" +
+			       //enclosedElements.printKotlinSummary().prependIndent("\t")
 	}
+
+	fun List<KotlinElement>.printKotlinSummary() =
+			joinToString("\n--------------------------------\n") { it.printKotlinSummary() }
 
 	fun Element.printSummary(): String {
 		return """
@@ -276,6 +273,8 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 
 	fun List<Element>.printSummary() =
 			joinToString("\n--------------------------------\n") { it.printSummary() }
+
+
 
 }
 

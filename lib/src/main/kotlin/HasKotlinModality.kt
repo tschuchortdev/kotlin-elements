@@ -17,16 +17,15 @@ interface HasKotlinModality : Element {
 }
 
 enum class KotlinModality {
-	FINAL, OPEN, ABSTRACT, SEALED, NONE;
+	FINAL, OPEN, ABSTRACT, SEALED;
 
 	companion object {
-		internal fun fromProtoBuf(protoModality: ProtoBuf.Modality?): KotlinModality
+		internal fun fromProtoBuf(protoModality: ProtoBuf.Modality): KotlinModality
 				= when(protoModality) {
 			ProtoBuf.Modality.FINAL -> FINAL
 			ProtoBuf.Modality.ABSTRACT -> ABSTRACT
 			ProtoBuf.Modality.OPEN -> OPEN
 			ProtoBuf.Modality.SEALED -> SEALED
-			null -> NONE
 		}
 	}
 }

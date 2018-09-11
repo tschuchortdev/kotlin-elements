@@ -15,15 +15,14 @@ class KotlinConstructorElement internal constructor(
 		private val protoConstructor: ProtoBuf.Constructor,
 		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinExecutableElement(javaElement, jvmOverloadElements, processingEnv) {
+) : KotlinExecutableElement(javaElement, jvmOverloadElements, processingEnv), HasKotlinVisibility {
 
 	val isPrimary: Boolean
 		get() = protoConstructor.isPrimary.also { primary ->
 			assert(primary != protoConstructor.isSecondary)
 		}
 
-	//TODO("constructor visibility")
-	val visibility: ProtoBuf.Visibility = protoConstructor.visibility!!
+	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoConstructor.visibility!!)
 
 	override fun getParameters(): List<KotlinParameterElement>
 			= protoConstructor.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->
