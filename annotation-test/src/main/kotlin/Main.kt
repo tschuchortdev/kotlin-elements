@@ -1,24 +1,43 @@
 package com.tschuchort.kotlinelements
 
-@ClassAnnotation
+import jdk.nashorn.internal.objects.annotations.Getter
+
+//@ClassAnnotation
 data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 	companion object Comp {
 	}
 }
-
-
 
 //@ClassAnnotation
 open class B(val a: Integer) {
 	companion object {
 	}
 
-	private var x = 3
+	var x
+		get() = 3
+		set(value) {}
 
 	//@PropertyAnnotation
 	var y = 4
 	   @Deprecated("", level = DeprecationLevel.HIDDEN) get
 	   set(value) {}
+}
+
+class O<T>(t: T) {
+	//@PropertyAnnotation
+	private val t: T = t // visibility for t is PRIVATE_TO_THIS
+
+	private val x = 3
+
+	//@get:GetterAnnotation
+	internal val y
+		get() = 3 //TODO(getY$production_sources_for_module_com_tschuchort_kotlinelements_annotation_test_main)
+
+	@FunctionAnnotation
+	private fun foo():T = t
+
+	@FunctionAnnotation
+	fun bar():T = t
 }
 
 class C : B(Integer(1)) {

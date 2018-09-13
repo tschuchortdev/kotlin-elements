@@ -92,7 +92,40 @@ class KotlinPropertyElement internal constructor(
 
 	val hasConstant = protoProperty.hasConstant
 
-	override fun getModifiers(): Set<Modifier> = emptySet() //TODO("KotlinPropertyElement modifiers")
+	override fun getModifiers(): Set<Modifier> {
+		val modalityModifier: Modifier? = when(modality) {
+			KotlinModality.FINAL -> Modifier.FINAL
+			KotlinModality.SEALED,
+			KotlinModality.ABSTRACT -> Modifier.ABSTRACT
+			KotlinModality.OPEN -> null
+		}
+
+		val visibilityModifier: Modifier? = when(visibility) {
+			KotlinVisibility.PRIVATE,
+			KotlinVisibility.PRIVATE_TO_THIS -> Modifier.PRIVATE
+			KotlinVisibility.PUBLIC -> Modifier.PUBLIC
+			KotlinVisibility.PROTECTED -> Modifier.PROTECTED
+			KotlinVisibility.LOCAL -> throw AssertionError(
+					"This library was written with the assumption that" +
+					"it is impossible to get a local element. In the future" +
+					"this might change.")
+			KotlinVisibility.INTERNAL -> Modifier.PUBLIC
+		}
+
+		val annotatedModifiers = arrayOf<Modifier>().apply {
+			if(javaFieldElement?.modifiers?.contains(Modifier.VOLATILE) == true)
+				plus(Modifier.VOLATILE)
+
+			if(javaFieldElement?.modifiers?.contains(Modifier.TRANSIENT) == true)
+				plus(Modifier.TRANSIENT)
+
+			if(javaFieldElement?.modifiers?.contains(Modifier.NATIVE) == true)
+				plus(Modifier.NATIVE)
+		}
+
+		return setOfNotNull(modalityModifier, visibilityModifier, *annotatedModifiers)
+	}
+
 
 	override fun getSimpleName(): Name
 			= processingEnv.elementUtils.getName(protoNameResolver.getString(protoProperty.name))
@@ -117,16 +150,18 @@ class KotlinPropertyElement internal constructor(
 		return nonNullJavaElem.enclosingElement!!.correspondingKotlinElement(processingEnv)!!
 	}
 
-	override fun <A : Annotation?> getAnnotationsByType(annotationType: Class<A>?): Array<A> {
-		TODO("property annotations")
+	override fun <A : Annotation?> getAnnotationsByType(annotationType: Class<A>): Array<A> {
+		return javaSyntheticAnnotationHolderElement?.getAnnotationsByType(annotationType)
+		?: java.lang.reflect.Array.newInstance(annotationType, 0) as Array<A>
 	}
 
-	override fun <A : Annotation?> getAnnotation(annotationType: Class<A>?): A {
-		TODO("property annotations")
+	override fun <A : Annotation?> getAnnotation(annotationType: Class<A>?): A? {
+		return javaSyntheticAnnotationHolderElement?.getAnnotation(annotationType)
 	}
 
-	override fun getAnnotationMirrors(): MutableList<out AnnotationMirror> {
-		TODO("property annotations")
+	override fun getAnnotationMirrors(): List<AnnotationMirror> {
+		return javaSyntheticAnnotationHolderElement?.getAnnotationMirrors()
+		?: emptyList()
 	}
 
 	override fun <R : Any?, P : Any?> accept(v: ElementVisitor<R, P>, p: P): R {

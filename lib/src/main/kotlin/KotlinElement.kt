@@ -110,11 +110,13 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 
 
 		ElementKind.METHOD -> with(this as ExecutableElement) {
+			processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "element__: " + this)
+
 			val enclosingElem = (enclosingElement.correspondingKotlinElement(processingEnv) as KotlinTypeElement)
 
 			if(this.maybeKotlinSetter())
 				enclosingElem.declaredProperties.single { it.javaSetterElement == this }
-			else if(this.maybeKotlinSetter())
+			else if(this.maybeKotlinGetter())
 				enclosingElem.declaredProperties.single { it.javaGetterElement == this }
 			else if(this.maybeSyntheticPropertyAnnotHolder())
 				enclosingElem.declaredProperties.single { it.javaSyntheticAnnotationHolderElement == this }

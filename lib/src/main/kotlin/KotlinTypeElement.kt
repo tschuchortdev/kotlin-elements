@@ -150,6 +150,8 @@ class KotlinTypeElement internal constructor(
 				it.simpleName.toString().removeSuffix("\$annotations") == propSimpleName
 			}
 
+			assert(arrayListOf(fieldElem, setterElem, getterElem).filterNotNull().isNotEmpty())
+
 			KotlinPropertyElement(fieldElem, setterElem, getterElem, syntheticAnnotHolderElem,
 					protoProperty, protoNameResolver, processingEnv)
 		}

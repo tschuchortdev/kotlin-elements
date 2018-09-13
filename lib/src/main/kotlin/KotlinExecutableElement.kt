@@ -22,7 +22,7 @@ abstract class KotlinExecutableElement internal constructor(
 		 */
 		val jvmOverloadElements: List<ExecutableElement>,
 		processingEnv: ProcessingEnvironment
-) : KotlinSubelement(processingEnv), ExecutableElement by javaElement, KotlinParameterizable {
+) : KotlinSubelement(processingEnv), ExecutableElement by javaElement {
 
 	init {
 		if(jvmOverloadElements.isNotEmpty())
@@ -58,8 +58,6 @@ abstract class KotlinExecutableElement internal constructor(
 
 	//TODO("handle Kotlin thrown types")
 
-	//TODO("return KotlinVariableElement parameters")
-
 	//TODO("handle Kotlin return types")
 
 	override fun getEnclosingElement(): KotlinElement
@@ -71,8 +69,6 @@ abstract class KotlinExecutableElement internal constructor(
 		assert(javaElement.enclosedElements.isNotEmpty())
 		return emptyList()
 	}
-
-	abstract override fun getTypeParameters(): List<KotlinTypeParameterElement>
 
 	abstract override fun getParameters(): List<KotlinParameterElement>
 

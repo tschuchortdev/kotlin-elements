@@ -121,28 +121,36 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   simpleName: $simpleName
 				   isTopLevel: ${isTopLevel()}
 				   kind: $kind
-				   modifiers: $modifiers
+				   java modifiers: $modifiers
+				   directly present annotations: $annotationMirrors
 			   """.trimIndent() +
-			   if (this is KotlinExecutableElement) {
+			   (if (this is HasKotlinModality)
+					"\nkotlin modality: $modality"
+			   else "") +
+			   (if (this is HasKotlinVisibility)
+					"\nkotlin visibility: $visibility"
+			   else "") +
+			   (if (this is KotlinParameterizable) {
+					"\ntypeParameters:" +
+					typeParameters.printKotlinSummary().prependIndent("\t")
+			   }
+			   else "") +
+			   (if (this is KotlinExecutableElement) {
 				    """
-					   isDefault: $isDefault
-					   isVarArgs: $isVarArgs
-					   receiverType: $receiverType
-					   returnType: $returnType
-					   thrownTypes: $thrownTypes
-					   typeParameters:
+						isDefault: $isDefault
+					    isVarArgs: $isVarArgs
+					    receiverType: $receiverType
+					    returnType: $returnType
+					    thrownTypes: $thrownTypes
 					""".trimIndent() +
-				   		typeParameters.printKotlinSummary().prependIndent("\t") +
-					"javaElement:"
+					"\njavaElement:" +
 				        javaElement.printSummary().prependIndent("\t") +
-					"jvmOverloads:"
+					"\njvmOverloads:" +
 				   		jvmOverloadElements.printSummary().prependIndent("\t")
 			   }
-			   else "" +
+			   else "") +
 			   when (this) {
 				   is KotlinPropertyElement -> """
-					   visibility:$visibility
-					   modality: $modality
 					   hasConstant: $hasConstant
 					   isConst: $isConst
 					   isExternal: $isExternal
@@ -183,17 +191,13 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   isExpectClass: $isExpectClass
 					   isInnerClass: $isInnerClass
 					   isObject: $isObject
-					   modality: $modality
-					   visibility: $visibility
 					   constructors:
 				   """.trimIndent() +
-							constructors.printKotlinSummary().prependIndent("\t") +
-						"\ndeclaredMethods:" +
-							declaredMethods.printKotlinSummary().prependIndent("\t") +
-						"\ntypeParams:" +
-							typeParameters.printKotlinSummary().prependIndent("\t") +
-						"\ncompanionObject:" +
-							companionObject?.printKotlinSummary()?.prependIndent("\t")
+										   constructors.printKotlinSummary().prependIndent("\t") +
+										   "\ndeclaredMethods:" +
+										   declaredMethods.printKotlinSummary().prependIndent("\t") +
+										   "\ncompanionObject:" +
+										   companionObject?.printKotlinSummary()?.prependIndent("\t")
 
 				   is KotlinFunctionElement -> """
 					   isExpectFunc: $isExpect

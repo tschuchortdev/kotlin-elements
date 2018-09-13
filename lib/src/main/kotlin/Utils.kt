@@ -54,6 +54,9 @@ internal fun <T> List<T>.equalsSubset(superset: List<T>)
 
 internal fun String.removeFirstOccurance(literal: String) = replaceFirst(Regex(Regex.escape(literal)), "")
 
+internal inline fun <T : Any> setOfNotNull(vararg elements: T?): Set<T> = listOfNotNull(*elements).toSet()
+
+
 //TODO("make internal for release")
 val ProcessingEnvironment.kotlinMetadataUtils: KotlinMetadataUtils
 	get() {

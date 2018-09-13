@@ -12,7 +12,8 @@ class KotlinFunctionElement internal constructor(
 		private val protoFunction: ProtoBuf.Function,
 		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinExecutableElement(javaElement, jvmOverloadElements, processingEnv), HasKotlinModality, HasKotlinVisibility {
+) : KotlinExecutableElement(javaElement, jvmOverloadElements, processingEnv),
+	KotlinParameterizable, HasKotlinModality, HasKotlinVisibility {
 
 	val isInline: Boolean = protoFunction.isInline
 	val isInfix: Boolean = protoFunction.isInfix
@@ -44,7 +45,6 @@ class KotlinFunctionElement internal constructor(
 	 */
 	override val modality: KotlinModality = KotlinModality.fromProtoBuf(protoFunction.modality!!)
 			.also { assert(it != KotlinModality.SEALED) }
-
 
 	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoFunction.visibility!!)
 
