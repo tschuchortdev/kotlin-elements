@@ -125,28 +125,28 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   directly present annotations: $annotationMirrors
 			   """.trimIndent() +
 			   (if (this is HasKotlinModality)
-					"\nkotlin modality: $modality"
+				   "\nkotlin modality: $modality"
 			   else "") +
 			   (if (this is HasKotlinVisibility)
-					"\nkotlin visibility: $visibility"
+				   "\nkotlin visibility: $visibility"
 			   else "") +
 			   (if (this is KotlinParameterizable) {
-					"\ntypeParameters:" +
-					typeParameters.printKotlinSummary().prependIndent("\t")
+				   "\ntypeParameters:" +
+				   typeParameters.printKotlinSummary().prependIndent("\t")
 			   }
 			   else "") +
 			   (if (this is KotlinExecutableElement) {
-				    """
+				   """
 						isDefault: $isDefault
 					    isVarArgs: $isVarArgs
 					    receiverType: $receiverType
 					    returnType: $returnType
 					    thrownTypes: $thrownTypes
 					""".trimIndent() +
-					"\njavaElement:" +
-				        javaElement.printSummary().prependIndent("\t") +
-					"\njvmOverloads:" +
-				   		jvmOverloadElements.printSummary().prependIndent("\t")
+				   "\njavaElement:" +
+				   javaElement.printSummary().prependIndent("\t") +
+				   "\njvmOverloads:" +
+				   jvmOverloadElements.printSummary().prependIndent("\t")
 			   }
 			   else "") +
 			   when (this) {
@@ -200,6 +200,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 										   companionObject?.printKotlinSummary()?.prependIndent("\t")
 
 				   is KotlinFunctionElement -> """
+					   jvmSignature: $jvmSignature
 					   isExpectFunc: $isExpect
 					   isExternalFunc: $isExternal
 					   isInfix: $isInfix
@@ -207,6 +208,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   isOperator: $isOperator
 					   isSuspend: $isSuspend
 					   isTailRec: $isTailRec
+					   kName: $kName
 				   """.trimIndent()
 
 				   is KotlinConstructorElement -> """
@@ -221,8 +223,8 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 
 				   else -> ""
 			   } //+
-			   //"\nenclosed Elements:" +
-			       //enclosedElements.printKotlinSummary().prependIndent("\t")
+		//"\nenclosed Elements:" +
+		//enclosedElements.printKotlinSummary().prependIndent("\t")
 	}
 
 	fun List<KotlinElement>.printKotlinSummary() =
@@ -249,9 +251,9 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 						isVarArgs: $isVarArgs
 						parameters:
 				   """.trimIndent() + "\n" +
-						parameters.printSummary().prependIndent("\t") +
-						"typeParameters:" +
-						typeParameters.printSummary().prependIndent("\t")
+										   parameters.printSummary().prependIndent("\t") +
+										   "typeParameters:" +
+										   typeParameters.printSummary().prependIndent("\t")
 				   is TypeElement -> """
 						nestingKind: $nestingKind
 						superclass: $superclass
@@ -259,8 +261,8 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 						qualifiedName: $qualifiedName
 						asType: ${asType()}
 				   """.trimIndent() + "\n" +
-						"typeParameters:\n" +
-						typeParameters.printSummary().prependIndent("\t")
+									 "typeParameters:\n" +
+									 typeParameters.printSummary().prependIndent("\t")
 				   is VariableElement -> """
 						constantValue: $constantValue
 				   """.trimIndent()
@@ -279,6 +281,6 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			joinToString("\n--------------------------------\n") { it.printSummary() }
 
 
-
 }
+
 

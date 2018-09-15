@@ -1,6 +1,7 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
+import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
@@ -20,6 +21,7 @@ class KotlinFunctionElement internal constructor(
 	val isTailRec: Boolean = protoFunction.isTailRec
 	val isSuspend: Boolean = protoFunction.isSuspend
 	val isOperator: Boolean = protoFunction.isOperator
+	val kName = protoNameResolver.getString(protoFunction.name)
 	//TODO("is free function")
 	//TODO("is extension function")
 
@@ -66,5 +68,16 @@ class KotlinFunctionElement internal constructor(
 		else
 			throw AssertionError("Kotlin ProtoBuf.TypeParameters should always " +
 								 "match up with Java TypeParameterElements")
+	}
+
+	override fun getSimpleName(): Name
+			// if JvmName is used, the name of the Kotlin function may be different than the jvm name
+			= processingEnv.elementUtils.getName(protoNameResolver.getString(protoFunction.name))
+
+	override fun toString(): String {
+		// if JvmName is used, the name of the Kotlin function may be different than the jvm name
+		val javaElemString = javaElement.toString()
+		assert(Regex("[^\\(\\)]+?\\([^\\(\\)]*?\\)[^\\(\\)]*").matches(javaElemString))
+		return simpleName.toString() + "(" + javaElemString.substringAfter("(")
 	}
 }

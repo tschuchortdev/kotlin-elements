@@ -1,6 +1,8 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
+import me.eugeniomarletti.kotlin.metadata.jvm.jvmPropertySignature
+import me.eugeniomarletti.kotlin.metadata.shadow.load.java.JvmAbi
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import java.util.*
@@ -42,6 +44,8 @@ class KotlinPropertyElement internal constructor(
 				.filterNotNull().allEqual())
 
 		assert(protoProperty.isVal || protoProperty.isVar)
+
+
 	}
 
 	val isConst: Boolean = protoProperty.isConst
@@ -81,6 +85,7 @@ class KotlinPropertyElement internal constructor(
 	val getterVisibility = protoProperty.getterVisibility
 	val getterHasAnnotations = protoProperty.getterHasAnnotations
 
+	val hasSetterValueParameter: Boolean = protoProperty.hasSetterValueParameter()
 	val isSetterDefault: Boolean = protoProperty.isSetterDefault
 	val isSetterNotDefault: Boolean = protoProperty.isSetterNotDefault
 	val isSetterExternal: Boolean = protoProperty.isSetterExternal
@@ -101,7 +106,10 @@ class KotlinPropertyElement internal constructor(
 		}
 
 		val visibilityModifier: Modifier? = when(visibility) {
-			KotlinVisibility.PRIVATE,
+			KotlinVisibility.PRIVATE -> if(isTopLevel())
+				null // private top level members become package private (i.e. no modifier) in Java
+			else
+				Modifier.PRIVATE
 			KotlinVisibility.PRIVATE_TO_THIS -> Modifier.PRIVATE
 			KotlinVisibility.PUBLIC -> Modifier.PUBLIC
 			KotlinVisibility.PROTECTED -> Modifier.PROTECTED
@@ -188,30 +196,20 @@ class KotlinPropertyElement internal constructor(
  * property annotations with [AnnotationTarget.PROPERTY]
  */
 internal fun ExecutableElement.maybeSyntheticPropertyAnnotHolder()
+		//TODO("replace string with constant from JvmAbi but it is private")
 		= simpleName.toString().endsWith("\$annotations")
 		  && returnType.kind == TypeKind.VOID
 		  && parameters.isEmpty()
 
 /** true if this element may be a kotlin generated getter of a property */
 internal fun ExecutableElement.maybeKotlinGetter()
-		= simpleName.toString().run { startsWith("get") || startsWith("is") }
+		= JvmAbi.isGetterName(simpleName.toString())
 		  && returnType.kind != TypeKind.VOID
 		  && parameters.isEmpty()
 
 /** true if this element may be a kotlin generated setter of a property */
 internal fun ExecutableElement.maybeKotlinSetter()
-		= simpleName.toString().startsWith("set")
+		= JvmAbi.isSetterName(simpleName.toString())
 		  && returnType.kind == TypeKind.VOID
 		  && parameters.isNotEmpty()
 
-/** returns the setter name that would be generated for a field with this simple name */
-internal fun kotlinSetterName(fieldSimpleName: String): String
-		= "set" + fieldSimpleName.removePrefix("is").capitalize()
-
-/** returns the getter name that would be generated for a field with this simple name */
-internal fun kotlinGetterName(fieldSimpleName: String): String {
-	return if (fieldSimpleName.startsWith("is"))
-		fieldSimpleName
-	else
-		"get" + fieldSimpleName.capitalize()
-}

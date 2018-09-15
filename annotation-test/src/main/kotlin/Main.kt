@@ -1,6 +1,7 @@
-package com.tschuchort.kotlinelements
+//TODO("handle JvmName for Kotlin files
+@file:JvmName("RenamedFileMainKt")
 
-import jdk.nashorn.internal.objects.annotations.Getter
+package com.tschuchort.kotlinelements
 
 //@ClassAnnotation
 data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
@@ -8,8 +9,13 @@ data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 	}
 }
 
+
+//TODO("handle illegal java names")
+fun `illegal$name`() {}
+
+
 //@ClassAnnotation
-open class B(val a: Integer) {
+open class B constructor(val a: Integer) {
 	companion object {
 	}
 
@@ -27,16 +33,12 @@ class O<T>(t: T) {
 	//@PropertyAnnotation
 	private val t: T = t // visibility for t is PRIVATE_TO_THIS
 
-	private val x = 3
+	private var x = 3
 
-	//@get:GetterAnnotation
-	internal val y
-		get() = 3 //TODO(getY$production_sources_for_module_com_tschuchort_kotlinelements_annotation_test_main)
-
-	@FunctionAnnotation
+	//@FunctionAnnotation
 	private fun foo():T = t
 
-	@FunctionAnnotation
+	//@FunctionAnnotation
 	fun bar():T = t
 }
 
@@ -44,9 +46,34 @@ class C : B(Integer(1)) {
 
 	//@ClassAnnotation
 	inner class InnerClass
+
+	//@FunctionAnnotation
+	//@JvmName("differentJvmFunName")
+	//fun kotlinFunName() {}
+
+	//@PropertyAnnotation
+	//var normalProp = 4
+		//@JvmName("renamedSetter") set(value) {}
+
+	@PropertyAnnotation
+	private var z = "hello"
+
+	@get:GetterAnnotation
+	@get:JvmName("differentJvmGetterName")
+	var kotlinPropName
+		set(value) {}
+		get() = 3
 }
 
 fun five() = 5
+
+//@ClassAnnotation
+class InternalMembers internal constructor(s: String) {
+	internal fun internalFoo() {}
+
+	internal val internalProp
+		get() = 3
+}
 
 //@ClassAnnotation
 class D {
@@ -58,7 +85,6 @@ class D {
 	val x
 		get() = five()
 
-	var y = 6
 
 	var z: Int
 		get() = 5

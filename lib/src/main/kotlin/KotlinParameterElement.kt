@@ -46,7 +46,7 @@ class KotlinParameterElement internal constructor(
 	override fun toString() = javaElement.toString()
 }
 
-fun doParametersMatch(javaParamElem: VariableElement, protoParam: ProtoBuf.ValueParameter, protoNameResolver: NameResolver)
+internal fun doParametersMatch(javaParamElem: VariableElement, protoParam: ProtoBuf.ValueParameter, protoNameResolver: NameResolver)
 		= (javaParamElem.simpleName.toString() == protoNameResolver.getString(protoParam.name))
 	//TODO("also check that parameter types match")
 

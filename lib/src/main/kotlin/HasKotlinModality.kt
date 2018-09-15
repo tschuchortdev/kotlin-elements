@@ -1,6 +1,5 @@
 package com.tschuchort.kotlinelements
 
-import me.eugeniomarletti.kotlin.metadata.modality
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import javax.lang.model.element.Element
 
@@ -10,14 +9,24 @@ import javax.lang.model.element.Element
  */
 interface HasKotlinModality : Element {
 	/**
-	 * modality
-	 * one of: [KotlinModality.FINAL], [KotlinModality.OPEN], [KotlinModality.ABSTRACT], [KotlinModality.ABSTRACT], [KotlinModality.NONE]
+	 * modality modifier including implicit modifiers (`final` if no modifier
+	 * is explicitly specified or `open` in case it was inherited by `override`)
+	 * one of: [KotlinModality.FINAL], [KotlinModality.OPEN], [KotlinModality.ABSTRACT], [KotlinModality.ABSTRACT]
 	 */
 	val modality: KotlinModality
 }
 
 enum class KotlinModality {
-	FINAL, OPEN, ABSTRACT, SEALED;
+	/** has `final` modifier or no modifier (final by default) */
+	FINAL,
+	/** has `open` modifier or inherited it */
+	OPEN,
+	/** has `abstract` modifier` */
+	ABSTRACT,
+	/** has `sealed` modifier.
+	 * Maps to `abstract` modifier in the underlying Java element
+	 * */
+	SEALED;
 
 	companion object {
 		internal fun fromProtoBuf(protoModality: ProtoBuf.Modality): KotlinModality

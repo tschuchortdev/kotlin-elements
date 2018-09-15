@@ -1,6 +1,8 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
+import me.eugeniomarletti.kotlin.metadata.jvm.getJvmMethodSignature
+import me.eugeniomarletti.kotlin.metadata.shadow.load.java.JvmAbi
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
@@ -17,8 +19,6 @@ abstract class KotlinElement internal constructor(
 		protected val processingEnv: ProcessingEnvironment
 ) : Element {
 	companion object {
-
-
 		/**
 		 * Returns the [NameResolver] of the closest parent element (or this element) that has one
 		 */
@@ -56,13 +56,25 @@ abstract class KotlinElement internal constructor(
 
 	abstract override fun getEnclosingElement(): Element?
 
+	/**
+	 * Returns the JVM signature in the form "$Name$MethodDescriptor", for example: `equals(Ljava/lang/Object;)Z`.
+	 *
+	 * For reference, see the [JVM specification, section 4.3](http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3).
+	 */
 	protected fun ExecutableElement.jvmSignature() = getJvmMethodSignature(processingEnv)
+
+	protected fun log(s: String) = processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, s)
 
 	abstract override fun toString(): String
 	abstract override fun equals(other: Any?): Boolean
 	abstract override fun hashCode(): Int
 }
 
+/**
+ * Returns the JVM signature in the form "$Name$MethodDescriptor", for example: `equals(Ljava/lang/Object;)Z`.
+ *
+ * For reference, see the [JVM specification, section 4.3](http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3).
+ */
 internal fun ExecutableElement.getJvmMethodSignature(processingEnv: ProcessingEnvironment): String
 		= with(processingEnv.kotlinMetadataUtils) {
 	this@getJvmMethodSignature.jvmMethodSignature
@@ -114,16 +126,17 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 
 			val enclosingElem = (enclosingElement.correspondingKotlinElement(processingEnv) as KotlinTypeElement)
 
-			if(this.maybeKotlinSetter())
-				enclosingElem.declaredProperties.single { it.javaSetterElement == this }
-			else if(this.maybeKotlinGetter())
-				enclosingElem.declaredProperties.single { it.javaGetterElement == this }
-			else if(this.maybeSyntheticPropertyAnnotHolder())
-				enclosingElem.declaredProperties.single { it.javaSyntheticAnnotationHolderElement == this }
-			else
-				enclosingElem.declaredMethods.single {
-					it.javaElement == this || it.jvmOverloadElements.any { it == this }
-				}
+			(enclosingElem.declaredProperties.atMostOne {
+				it.javaGetterElement == this
+				|| it.javaSetterElement == this
+				|| it.javaSyntheticAnnotationHolderElement == this
+			}
+			?: enclosingElem.declaredMethods.atMostOne {
+				it.javaElement == this || it.jvmOverloadElements.any { it == this }
+			}
+			?: throw IllegalStateException(
+					"Can not convert Element to KotlinElement: element is a method but " +
+					"not part of any declared method or declared property of it's enclosing KotlinElement"))
 			as KotlinElement // unnecessary cast here because the compiler is going crazy again
 							// and would rather infer one of the less specific shared interfaces
 		}
@@ -178,8 +191,8 @@ fun Element.correspondingKotlinElement(processingEnv: ProcessingEnvironment): Ko
 }
 
 fun TypeElement.isInterfaceDefaultImpl(processingEnv: ProcessingEnvironment): Boolean {
-	val enclosingTypeElem =  enclosingElement?.correspondingKotlinElement(processingEnv) as? KotlinTypeElement
+	val enclosingTypeElem = enclosingElement?.correspondingKotlinElement(processingEnv) as? KotlinTypeElement
 
-	return (qualifiedName.toString() == enclosingTypeElem?.qualifiedName.toString() + ".DefaultImpl"
+	return (qualifiedName.toString() == enclosingTypeElem?.qualifiedName.toString() + JvmAbi.DEFAULT_IMPLS_SUFFIX
 			&& enclosingTypeElem?.kind == ElementKind.INTERFACE)
 }

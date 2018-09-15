@@ -8,6 +8,7 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameRe
 import me.eugeniomarletti.kotlin.metadata.visibility
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Name
 
 class KotlinConstructorElement internal constructor(
 		javaElement: ExecutableElement,
@@ -38,4 +39,8 @@ class KotlinConstructorElement internal constructor(
 		assert(javaElement.typeParameters.isEmpty())
 		return emptyList()
 	}
+
+	override fun getSimpleName(): Name = javaElement.simpleName
+
+	override fun toString(): String = javaElement.toString()
 }

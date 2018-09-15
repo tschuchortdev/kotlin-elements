@@ -1,18 +1,16 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
-import me.eugeniomarletti.kotlin.metadata.jvm.getJvmConstructorSignature
-import me.eugeniomarletti.kotlin.metadata.jvm.getJvmFieldSignature
-import me.eugeniomarletti.kotlin.metadata.jvm.getJvmMethodSignature
+import me.eugeniomarletti.kotlin.metadata.jvm.*
+import me.eugeniomarletti.kotlin.metadata.shadow.load.java.JvmAbi
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
+import me.eugeniomarletti.kotlin.metadata.shadow.name.NameUtils
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.*
-import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
-import javax.tools.Diagnostic
 
 class KotlinTypeElement internal constructor(
 		val javaElement: TypeElement,
@@ -29,6 +27,10 @@ class KotlinTypeElement internal constructor(
 		val elementQualifiedName = javaElement.qualifiedName.toString()
 
 		assert(fqName == elementQualifiedName)
+
+		// a Kotlin TypeElement should never have initializers
+		assert(javaElement.enclosedElements.none { it.kind == ElementKind.INSTANCE_INIT
+												   || it.kind == ElementKind.STATIC_INIT })
 	}
 
 	val packageName: String = protoNameResolver.getString(protoClass.fqName).substringBeforeLast('/').replace('/', '.')
@@ -113,46 +115,59 @@ class KotlinTypeElement internal constructor(
 		val methodElems = javaElement.enclosedElements.filter { it.kind == ElementKind.METHOD }
 				.castList<ExecutableElement>()
 
-		val possibleSetterElems = methodElems.filter(ExecutableElement::maybeKotlinSetter)
-
-		val possibleGetterElems = methodElems.filter(ExecutableElement::maybeKotlinGetter)
-
-		val possibleFieldElems = javaElement.enclosedElements.filter { it.kind == ElementKind.FIELD }
+		val fieldElems = javaElement.enclosedElements.filter { it.kind == ElementKind.FIELD }
 				.castList<VariableElement>()
 
-		/* If the Kotlin property has annotations with target [AnnotationTarget.PROPERTY]
-		 the Kotlin compiler will generate an empty parameterless void-returning
-		 synthetic method named "propertyName$annotations" to hold the annotations that
-		 are targeted at the property and not backing field, getter or setter */
-		val possibleSyntheticAnnotHolderElems = methodElems.filter(ExecutableElement::maybeSyntheticPropertyAnnotHolder)
-
 		protoClass.propertyList.map { protoProperty ->
-			val propSimpleName = protoNameResolver.getString(protoProperty.name)
+			val propertyJvmProtoSignature = protoProperty.jvmPropertySignature!!
+			val propertyName = protoNameResolver.getString(protoProperty.name)
 
-			/* If the property is private and doesn't use a custom getter/setter, the java getter/setter is actually not
-			generated even though `protoProperty.hasSetter` is true */
-			val setterElem = if (protoProperty.hasSetter && protoProperty.visibility != ProtoBuf.Visibility.PRIVATE
-								 || !protoProperty.isSetterDefault)
-				possibleSetterElems.singleOrNull { it.simpleName.toString() == kotlinSetterName(propSimpleName) }
+			val setterElem = if(propertyJvmProtoSignature.hasSetter()) {
+				val setterJvmSignature = propertyJvmProtoSignature.setter.jvmSignatureString(protoNameResolver)
+										 ?: throw IllegalStateException("Property setter should always have jvm name if it exists")
+
+				methodElems.atMostOne { it.jvmSignature() == setterJvmSignature }
+			}
 			else
 				null
 
 			//TODO("handle the trick where people use a getter with DeprecationLevel.HIDDEN to create properties with inaccessible getter")
-			val getterElem = if (protoProperty.hasGetter && protoProperty.visibility != ProtoBuf.Visibility.PRIVATE
-								 || !protoProperty.isGetterDefault)
-				possibleGetterElems.singleOrNull { it.simpleName.toString() == kotlinGetterName(propSimpleName) }
+			val getterElem = if(propertyJvmProtoSignature.hasGetter()) {
+				val getterJvmSignature = propertyJvmProtoSignature.getter.jvmSignatureString(protoNameResolver)
+										 ?: throw IllegalStateException("Property getter should always have jvm name if it exists")
+
+				methodElems.atMostOne { it.jvmSignature() == getterJvmSignature }
+			}
 			else
 				null
 
-			val fieldElem = possibleFieldElems.singleOrNull { it.simpleName.toString() == propSimpleName }
+			val fieldElem = if(propertyJvmProtoSignature.hasField()) {
+				if(propertyJvmProtoSignature.field.hasName())
+					throw IllegalStateException("Afaik the field should never have a name in JvmProtoBuf.JvmFieldSignature" +
+												"because it must always be the same as the property name")
 
-			val syntheticAnnotHolderElem = possibleSyntheticAnnotHolderElems.singleOrNull {
-				it.simpleName.toString().removeSuffix("\$annotations") == propSimpleName
+				fieldElems.atMostOne { it.simpleName.toString() == propertyName }
 			}
+			else
+				null
+
+			/* If the Kotlin property has annotations with target [AnnotationTarget.PROPERTY]
+		 	the Kotlin compiler will generate an empty parameterless void-returning
+		 	synthetic method named "propertyName$annotations" to hold the annotations that
+		 	are targeted at the property and not backing field, getter or setter */
+			val syntheticAnnotationHolderElem = if(propertyJvmProtoSignature.hasSyntheticMethod()) {
+				val synthJvmSignature = propertyJvmProtoSignature.syntheticMethod.jvmSignatureString(protoNameResolver)
+										 ?: throw IllegalStateException("Property synthetic annotation holder method " +
+																		"should always have jvm name if it exists")
+
+				methodElems.atMostOne { it.jvmSignature() == synthJvmSignature }
+			}
+			else
+				null
 
 			assert(arrayListOf(fieldElem, setterElem, getterElem).filterNotNull().isNotEmpty())
 
-			KotlinPropertyElement(fieldElem, setterElem, getterElem, syntheticAnnotHolderElem,
+			KotlinPropertyElement(fieldElem, setterElem, getterElem, syntheticAnnotationHolderElem,
 					protoProperty, protoNameResolver, processingEnv)
 		}
 	}
@@ -174,10 +189,6 @@ class KotlinTypeElement internal constructor(
 	 * The primary constructor will be the first one in the list
 	 */
 	val constructors: List<KotlinConstructorElement> by lazy {
-		// a Kotlin TypeElement should never have initializers
-		assert(javaElement.enclosedElements.none { it.kind == ElementKind.INSTANCE_INIT
-												   || it.kind == ElementKind.STATIC_INIT })
-
 		val ctorElems = javaElement.enclosedElements.filter { it.kind == ElementKind.CONSTRUCTOR }
 				.castList<ExecutableElement>()
 
@@ -296,7 +307,7 @@ class KotlinTypeElement internal constructor(
 	override fun getInterfaces(): List<TypeMirror> = javaElement.interfaces
 
 	override fun getEnclosedElements(): List<KotlinElement> {
-		TODO("type enclosed elements")
+		TODO("KotlinTypeElement enclosed elements")
 	}
 
 	override fun getEnclosingElement(): Element?
@@ -335,6 +346,14 @@ class KotlinTypeElement internal constructor(
 
 	protected fun doConstructorsMatch(constructorElement: ExecutableElement, protoConstructor: ProtoBuf.Constructor): Boolean
 			= constructorElement.jvmSignature() == protoConstructor.jvmSignature()
+
+	/**
+	 * returns the mangling suffix added to members with [KotlinVisibility.INTERNAL]
+	 */
+	private fun getManglingSuffix(): String {
+		val moduleName = protoClass.jvmClassModuleName?.let(protoNameResolver::getString) ?: JvmAbi.DEFAULT_MODULE_NAME
+		return NameUtils.sanitizeAsJavaIdentifier(moduleName)
+	}
 
 	override fun toString() = javaElement.toString()
 

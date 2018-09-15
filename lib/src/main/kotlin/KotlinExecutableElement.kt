@@ -1,5 +1,6 @@
 package com.tschuchort.kotlinelements
 
+import me.eugeniomarletti.kotlin.metadata.jvm.getJvmMethodSignature
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
@@ -54,6 +55,13 @@ abstract class KotlinExecutableElement internal constructor(
 	 */
 	val hasJvmOverloads: Boolean = jvmOverloadElements.isNotEmpty()
 
+	/**
+	 * Returns the JVM signature in the form "$Name$MethodDescriptor", for example: `equals(Ljava/lang/Object;)Z`.
+	 *
+	 * For reference, see the [JVM specification, section 4.3](http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3).
+	 */
+	val jvmSignature: String = javaElement.jvmSignature()
+
 	//TODO("handle Kotlin receiver type")
 
 	//TODO("handle Kotlin thrown types")
@@ -70,14 +78,14 @@ abstract class KotlinExecutableElement internal constructor(
 		return emptyList()
 	}
 
+	abstract override fun getSimpleName(): Name
+
 	abstract override fun getParameters(): List<KotlinParameterElement>
 
-	override fun equals(other: Any?)
-		= (other is KotlinExecutableElement
-		   && other.javaElement.jvmSignature() == javaElement.jvmSignature()
-		   && other.enclosingElement == enclosingElement)
+	final override fun equals(other: Any?)
+		= (other is KotlinExecutableElement && other.javaElement == javaElement)
 
-	override fun hashCode() = Objects.hash(simpleName, enclosingElement, javaElement.jvmSignature())
+	final override fun hashCode() = Objects.hash(javaElement)
 
-	override fun toString() = javaElement.toString()
+	abstract override fun toString(): String
 }
