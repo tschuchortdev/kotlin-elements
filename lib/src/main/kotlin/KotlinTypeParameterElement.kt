@@ -1,55 +1,52 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
-import me.eugeniomarletti.kotlin.metadata.shadow.serialization.deserialization.getName
 import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.AnnotatedConstruct
+import javax.lang.model.element.Name
 import javax.lang.model.element.TypeParameterElement
 import javax.lang.model.type.TypeMirror
 
+/**
+ * Type parameter of a [KotlinParameterizable] element
+ */
 class KotlinTypeParameterElement internal constructor(
 		val javaElement: TypeParameterElement,
 		protoTypeParam: ProtoBuf.TypeParameter,
+		override val enclosingElement: KotlinElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinSubelement(processingEnv), TypeParameterElement by javaElement {
+) : KotlinElement(processingEnv), AnnotatedConstruct by javaElement {
 
+	//TODO("test type parameter annotations")
+
+	/** Variance of a type parameter */
 	enum class Variance  { IN, OUT, INVARIANT }
 
+	/** Variance of this type parameter */
 	val variance: Variance = when(protoTypeParam.variance!!) {
 		ProtoBuf.TypeParameter.Variance.IN -> Variance.IN
 		ProtoBuf.TypeParameter.Variance.OUT -> Variance.OUT
 		ProtoBuf.TypeParameter.Variance.INV -> Variance.INVARIANT
 	}
 
+	/** Whether this type parameter is reified */
 	val reified: Boolean = protoTypeParam.reified
 
-	//TODO(bounds)
-	override fun getBounds(): List<TypeMirror> = javaElement.bounds
+	/** The bounds of this type parameter */
+	val bounds: List<TypeMirror> = javaElement.bounds //TODO("bounds KotlinTypeMirrors")
 
-	override fun getEnclosingElement(): KotlinElement
-			= javaElement.enclosingElement.correspondingKotlinElement(processingEnv)!!
+	/**
+	 * The [KotlinElement] that is parameterized by this [KotlinTypeParameterElement].
+	 * Same as the [enclosingElement]
+	 */
+	val genericElement: KotlinElement by lazy { enclosingElement }
 
-	override fun getGenericElement(): KotlinElement = enclosingElement
+	override val simpleName: Name = javaElement.simpleName
 
-	override fun getEnclosedElements(): List<Nothing> {
-		// According to documentation (as of JDK 9), an ExecutableElement
-		// is not considered to enclose any elements
-		assert(javaElement.enclosedElements.isNotEmpty())
-		return emptyList()
-	}
+	//TODO("translate type parameter TypeMirror")
+	override fun asType(): TypeMirror = javaElement.asType()
 
-	override fun equals(other: Any?) =
-			if(other is KotlinTypeParameterElement)
-				other.javaElement == javaElement
-			else
-				false
-
-	override fun toString() = javaElement.toString()
-
+	override fun equals(other: Any?) = (other as? KotlinTypeParameterElement)?.javaElement == javaElement
 	override fun hashCode() = javaElement.hashCode()
+	override fun toString() = javaElement.toString()
 }
-
-internal fun doTypeParamsMatch(typeParamElem: TypeParameterElement, protoTypeParam: ProtoBuf.TypeParameter,
-							   nameResolver: NameResolver): Boolean
-		= (typeParamElem.simpleName.toString() == nameResolver.getString(protoTypeParam.name))
-		//TODO("also check if bounds of type parameters match")

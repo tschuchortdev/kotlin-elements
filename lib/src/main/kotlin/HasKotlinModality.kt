@@ -4,10 +4,10 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import javax.lang.model.element.Element
 
 /**
- * An element that is overridable or derivable and has a modality modifier
+ * An javaElement that is overridable or derivable and has a modality modifier
  * (i.e. classes, functions and properties but not constructors)
  */
-interface HasKotlinModality : Element {
+interface HasKotlinModality {
 	/**
 	 * modality modifier including implicit modifiers (`final` if no modifier
 	 * is explicitly specified or `open` in case it was inherited by `override`)
@@ -24,7 +24,7 @@ enum class KotlinModality {
 	/** has `abstract` modifier` */
 	ABSTRACT,
 	/** has `sealed` modifier.
-	 * Maps to `abstract` modifier in the underlying Java element
+	 * Maps to `abstract` modifier in the underlying Java javaElement
 	 * */
 	SEALED;
 

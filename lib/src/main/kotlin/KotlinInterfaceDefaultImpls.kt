@@ -13,18 +13,18 @@ import javax.lang.model.type.TypeMirror
  * default method implementation
  */
 /*class KotlinInterfaceDefaultImpls internal constructor(
-		protected val element: TypeElement,
-		protected val interfaceElement: KotlinTypeElement,
+		protected val javaElement: TypeElement,
+		protected val interfaceElement: KotlinClassOrInterfaceElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinImplicitElement(element, processingEnv), TypeElement {
+) : KotlinImplicitElement(javaElement, processingEnv), TypeElement {
 
 	companion object {
-		fun get(element: TypeElement, processingEnv: ProcessingEnvironment): KotlinInterfaceDefaultImpls? {
-			val enclosingElem = KotlinSyntacticElement.get(element.enclosingElement, processingEnv) as? KotlinTypeElement
+		fun get(javaElement: TypeElement, processingEnv: ProcessingEnvironment): KotlinInterfaceDefaultImpls? {
+			val enclosingElem = KotlinSyntacticElement.get(javaElement.enclosingElement, processingEnv) as? KotlinClassOrInterfaceElement
 
-			return if(element.qualifiedName.toString() == enclosingElem?.qualifiedName.toString() + ".DefaultImpl"
+			return if(javaElement.qualifiedName.toString() == enclosingElem?.qualifiedName.toString() + ".DefaultImpl"
 			   && enclosingElem?.kind == ElementKind.INTERFACE) {
-				KotlinInterfaceDefaultImpls(element, enclosingElem, processingEnv)
+				KotlinInterfaceDefaultImpls(javaElement, enclosingElem, processingEnv)
 			}
 			else
 				null
@@ -32,23 +32,23 @@ import javax.lang.model.type.TypeMirror
 	}
 
 	//TODO("return Kotlin Superclass")
-	override fun getSuperclass(): TypeMirror = element.superclass
+	override fun getSuperclass(): TypeMirror = javaElement.superclass
 
 	override fun getInterfaces(): List<Nothing> {
 		// the generated DefaultImpl class should never implement any interfaces
-		assert(element.interfaces.isEmpty())
+		assert(javaElement.interfaces.isEmpty())
 		return emptyList()
 	}
 
-	override fun getNestingKind(): NestingKind = element.nestingKind
+	override fun getNestingKind(): NestingKind = javaElement.nestingKind
 
 	//TODO("return Kotlin qualified name")
-	override fun getQualifiedName(): Name = element.qualifiedName
+	override fun getQualifiedName(): Name = javaElement.qualifiedName
 
 	override fun getTypeParameters(): List<Nothing> {
 		// the generated DefaultImpl class never has type parameters. Instead each of it's functions
 		// receives an instance of the enclosing interface
-		assert(element.typeParameters.isEmpty())
+		assert(javaElement.typeParameters.isEmpty())
 		return emptyList()
 	}
 }*/

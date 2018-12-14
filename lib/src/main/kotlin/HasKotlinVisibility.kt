@@ -4,9 +4,9 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import javax.lang.model.element.Element
 
 /**
- * An element that has a visibility modifier
+ * An javaElement that has a visibility modifier
  */
-interface HasKotlinVisibility : Element {
+interface HasKotlinVisibility {
 	/**
 	 * visibility modifier including implicit modifiers (`public` in case for non-local elements)
 	 *
@@ -30,7 +30,7 @@ enum class KotlinVisibility {
 	PUBLIC,
 
 	/**
-	 * `private` element that references a non-reified contravariant type parameter
+	 * `private` javaElement that references a non-reified contravariant type parameter
 	 * (with `in`-variance) in its signature. This means that only the instance
 	 * that the `private` member belongs to can access it. In contrast to regular
 	 * `private` members which can also be accessed by other instances of the same type
@@ -56,7 +56,7 @@ enum class KotlinVisibility {
 	PRIVATE_TO_THIS,
 
 	/**
-	 * is a local element (inside an executable element)
+	 * is a local javaElement (inside an executable javaElement)
 	 * and thus has no explicit visibility modifier
 	 */
 	LOCAL;

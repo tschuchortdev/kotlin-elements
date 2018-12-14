@@ -7,9 +7,13 @@ import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.*
 import javax.tools.Diagnostic
+import PackageAnnotation
 
 @Target(AnnotationTarget.CLASS)
 annotation class ClassAnnotation
+
+@Target(AnnotationTarget.FILE)
+annotation class FileAnnotation
 
 @Target(AnnotationTarget.TYPE)
 annotation class TypeAnnotation
@@ -38,6 +42,9 @@ annotation class GetterAnnotation
 @Target(AnnotationTarget.VALUE_PARAMETER)
 annotation class ParameterAnnotation
 
+@Target(AnnotationTarget.TYPE_PARAMETER)
+annotation class TypeParameterAnnotation
+
 @Suppress("unused")
 @AutoService(Processor::class)
 internal class TestAnnotationProcessor : AbstractProcessor() {
@@ -59,22 +66,38 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			ClassAnnotation::class.java.name, FunctionAnnotation::class.java.name, TypeAliasAnnotation::class.java.name,
 			LocalVarAnnotation::class.java.name, TypeAnnotation::class.java.name, ParameterAnnotation::class.java.name,
 			FieldAnnotation::class.java.name, PropertyAnnotation::class.java.name, SetterAnnotation::class.java.name,
-			GetterAnnotation::class.java.name)
+			GetterAnnotation::class.java.name, PackageAnnotation::class.java.name, TypeParameterAnnotation::class.java.name)
 
 	override fun getSupportedOptions() = setOf(KAPT_KOTLIN_GENERATED_OPTION_NAME, GENERATE_KOTLIN_CODE_OPTION, GENERATE_ERRORS_OPTION)
 	override fun getSupportedSourceVersion() = SourceVersion.latestSupported()!!
+
+	fun getPackage(elem: Element): PackageElement {
+		if(elem is PackageElement)
+			return elem
+		else if(elem.enclosingElement == null)
+			throw IllegalArgumentException("javaElement $elem is not enclosed by a package")
+		else
+			return getPackage(elem.enclosingElement)
+	}
 
 	override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
 		log("annotation processing... $annotations")
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
+			val packageElem = getPackage(annotatedElem)
+
+			log(packageElem.printSummary())
+		}
+
+
+		/*for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
 			/*val classData = (annotatedElem.kotlinMetadata as KotlinClassMetadata).data
 			val (nameResolver, classProto) = classData
 			val method = classProto.functionList.first()
 
-			log("method")
+			logW("method")
 
-			log(method.valueParameterList.map {
+			logW(method.valueParameterList.map {
 				"""
 					name: ${nameResolver.getString(it.name)}
 					getType: ${it.type.extractFullName(classData)}
@@ -82,35 +105,35 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				"""
 			}.joinToString("\n"))*/
 
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
-			log("----------------------------------------------------------------------------------------------------")
+			logW(annotatedElem.printSummary())
+			logW("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FunctionAnnotation::class.java)) {
 
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
-			log("----------------------------------------------------------------------------------------------------")
+			logW(annotatedElem.asKotlin(processingEnv)!!.printKotlinSummary())
+			logW("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(FieldAnnotation::class.java)) {
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
-			log("----------------------------------------------------------------------------------------------------")
+			logW(annotatedElem.asKotlin(processingEnv)!!.printKotlinSummary())
+			logW("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(PropertyAnnotation::class.java)) {
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
-			log("----------------------------------------------------------------------------------------------------")
+			logW(annotatedElem.asKotlin(processingEnv)!!.printKotlinSummary())
+			logW("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(SetterAnnotation::class.java)) {
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
-			log("----------------------------------------------------------------------------------------------------")
+			logW(annotatedElem.asKotlin(processingEnv)!!.printKotlinSummary())
+			logW("----------------------------------------------------------------------------------------------------")
 		}
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(GetterAnnotation::class.java)) {
-			log(annotatedElem.correspondingKotlinElement(processingEnv)!!.printKotlinSummary())
-			log("----------------------------------------------------------------------------------------------------")
-		}
+			logW(annotatedElem.asKotlin(processingEnv)!!.printKotlinSummary())
+			logW("----------------------------------------------------------------------------------------------------")
+		}*/
 
 		return true
 	}
@@ -145,7 +168,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					""".trimIndent() +
 				   "\njavaElement:" +
 				   javaElement.printSummary().prependIndent("\t") +
-				   "\njvmOverloads:" +
+				   "\njavaOverloads:" +
 				   jvmOverloadElements.printSummary().prependIndent("\t")
 			   }
 			   else "") +
@@ -183,21 +206,21 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 											   javaSetterElement?.printSummary()?.prependIndent("\t") +
 											   "\njavaGetter:" +
 											   javaGetterElement?.printSummary()?.prependIndent("\t")
-				   is KotlinTypeElement -> """
+				   is KotlinClassOrInterfaceElement -> """
 					   packageName: $packageName
 					   nestingKind: $nestingKind
-					   isExternalClass: $isExternalClass
+					   isExternal: $isExternal
 					   isDataClass: $isDataClass
-					   isExpectClass: $isExpectClass
-					   isInnerClass: $isInnerClass
+					   isExpect: $isExpect
+					   isInner: $isInner
 					   isObject: $isObject
 					   constructors:
 				   """.trimIndent() +
-										   constructors.printKotlinSummary().prependIndent("\t") +
-										   "\ndeclaredMethods:" +
-										   declaredMethods.printKotlinSummary().prependIndent("\t") +
-										   "\ncompanionObject:" +
-										   companionObject?.printKotlinSummary()?.prependIndent("\t")
+													   constructors.printKotlinSummary().prependIndent("\t") +
+													   "\nfunctions:" +
+													   declaredFunctions.printKotlinSummary().prependIndent("\t") +
+													   "\ncompanionObject:" +
+													   companionObject?.printKotlinSummary()?.prependIndent("\t")
 
 				   is KotlinFunctionElement -> """
 					   jvmSignature: $jvmSignature
@@ -224,7 +247,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   else -> ""
 			   } //+
 		//"\nenclosed Elements:" +
-		//enclosedElements.printKotlinSummary().prependIndent("\t")
+		//kotlinElements.printKotlinSummary().prependIndent("\t")
 	}
 
 	fun List<KotlinElement>.printKotlinSummary() =
@@ -273,7 +296,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			   } + "\n" +
 			   //"enclosingElement:" +
 			   //enclosingElement?.printSummary()?.prependIndent("\t") +
-			   "enclosedElements:\n" +
+			   "kotlinElements:\n" +
 			   enclosedElements.printSummary().prependIndent("\t")
 	}
 

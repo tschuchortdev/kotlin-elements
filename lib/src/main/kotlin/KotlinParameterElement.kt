@@ -7,13 +7,20 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.AnnotatedConstruct
+import javax.lang.model.element.Name
 import javax.lang.model.element.VariableElement
+import javax.lang.model.type.TypeMirror
 
+/**
+ * A value parameter of a function, method or constructor
+ */
 class KotlinParameterElement internal constructor(
 		val javaElement: VariableElement,
 		private val protoParam: ProtoBuf.ValueParameter,
+		override val enclosingElement: KotlinExecutableElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinSubelement(processingEnv), VariableElement by javaElement {
+) : KotlinElement(processingEnv), AnnotatedConstruct by javaElement {
 
 	/**
 	 * Whether this parameter has a default value
@@ -28,15 +35,9 @@ class KotlinParameterElement internal constructor(
 
 	val isNoInline: Boolean = protoParam.isNoInline
 
-	override fun getEnclosingElement(): KotlinElement {
-		return javaElement.enclosingElement.correspondingKotlinElement(processingEnv)!!
-	}
+	override val simpleName: Name = javaElement.simpleName
 
-	override fun getEnclosedElements(): List<Nothing> {
-		// a parameter element shouldn't enclose anything
-		assert(javaElement.enclosedElements.isEmpty())
-		return emptyList()
-	}
+	override fun asType(): TypeMirror = javaElement.asType()
 
 	override fun equals(other: Any?): Boolean
 			= (other as? KotlinParameterElement)?.javaElement == javaElement

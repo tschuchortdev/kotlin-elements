@@ -2,7 +2,6 @@ package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.isPrimary
 import me.eugeniomarletti.kotlin.metadata.isSecondary
-import me.eugeniomarletti.kotlin.metadata.jvm.getJvmConstructorSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import me.eugeniomarletti.kotlin.metadata.visibility
@@ -10,14 +9,21 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Name
 
+/**
+ * A constructor of a Kotlin class.
+ *
+ * Note that annotation classes do not actually have constructors
+ */
 class KotlinConstructorElement internal constructor(
 		javaElement: ExecutableElement,
-		jvmOverloadElements: List<ExecutableElement>,
+		javaOverloadElements: List<ExecutableElement>,
+		override val enclosingElement: KotlinTypeElement,
 		private val protoConstructor: ProtoBuf.Constructor,
 		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinExecutableElement(javaElement, jvmOverloadElements, processingEnv), HasKotlinVisibility {
+) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement, processingEnv), HasKotlinVisibility {
 
+	/** Whether this constructor is the primary constructor of its class */
 	val isPrimary: Boolean
 		get() = protoConstructor.isPrimary.also { primary ->
 			assert(primary != protoConstructor.isSecondary)
@@ -25,22 +31,17 @@ class KotlinConstructorElement internal constructor(
 
 	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoConstructor.visibility!!)
 
-	override fun getParameters(): List<KotlinParameterElement>
-			= protoConstructor.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->
-
-		if (doParametersMatch(javaParam, protoParam, protoNameResolver))
-			KotlinParameterElement(javaParam, protoParam, processingEnv)
-		else
-			throw AssertionError("Kotlin ProtoBuf.Parameters should always " +
-								 "match up with Java VariableElements")
-	}
-	override fun getTypeParameters(): List<Nothing> {
-		// a constructor should never have type parameters
-		assert(javaElement.typeParameters.isEmpty())
-		return emptyList()
+	override val parameters: List<KotlinParameterElement> by lazy{
+		protoConstructor.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->
+			if (doParametersMatch(javaParam, protoParam, protoNameResolver))
+				KotlinParameterElement(javaParam, protoParam, this, processingEnv)
+			else
+				throw AssertionError("Kotlin ProtoBuf.Parameters should always " +
+									 "match up with Java VariableElements")
+		}
 	}
 
-	override fun getSimpleName(): Name = javaElement.simpleName
+	override val simpleName: Name = javaElement.simpleName
 
 	override fun toString(): String = javaElement.toString()
 }

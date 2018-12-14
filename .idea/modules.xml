@@ -13,7 +13,7 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.main.iml" filepath="$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.test.iml" filepath="$PROJECT_DIR$/.idea/modules/test-annot-processor/com.tschuchort.kotlinelements.test-annot-processor.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/kotlinelements.iml" filepath="$PROJECT_DIR$/.idea/modules/kotlinelements.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lib/kotlinelements.com.tschuchort.kotlinelements.kotlinelements.iml" filepath="$PROJECT_DIR$/.idea/modules/lib/kotlinelements.com.tschuchort.kotlinelements.kotlinelements.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/lib/lib.com.tschuchort.kotlinelements.kotlinelements.iml" filepath="$PROJECT_DIR$/.idea/modules/lib/lib.com.tschuchort.kotlinelements.kotlinelements.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/test-annot-processor.iml" filepath="$PROJECT_DIR$/.idea/modules/test-annot-processor.iml" />
     </modules>
   </component>

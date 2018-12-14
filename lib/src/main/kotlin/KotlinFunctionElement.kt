@@ -1,7 +1,6 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
-import me.eugeniomarletti.kotlin.metadata.jvm.jvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
@@ -9,18 +8,23 @@ import javax.lang.model.element.*
 
 class KotlinFunctionElement internal constructor(
 		javaElement: ExecutableElement,
-		jvmOverloadElements: List<ExecutableElement>,
+		javaOverloadElements: List<ExecutableElement>,
+		enclosingElement: KotlinElement,
 		private val protoFunction: ProtoBuf.Function,
 		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinExecutableElement(javaElement, jvmOverloadElements, processingEnv),
-	KotlinParameterizable, HasKotlinModality, HasKotlinVisibility {
+) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement, processingEnv),
+	KotlinParameterizable by KotlinParameterizableMixin(
+			protoFunction.typeParameterList, javaElement.typeParameters, protoNameResolver, processingEnv),
+	HasKotlinModality, HasKotlinVisibility {
 
 	val isInline: Boolean = protoFunction.isInline
 	val isInfix: Boolean = protoFunction.isInfix
 	val isTailRec: Boolean = protoFunction.isTailRec
 	val isSuspend: Boolean = protoFunction.isSuspend
 	val isOperator: Boolean = protoFunction.isOperator
+
+	//TODO("remove kName debug property")
 	val kName = protoNameResolver.getString(protoFunction.name)
 	//TODO("is free function")
 	//TODO("is extension function")
@@ -50,29 +54,19 @@ class KotlinFunctionElement internal constructor(
 
 	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoFunction.visibility!!)
 
-	override fun getParameters(): List<KotlinParameterElement>
-			= protoFunction.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->
-
-		if (doParametersMatch(javaParam, protoParam, protoNameResolver))
-			KotlinParameterElement(javaParam, protoParam, processingEnv)
-		else
-			throw AssertionError("Kotlin ProtoBuf.Parameters should always " +
-								 "match up with Java VariableElements")
+	override val parameters: List<KotlinParameterElement> by lazy {
+		protoFunction.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->
+			if (doParametersMatch(javaParam, protoParam, protoNameResolver))
+				KotlinParameterElement(javaParam, protoParam, this, processingEnv)
+			else
+				throw AssertionError("Kotlin ProtoBuf.Parameters should always " +
+									 "match up with Java VariableElements")
+		}
 	}
 
-	override fun getTypeParameters(): List<KotlinTypeParameterElement>
-			= protoFunction.typeParameterList.zipWith(javaElement.typeParameters) { protoTypeParam, javaTypeParam ->
-
-		if (doTypeParamsMatch(javaTypeParam, protoTypeParam, protoNameResolver))
-			KotlinTypeParameterElement(javaTypeParam, protoTypeParam, processingEnv)
-		else
-			throw AssertionError("Kotlin ProtoBuf.TypeParameters should always " +
-								 "match up with Java TypeParameterElements")
-	}
-
-	override fun getSimpleName(): Name
+	override val simpleName: Name
 			// if JvmName is used, the name of the Kotlin function may be different than the jvm name
-			= processingEnv.elementUtils.getName(protoNameResolver.getString(protoFunction.name))
+			get() = processingEnv.elementUtils.getName(protoNameResolver.getString(protoFunction.name))
 
 	override fun toString(): String {
 		// if JvmName is used, the name of the Kotlin function may be different than the jvm name

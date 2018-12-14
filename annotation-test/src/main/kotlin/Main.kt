@@ -1,9 +1,12 @@
 //TODO("handle JvmName for Kotlin files
-@file:JvmName("RenamedFileMainKt")
+@file:JvmName("RenamedFile")
 
 package com.tschuchort.kotlinelements
 
-//@ClassAnnotation
+//TODO("test inline classes")
+//TODO("test functions accepting inline classes")
+
+/*//@ClassAnnotation
 data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 	companion object Comp {
 	}
@@ -58,7 +61,17 @@ class C : B(Integer(1)) {
 	@PropertyAnnotation
 	private var z = "hello"
 
-	@get:GetterAnnotation
+	@PropertyAnnotation
+	inline private var z2
+		get() = "hello"
+		inline set(value) {}
+
+	@PropertyAnnotation
+	private var z3 = "hello"
+		set
+
+
+	//@get:GetterAnnotation
 	@get:JvmName("differentJvmGetterName")
 	var kotlinPropName
 		set(value) {}
@@ -66,6 +79,20 @@ class C : B(Integer(1)) {
 }
 
 fun five() = 5
+
+//@ClassAnnotation
+class Q {
+	init {
+
+	}
+
+	 companion object {
+		 val x = 3
+		 init {
+
+		 }
+	 }
+}
 
 //@ClassAnnotation
 class InternalMembers internal constructor(s: String) {
@@ -144,6 +171,7 @@ enum class EnumClass { }
 annotation class Ann(val x: String, val y: String) {
 }
 
+
 //@ClassAnnotation
 interface Interf<in T, S : SomeClass> {
 	fun foo()
@@ -186,11 +214,10 @@ fun fooWithDefault(a: String, y: Float = 2.0f) {
 //@FunctionAnnotation
 fun SomeClass.ext(a: String) {
 
-}
+}*/
 
 //var x: @TypeAnnotation Integer? = null
 
 fun main(args: Array<String>) {
 	println("hello")
-	A<Int, Int, Integer, Int, Int>(Integer(1))
 }
