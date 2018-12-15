@@ -108,7 +108,7 @@ class KotlinPropertyElement internal constructor(
 	override fun asType(): TypeMirror =
 			backingField?.run { asType() }
 			?: getter?.run { javaElement.returnType!! }
-			?: setter?.run { parameter.asType() }!!
+			?: setter?.run { parameter.javaElement.asType() }!!
 
 	override val enclosingElement: KotlinElement by lazy {
 		val nonNullJavaElem = backingField?.javaElement
@@ -195,6 +195,8 @@ class KotlinPropertyElement internal constructor(
 
 		/** A backing field is enclosed by its property */
 		override val enclosingElement: KotlinPropertyElement = this@KotlinPropertyElement
+
+		val correspondingProperty: KotlinPropertyElement = this@KotlinPropertyElement
 	}
 
 	/**
@@ -206,6 +208,8 @@ class KotlinPropertyElement internal constructor(
 
 		/** A [DelegateField] is enclosed by its property */
 		override val enclosingElement: KotlinPropertyElement = this@KotlinPropertyElement
+
+		val correspondingProperty: KotlinPropertyElement = this@KotlinPropertyElement
 	}
 
 	/** The accessor (getter or setter) of a property */
@@ -219,6 +223,8 @@ class KotlinPropertyElement internal constructor(
 
 		/** An accessor is enclosed by its property */
 		override val enclosingElement: KotlinPropertyElement = this@KotlinPropertyElement
+
+		val correspondingProperty: KotlinPropertyElement = this@KotlinPropertyElement
 
 		override val simpleName: Name get() = javaElement.simpleName
 

@@ -57,7 +57,7 @@ abstract class KotlinAbstractProcessor protected constructor() : AbstractProcess
 		return getElementsAnnotatedWithAny(annotations).asSequence().filter { !it.originatesFromKotlinCode() }.toSet()
 	}
 
-	protected fun RoundEnvironment.getKotlinRelatedElementsAnnotatedWith(annotation: Class<out Annotation>): Set<KotlinRelatedElement>
+	/*protected fun RoundEnvironment.getKotlinRelatedElementsAnnotatedWith(annotation: Class<out Annotation>): Set<KotlinRelatedElement>
 			= getKotlinRelatedElementsAnnotatedWithAny(setOf(annotation))
 
 	protected fun RoundEnvironment.getKotlinRelatedElementsAnnotatedWithAny(annotations: Set<Class<out Annotation>>): Set<KotlinRelatedElement> {
@@ -111,6 +111,6 @@ abstract class KotlinAbstractProcessor protected constructor() : AbstractProcess
 			is KotlinEnumElement ->;
 			is KotlinEnumConstantElement ->;
 		}
-	}
+	}*/
 }
 

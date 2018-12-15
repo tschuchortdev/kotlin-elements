@@ -6,32 +6,48 @@ package com.tschuchort.kotlinelements
 //TODO("test inline classes")
 //TODO("test functions accepting inline classes")
 
-/*//@ClassAnnotation
+/*@ClassAnnotation
 data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 	companion object Comp {
 	}
 }
 
+*/
 
+class A()
+
+interface I {
+	fun bar(): String
+}
+
+@ClassAnnotation
+enum class E(val prop: A) : I {
+	E1(A()) {
+		@FunctionAnnotation
+		override fun bar() = "E1"
+	}, E2(A()) {
+		override fun bar() = "E1"
+	};
+
+	fun foo() {}
+}
+
+/*
 //TODO("handle illegal java names")
 fun `illegal$name`() {}
 
 
-//@ClassAnnotation
-open class B constructor(val a: Integer) {
-	companion object {
-	}
-
-	var x
-		get() = 3
-		set(value) {}
+@ClassAnnotation
+open class B {
 
 	//@PropertyAnnotation
 	var y = 4
-	   @Deprecated("", level = DeprecationLevel.HIDDEN) get
-	   set(value) {}
+		@Deprecated("", level = DeprecationLevel.HIDDEN) get
+		set(value) {}
 }
 
+
+@ClassAnnotation
 class O<T>(t: T) {
 	//@PropertyAnnotation
 	private val t: T = t // visibility for t is PRIVATE_TO_THIS
@@ -45,6 +61,7 @@ class O<T>(t: T) {
 	fun bar():T = t
 }
 
+@ClassAnnotation
 class C : B(Integer(1)) {
 
 	//@ClassAnnotation
@@ -80,7 +97,7 @@ class C : B(Integer(1)) {
 
 fun five() = 5
 
-//@ClassAnnotation
+@ClassAnnotation
 class Q {
 	init {
 
@@ -94,7 +111,7 @@ class Q {
 	 }
 }
 
-//@ClassAnnotation
+@ClassAnnotation
 class InternalMembers internal constructor(s: String) {
 	internal fun internalFoo() {}
 
@@ -102,7 +119,7 @@ class InternalMembers internal constructor(s: String) {
 		get() = 3
 }
 
-//@ClassAnnotation
+@ClassAnnotation
 class D {
 	companion object {
 		@JvmStatic
@@ -134,7 +151,7 @@ class D {
 	}
 }
 
-//@ClassAnnotation
+@ClassAnnotation
 class E constructor(x: String, y: SomeClass){
 	fun foo(x: String, y: GenericClass<Int>, z: GenericClass<*>) {}
 }
@@ -214,10 +231,10 @@ fun fooWithDefault(a: String, y: Float = 2.0f) {
 //@FunctionAnnotation
 fun SomeClass.ext(a: String) {
 
-}*/
+}
 
 //var x: @TypeAnnotation Integer? = null
-
+*/
 fun main(args: Array<String>) {
 	println("hello")
 }

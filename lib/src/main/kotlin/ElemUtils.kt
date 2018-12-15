@@ -78,7 +78,8 @@ internal fun JvmProtoBuf.JvmFieldSignature.jvmSignatureString(nameResolver: Name
  *
  * For reference, see the [JVM specification, section 4.3](http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3).
  */
-internal fun ExecutableElement.getJvmMethodSignature(processingEnv: ProcessingEnvironment): String
+//TODO("make internal for release")
+fun ExecutableElement.getJvmMethodSignature(processingEnv: ProcessingEnvironment): String
 		= with(processingEnv.kotlinMetadataUtils) {
 	this@getJvmMethodSignature.jvmMethodSignature
 }

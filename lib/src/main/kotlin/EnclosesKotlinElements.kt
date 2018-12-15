@@ -214,7 +214,8 @@ internal class EnclosedElementsDelegate(
 	val constructors: Set<KotlinConstructorElement> by lazy {
 		protoCtors.asSequence().map { protoCtor ->
 			val (element, overloadElements) = findCorrespondingExecutableElements(
-					protoCtor.jvmSignature(), protoCtor.valueParameterList, javaCtorElems
+					protoCtor.jvmSignature(enclosingKtElement is KotlinEnumElement),
+					protoCtor.valueParameterList, javaCtorElems
 			)
 
 			KotlinConstructorElement(element, overloadElements, enclosingKtElement as KotlinTypeElement,
@@ -314,12 +315,12 @@ internal class EnclosedElementsDelegate(
 		}
 	}
 
-	private fun ProtoBuf.Constructor.jvmSignature() = with(processingEnv.kotlinMetadataUtils) {
+	private fun ProtoBuf.Constructor.jvmSignature(isEnumConstructor: Boolean)
+			= with(processingEnv.kotlinMetadataUtils) {
 		val signature = this@jvmSignature.getJvmConstructorSignature(protoNameResolver, protoTypeTable)
 						?: throw IllegalArgumentException("could not get JVM signature for ProtoBuf.Constructor")
 
-		//TODO("test enum class constructors")
-		/*if(javaElement.kind == ElementKind.ENUM) {
+		if(isEnumConstructor) {
 			/* for some reason the Kotlin compiler adds an implicit String and Int argument
 			to enum constructors (probably to call it's implicit super constructor
 			`Enum::<init>(name: String, ordinal: Int)`). The `ExecutableElement` that is
@@ -328,7 +329,7 @@ internal class EnclosedElementsDelegate(
 			check(signature.startsWith("<init>(Ljava/lang/String;I"))
 			signature.removeFirstOccurance("Ljava/lang/String;I")
 		}
-		else*/
+		else
 			signature
 	}
 
