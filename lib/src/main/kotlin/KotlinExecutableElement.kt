@@ -78,21 +78,23 @@ abstract class KotlinExecutableElement internal constructor(
 	 */
 	abstract val parameters: List<KotlinParameterElement>
 
-	val receiverType: TypeMirror? get() = TODO("handle Kotlin receiver type")
+	val receiverType: TypeMirror? = javaElement.receiverType //TODO("handle Kotlin receiver type")
 
-	val thrownTypes: List<TypeMirror> get() = TODO("handle Kotlin thrown types")
+	val thrownTypes: List<TypeMirror> = javaElement.thrownTypes //TODO("handle Kotlin thrown types")
 
-	val returnType: TypeMirror get() = TODO("handle Kotlin return types")
+	val returnType: TypeMirror = javaElement.returnType //TODO("handle Kotlin return types")
 
-	override fun asType(): TypeMirror = TODO("handle kotlin executable element asType")
+	override fun asType(): TypeMirror = javaElement.asType() //TODO("handle kotlin executable element asType")
 
 	final override fun equals(other: Any?) = (other as? KotlinExecutableElement)?.javaElement == javaElement
 	final override fun hashCode() = Objects.hash(javaElement)
 	abstract override fun toString(): String
 
-	inner class JavaOverload(javaElement: ExecutableElement)
+	inner class JavaOverload(override val javaElement: ExecutableElement)
 		: KotlinCompatElement(javaElement, processingEnv) {
 
-		override val enclosingElement: KotlinElement = this@KotlinExecutableElement
+		override val enclosingElement: KotlinElement = this@KotlinExecutableElement.enclosingElement
+
+		val correspondingFunction: KotlinExecutableElement = this@KotlinExecutableElement
 	}
 }

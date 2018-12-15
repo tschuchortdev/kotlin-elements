@@ -5,11 +5,11 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeElement
 
 class KotlinFileFacadeElement private constructor(
-		javaElement: TypeElement,
+		override val javaElement: TypeElement,
 		private val packageData: PackageData?,
 		processingEnv: ProcessingEnvironment
 ) : KotlinCompatElement(javaElement, processingEnv), EnclosesKotlinElements,
-	EnclosesKotlinProperties, EnclosesKotlinFunctions, EnclosesKotlinTypes, TypeElement by javaElement {
+	EnclosesKotlinProperties, EnclosesKotlinFunctions, EnclosesKotlinTypes {
 
 	internal constructor(javaElement: TypeElement, metadata: KotlinFileMetadata,
 						 processingEnv: ProcessingEnvironment)
@@ -57,7 +57,7 @@ class KotlinFileFacadeElement private constructor(
  * and type aliases, since only classes can be top-level in Java
  */
 class KotlinMultiFileClassPartElement(
-		element: TypeElement,
+	    override val javaElement: TypeElement,
 		metadata: KotlinMultiFileClassPartMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinCompatElement(element, processingEnv), TypeElement by element
+) : KotlinCompatElement(javaElement, processingEnv)

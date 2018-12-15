@@ -38,10 +38,10 @@ class KotlinInterfaceElement internal constructor(
  * in a Kotlin interface
  */
 class KotlinInterfaceDefaultImplElement(
-		element: TypeElement,
+		override val javaElement: TypeElement,
 		metadata: KotlinSyntheticClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinCompatElement(element, processingEnv), TypeElement by element {
+) : KotlinCompatElement(javaElement, processingEnv) {
 
 	val correspondingInterface: KotlinInterfaceElement by lazy {
 		enclosingElement as KotlinInterfaceElement

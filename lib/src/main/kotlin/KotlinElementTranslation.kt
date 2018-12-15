@@ -54,7 +54,7 @@ fun Element.asKotlin(processingEnv: ProcessingEnvironment): KotlinRelatedElement
 
 			constructors.atMostOne { it.javaElement == this }
 					as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
-			?: constructors.flatMap { it.javaOverloads }.atMostOne { it == this }
+			?: constructors.flatMap { it.javaOverloads }.atMostOne { it.javaElement == this }
 			?: throw IllegalStateException("Can not convert element $this to Kotlin: ElementKind is CONSTRUCTOR but" +
 											"does not belong to any Kotlin constructor of its enclosing element")
 
@@ -69,7 +69,7 @@ fun Element.asKotlin(processingEnv: ProcessingEnvironment): KotlinRelatedElement
 
 			functions?.atMostOne { it.javaElement == this }
 					as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
-			?: functions?.flatMap { it.javaOverloads }?.atMostOne { it == this }
+			?: functions?.flatMap { it.javaOverloads }?.atMostOne { it.javaElement == this }
 			?: properties?.mapNotNull { it.getter }?.atMostOne { it.javaElement == this }
 			?: properties?.mapNotNull { it.setter }?.atMostOne { it.javaElement == this }
 			?: properties?.atMostOne { it.javaAnnotationHolderElement == this }

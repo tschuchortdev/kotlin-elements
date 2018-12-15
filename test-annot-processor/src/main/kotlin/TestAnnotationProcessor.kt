@@ -85,9 +85,8 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		log("annotation processing... $annotations")
 
 		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
-			val packageElem = getPackage(annotatedElem)
-
-			log(packageElem.printSummary())
+			log(annotatedElem.asKotlin(processingEnv)!!.printKotlinSummary())
+			//log(annotatedElem.printSummary())
 		}
 
 
@@ -140,7 +139,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 	}
 
 	fun KotlinRelatedElement.printKotlinSummary(): String {
-		return "name: $this" +
+		return "name: $this\n" +
 			   (if (this is KotlinElement)
 				   """
 					   simpleName: $simpleName
@@ -154,18 +153,18 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   "\nkotlin visibility: $visibility"
 			   else "") +
 			   (if (this is KotlinParameterizable) {
-				   "\ntypeParameters:" + typeParameters.printKotlinSummary().prependIndent("\t")
+				   "\ntypeParameters:\n" + typeParameters.printKotlinSummary().prependIndent("\t")
 			   }
 			   else "") +
 			   (if (this is KotlinExecutableElement) {
 				   """
+					    jvmSignature: $jvmSignature
 					    isVarArgs: $isVarArgs
 					    receiverType: $receiverType
 					    returnType: $returnType
 					    thrownTypes: $thrownTypes
 					""".trimIndent() +
-				   "\njavaElement:" + javaElement.printSummary().prependIndent("\t") +
-				   "\njavaOverloads:" + javaOverloads.printKotlinSummary().prependIndent("\t")
+				   "\njavaOverloads:\n" + javaOverloads.printKotlinSummary().prependIndent("\t")
 			   }
 			   else "") +
 			   when (this) {
@@ -175,13 +174,16 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   isDelegated:	$isDelegated
 					   isExpect: $isExpect
 					   isLateInit: $isLateInit
-				   """.trimIndent()
+				   """.trimIndent() +
+					"\nsetter:" + setter?.printKotlinSummary()?.prependIndent("\t") +
+					"\ngetter:" + getter?.printKotlinSummary()?.prependIndent("\t")	+
+					"\nbacking field:" + backingField?.printKotlinSummary()?.prependIndent("\t")
 
 				   is KotlinPropertyElement.Getter -> """
 				   """.trimIndent()
 
 				   is KotlinPropertyElement.Setter ->
-					   "setter parameter:" + parameter.printKotlinSummary().prependIndent("\t")
+					   "\nsetter parameter:" + parameter.printKotlinSummary().prependIndent("\t")
 
 				   is KotlinTypeElement -> """
 					   isExternal: $isExternal
@@ -200,20 +202,19 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   """.trimIndent()*/
 
 				   is KotlinEnumElement ->
-					   "enumConstants:" + enumConstants.printKotlinSummary().prependIndent("\t")
+					   "\nenumConstants:\n" + enumConstants.printKotlinSummary().prependIndent("\t")
 
 				   is KotlinEnumConstantElement -> """
 				   """.trimIndent()
 
 				   is KotlinAnnotationElement ->
-					   "annotation parameters:" + parameters.printKotlinSummary().prependIndent("\t")
+					   "\nannotation parameters:\n" + parameters.printKotlinSummary().prependIndent("\t")
 
 				   is KotlinAnnotationParameterElement -> """
 					   defaultValue: $defaultValue
 				   """.trimIndent()
 
 				   is KotlinFunctionElement -> """
-					   jvmSignature: $jvmSignature
 					   isExpectFunc: $isExpect
 					   isExternalFunc: $isExternal
 					   isInfix: $isInfix
@@ -234,15 +235,24 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   bounds: $bounds
 				   """.trimIndent()
 
+				   is KotlinTypeAliasElement -> """
+					   expanded type: $expandedType
+					   underlying type: $underlyingType
+				   """.trimIndent()
+
 				   is KotlinPackageElement -> """
 					   isUnnamed: $isUnnamed
 				   """.trimIndent() +
-						"javaPackages: " + javaPackages.printSummary().prependIndent("\t") +
-						"kotlinPackages:" + kotlinPackages.printKotlinSummary().prependIndent("\t")
+						"\njavaPackages:\n" + javaPackages.printSummary().prependIndent("\t") +
+						"\nkotlinPackages:\n" + kotlinPackages.printKotlinSummary().prependIndent("\t")
 				   else -> ""
-			   } //+
-		//"\nenclosed Elements:" +
-		//kotlinElements.printKotlinSummary().prependIndent("\t")
+			   } +
+			   (if(this is EnclosesKotlinElements)
+				   "\nenclosed Elements:\n" + enclosedKotlinElements.printKotlinSummary().prependIndent("\t")
+			   	else
+				   ""
+			   )
+
 	}
 
 	fun List<KotlinRelatedElement>.printKotlinSummary() =
@@ -269,6 +279,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 						isDefault: $isDefault
 						defaultValue: $defaultValue
 						isVarArgs: $isVarArgs
+						jvmMethodSignature: ${getJvmMethodSignature(processingEnv)}
 						parameters:
 				   """.trimIndent() + "\n" +
 										   parameters.printSummary().prependIndent("\t") +
@@ -293,7 +304,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			   } + "\n" +
 			   //"enclosingElement:" +
 			   //enclosingElement?.printSummary()?.prependIndent("\t") +
-			   "kotlinElements:\n" +
+			   "enclosed elements:\n" +
 			   enclosedElements.printSummary().prependIndent("\t")
 	}
 
