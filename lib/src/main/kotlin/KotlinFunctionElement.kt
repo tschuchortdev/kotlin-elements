@@ -14,9 +14,7 @@ class KotlinFunctionElement internal constructor(
 		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
 ) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement, processingEnv),
-	KotlinParameterizable by KotlinParameterizableMixin(
-			protoFunction.typeParameterList, javaElement.typeParameters, protoNameResolver, processingEnv),
-	HasKotlinModality, HasKotlinVisibility {
+	KotlinParameterizable, HasKotlinModality, HasKotlinVisibility {
 
 	val isInline: Boolean = protoFunction.isInline
 	val isInfix: Boolean = protoFunction.isInfix
@@ -64,6 +62,9 @@ class KotlinFunctionElement internal constructor(
 		}
 	}
 
+	override val typeParameters: List<KotlinTypeParameterElement>
+		get() = parameterizableDelegate.typeParameters
+
 	override val simpleName: Name
 			// if JvmName is used, the name of the Kotlin function may be different than the jvm name
 			get() = processingEnv.elementUtils.getName(protoNameResolver.getString(protoFunction.name))
@@ -73,5 +74,11 @@ class KotlinFunctionElement internal constructor(
 		val javaElemString = javaElement.toString()
 		assert(Regex("[^\\(\\)]+?\\([^\\(\\)]*?\\)[^\\(\\)]*").matches(javaElemString))
 		return simpleName.toString() + "(" + javaElemString.substringAfter("(")
+	}
+
+	private val parameterizableDelegate by lazy {
+		// lazy to avoid leaking this in ctor
+		KotlinParameterizableDelegate(this, protoFunction.typeParameterList,
+				javaElement.typeParameters, protoNameResolver, processingEnv)
 	}
 }

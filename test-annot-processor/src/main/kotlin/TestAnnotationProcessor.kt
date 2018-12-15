@@ -8,6 +8,7 @@ import javax.lang.model.SourceVersion
 import javax.lang.model.element.*
 import javax.tools.Diagnostic
 import PackageAnnotation
+import javax.lang.model.AnnotatedConstruct
 
 @Target(AnnotationTarget.CLASS)
 annotation class ClassAnnotation
@@ -138,15 +139,14 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 		return true
 	}
 
-	fun KotlinElement.printKotlinSummary(): String {
-		return """
-				   name: $this
-				   simpleName: $simpleName
-				   isTopLevel: ${isTopLevel()}
-				   kind: $kind
-				   java modifiers: $modifiers
-				   directly present annotations: $annotationMirrors
-			   """.trimIndent() +
+	fun KotlinRelatedElement.printKotlinSummary(): String {
+		return "name: $this" +
+			   (if (this is KotlinElement)
+				   """
+					   simpleName: $simpleName
+					   directly present annotations: $annotationMirrors
+				   """.trimIndent()
+			   else "") +
 			   (if (this is HasKotlinModality)
 				   "\nkotlin modality: $modality"
 			   else "") +
@@ -154,73 +154,63 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 				   "\nkotlin visibility: $visibility"
 			   else "") +
 			   (if (this is KotlinParameterizable) {
-				   "\ntypeParameters:" +
-				   typeParameters.printKotlinSummary().prependIndent("\t")
+				   "\ntypeParameters:" + typeParameters.printKotlinSummary().prependIndent("\t")
 			   }
 			   else "") +
 			   (if (this is KotlinExecutableElement) {
 				   """
-						isDefault: $isDefault
 					    isVarArgs: $isVarArgs
 					    receiverType: $receiverType
 					    returnType: $returnType
 					    thrownTypes: $thrownTypes
 					""".trimIndent() +
-				   "\njavaElement:" +
-				   javaElement.printSummary().prependIndent("\t") +
-				   "\njavaOverloads:" +
-				   jvmOverloadElements.printSummary().prependIndent("\t")
+				   "\njavaElement:" + javaElement.printSummary().prependIndent("\t") +
+				   "\njavaOverloads:" + javaOverloads.printKotlinSummary().prependIndent("\t")
 			   }
 			   else "") +
 			   when (this) {
 				   is KotlinPropertyElement -> """
-					   hasConstant: $hasConstant
-					   isConst: $isConst
 					   isExternal: $isExternal
 					   isReadOnly: $isReadOnly
 					   isDelegated:	$isDelegated
 					   isExpect: $isExpect
 					   isLateInit: $isLateInit
+				   """.trimIndent()
 
-					   hasGetter: $hasGetter
-					   getterHasAnnotations: $getterHasAnnotations
-					   getterModality: $getterModality
-					   getterVisibility: $getterVisibility
-					   isGetterDefault:	$isGetterDefault
-					   isGetterNotDefault: $isGetterNotDefault
-					   isGetterExternal: $isGetterExternal
-					   isGetterInline: $isGetterInline
+				   is KotlinPropertyElement.Getter -> """
+				   """.trimIndent()
 
-					   hasSetter: $hasSetter
-					   setterHasAnnotations: $setterHasAnnotations
-					   setterModality: $setterModality
-					   setterVisibility: $setterVisibility
-					   isSetterInline: $isSetterInline
-					   isSetterExternal: $isSetterExternal
-					   isSetterDefault: $isSetterDefault
-					   isSetterNotDefault: $isSetterNotDefault
-				   """.trimIndent() +
-											   "\njavaField:" +
-											   javaFieldElement?.printSummary()?.prependIndent("\t") +
-											   "\njavaSetter:" +
-											   javaSetterElement?.printSummary()?.prependIndent("\t") +
-											   "\njavaGetter:" +
-											   javaGetterElement?.printSummary()?.prependIndent("\t")
-				   is KotlinClassOrInterfaceElement -> """
-					   packageName: $packageName
-					   nestingKind: $nestingKind
+				   is KotlinPropertyElement.Setter ->
+					   "setter parameter:" + parameter.printKotlinSummary().prependIndent("\t")
+
+				   is KotlinTypeElement -> """
 					   isExternal: $isExternal
-					   isDataClass: $isDataClass
 					   isExpect: $isExpect
 					   isInner: $isInner
-					   isObject: $isObject
-					   constructors:
-				   """.trimIndent() +
-													   constructors.printKotlinSummary().prependIndent("\t") +
-													   "\nfunctions:" +
-													   declaredFunctions.printKotlinSummary().prependIndent("\t") +
-													   "\ncompanionObject:" +
-													   companionObject?.printKotlinSummary()?.prependIndent("\t")
+					   superclass: $superclass
+					   interfaces: $interfaces
+				   """.trimIndent()
+
+				   is KotlinClassElement -> """
+					   isDataClass: $isDataClass
+				   """.trimIndent()
+
+				   /*is KotlinInterfaceElement -> """
+					   $interfaceDefaultImpls
+				   """.trimIndent()*/
+
+				   is KotlinEnumElement ->
+					   "enumConstants:" + enumConstants.printKotlinSummary().prependIndent("\t")
+
+				   is KotlinEnumConstantElement -> """
+				   """.trimIndent()
+
+				   is KotlinAnnotationElement ->
+					   "annotation parameters:" + parameters.printKotlinSummary().prependIndent("\t")
+
+				   is KotlinAnnotationParameterElement -> """
+					   defaultValue: $defaultValue
+				   """.trimIndent()
 
 				   is KotlinFunctionElement -> """
 					   jvmSignature: $jvmSignature
@@ -244,14 +234,21 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   bounds: $bounds
 				   """.trimIndent()
 
+				   is KotlinPackageElement -> """
+					   isUnnamed: $isUnnamed
+				   """.trimIndent() +
+						"javaPackages: " + javaPackages.printSummary().prependIndent("\t") +
+						"kotlinPackages:" + kotlinPackages.printKotlinSummary().prependIndent("\t")
 				   else -> ""
 			   } //+
 		//"\nenclosed Elements:" +
 		//kotlinElements.printKotlinSummary().prependIndent("\t")
 	}
 
-	fun List<KotlinElement>.printKotlinSummary() =
+	fun List<KotlinRelatedElement>.printKotlinSummary() =
 			joinToString("\n--------------------------------\n") { it.printKotlinSummary() }
+
+	fun Set<KotlinRelatedElement>.printKotlinSummary() = toList().printKotlinSummary()
 
 	fun Element.printSummary(): String {
 		return """
@@ -303,7 +300,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 	fun List<Element>.printSummary() =
 			joinToString("\n--------------------------------\n") { it.printSummary() }
 
-
+	fun Set<Element>.printSummary() = toList().printSummary()
 }
 
 

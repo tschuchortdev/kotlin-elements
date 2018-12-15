@@ -74,6 +74,16 @@ internal fun JvmProtoBuf.JvmFieldSignature.jvmSignatureString(nameResolver: Name
 }
 
 /**
+ * Returns the JVM signature in the form "$Name$MethodDescriptor", for example: `equals(Ljava/lang/Object;)Z`.
+ *
+ * For reference, see the [JVM specification, section 4.3](http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3).
+ */
+internal fun ExecutableElement.getJvmMethodSignature(processingEnv: ProcessingEnvironment): String
+		= with(processingEnv.kotlinMetadataUtils) {
+	this@getJvmMethodSignature.jvmMethodSignature
+}
+
+/**
  * finds all elements in the tree that fulfill the predicate (including the
  * root element that is the receiver)
  */
@@ -189,3 +199,4 @@ internal fun getManglingSuffix(jvmModuleName: String?): String {
  * Whether this is a (possibly anonymous) singleton class of the kind denoted by the `object` keyword
  */
 internal fun ProtoBuf.Class.isObject(): Boolean = (classKind == ProtoBuf.Class.Kind.OBJECT)
+

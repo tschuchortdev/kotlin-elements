@@ -18,11 +18,7 @@ abstract class KotlinTypeElement internal constructor(
 		val javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv),
-	KotlinParameterizable by KotlinParameterizableMixin(
-			metadata.data.classProto.typeParameterList, javaElement.typeParameters,
-			metadata.data.nameResolver, processingEnv),
-	KotlinQualifiedNameable,
+) : KotlinElement(processingEnv), KotlinParameterizable, KotlinQualifiedNameable,
 	HasKotlinVisibility, HasKotlinModality, AnnotatedConstruct by javaElement {
 
 	protected val protoClass: ProtoBuf.Class = metadata.data.classProto
@@ -69,6 +65,9 @@ abstract class KotlinTypeElement internal constructor(
 	 */
 	val superclass: TypeMirror = javaElement.superclass
 
+	override val typeParameters: List<KotlinTypeParameterElement>
+		get() = parameterizableDelegate.typeParameters
+
 	override fun asType(): TypeMirror = javaElement.asType()
 
 	override val qualifiedName: Name = javaElement.qualifiedName
@@ -102,5 +101,11 @@ abstract class KotlinTypeElement internal constructor(
 				protoTypeTable = protoTypeTable,
 				processingEnv = processingEnv
 		)
+	}
+
+	private val parameterizableDelegate by lazy {
+		// lazy to avoid leaking this in ctor
+		KotlinParameterizableDelegate(this, protoClass.typeParameterList,
+				javaElement.typeParameters, protoNameResolver, processingEnv)
 	}
 }

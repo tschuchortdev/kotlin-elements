@@ -7,16 +7,17 @@ import javax.lang.model.element.TypeParameterElement
 
 
 /**
- * An element that can have type parameters
+ * A Kotlin element that can have type parameters
  */
 interface KotlinParameterizable {
 	 val typeParameters: List<KotlinTypeParameterElement>
 }
 
 /**
- * Mixin for implementing [KotlinParameterizable] in multiple classes
+ * Delegate for implementing [KotlinParameterizable] in multiple classes
  */
-internal class KotlinParameterizableMixin(
+internal class KotlinParameterizableDelegate(
+		private val enclosingKtElement: KotlinElement,
 		private val protoTypeParams: List<ProtoBuf.TypeParameter>,
 		private val javaTypeParams: List<TypeParameterElement>,
 		private val protoNameResolver: NameResolver,
@@ -26,7 +27,7 @@ internal class KotlinParameterizableMixin(
 	override val typeParameters: List<KotlinTypeParameterElement> by lazy {
 		protoTypeParams.zipWith(javaTypeParams) { protoTypeParam, javaTypeParam ->
 			if (doTypeParamsMatch(javaTypeParam, protoTypeParam))
-				KotlinTypeParameterElement(javaTypeParam, protoTypeParam, processingEnv)
+				KotlinTypeParameterElement(javaTypeParam, protoTypeParam, enclosingKtElement, processingEnv)
 			else
 				throw AssertionError("Kotlin ProtoBuf.TypeParameters should always " +
 									 "match up with Java TypeParameterElements")

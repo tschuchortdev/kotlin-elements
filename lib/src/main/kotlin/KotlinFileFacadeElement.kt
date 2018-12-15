@@ -6,10 +6,10 @@ import javax.lang.model.element.TypeElement
 
 class KotlinFileFacadeElement private constructor(
 		javaElement: TypeElement,
-		internal val packageData: PackageData?,
+		private val packageData: PackageData?,
 		processingEnv: ProcessingEnvironment
 ) : KotlinCompatElement(javaElement, processingEnv), EnclosesKotlinElements,
-	EnclosesKotlinProperties, EnclosesKotlinFunctions, EnclosesKotlinTypes {
+	EnclosesKotlinProperties, EnclosesKotlinFunctions, EnclosesKotlinTypes, TypeElement by javaElement {
 
 	internal constructor(javaElement: TypeElement, metadata: KotlinFileMetadata,
 						 processingEnv: ProcessingEnvironment)
@@ -51,3 +51,13 @@ class KotlinFileFacadeElement private constructor(
 		)
 	}
 }
+
+/**
+ * A synthetic class that holds all the elements for top-level properties, functions
+ * and type aliases, since only classes can be top-level in Java
+ */
+class KotlinMultiFileClassPartElement(
+		element: TypeElement,
+		metadata: KotlinMultiFileClassPartMetadata,
+		processingEnv: ProcessingEnvironment
+) : KotlinCompatElement(element, processingEnv), TypeElement by element

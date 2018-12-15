@@ -105,10 +105,10 @@ class KotlinPropertyElement internal constructor(
 
 
 	//TODO("KotlinPropertyElement: return correctly resolved Kotlin type")
-	/*override fun asType(): TypeMirror =
-			javaFieldElement?.run { asType()!! }
-			?: javaGetterElement?.run { returnType }
-			?: javaSetterElement?.run { parameters.single().asType() }!!*/
+	override fun asType(): TypeMirror =
+			backingField?.run { asType() }
+			?: getter?.run { javaElement.returnType!! }
+			?: setter?.run { parameter.asType() }!!
 
 	override val enclosingElement: KotlinElement by lazy {
 		val nonNullJavaElem = backingField?.javaElement
@@ -120,6 +120,7 @@ class KotlinPropertyElement internal constructor(
 	}
 
 	override fun <A : Annotation?> getAnnotationsByType(annotationType: Class<A>): Array<A> {
+		@Suppress("unchecked_cast")
 		return javaAnnotationHolderElement?.getAnnotationsByType(annotationType)
 			   ?: java.lang.reflect.Array.newInstance(annotationType, 0) as Array<A>
 	}

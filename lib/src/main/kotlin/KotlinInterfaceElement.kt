@@ -4,6 +4,9 @@ import me.eugeniomarletti.kotlin.metadata.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeElement
 
+/**
+ * A Kotlin interface declaration
+ */
 class KotlinInterfaceElement internal constructor(
 		javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
@@ -25,4 +28,22 @@ class KotlinInterfaceElement internal constructor(
 
 	override val types: Set<KotlinTypeElement>
 		get() = enclosedElementsDelegate.types
+
+	val interfaceDefaultImpls: KotlinInterfaceDefaultImplElement?
+		get() = TODO("return InterfaceDefaultImpls")
+}
+
+/**
+ * A class that contains default implementations of methods
+ * in a Kotlin interface
+ */
+class KotlinInterfaceDefaultImplElement(
+		element: TypeElement,
+		metadata: KotlinSyntheticClassMetadata,
+		processingEnv: ProcessingEnvironment
+) : KotlinCompatElement(element, processingEnv), TypeElement by element {
+
+	val correspondingInterface: KotlinInterfaceElement by lazy {
+		enclosingElement as KotlinInterfaceElement
+	}
 }

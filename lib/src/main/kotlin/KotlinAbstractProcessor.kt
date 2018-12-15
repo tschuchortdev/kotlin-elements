@@ -94,6 +94,7 @@ abstract class KotlinAbstractProcessor protected constructor() : AbstractProcess
 											   foldKotlin: (KotlinRelatedElement, R) -> R,
 											   foldJava: (Element, R) -> R): R {
 		return when(this) {
+			is KotlinCompatElement ->;
 			is KotlinModuleElement ->;
 			is KotlinPackageElement ->;
 			is KotlinAnnotationElement ->;
@@ -107,6 +108,8 @@ abstract class KotlinAbstractProcessor protected constructor() : AbstractProcess
 			is KotlinTypeParameterElement ->;
 			is KotlinTypeAliasElement ->;
 			is KotlinPropertyElement ->;
+			is KotlinEnumElement ->;
+			is KotlinEnumConstantElement ->;
 		}
 	}
 }
