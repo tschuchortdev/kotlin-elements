@@ -74,3 +74,5 @@ data class MutablePair<A, B>(var first: A, var second: B) {
 
 	fun toPair() = Pair(first, second)
 }
+
+internal fun <T> MutableCollection<T>.addAll(vararg args: T): Boolean = addAll(args.toList())

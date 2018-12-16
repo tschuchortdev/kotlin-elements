@@ -64,10 +64,12 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 	private fun log(msg: String) = processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, msg)
 
 	override fun getSupportedAnnotationTypes() = setOf(
-			ClassAnnotation::class.java.name, FunctionAnnotation::class.java.name, TypeAliasAnnotation::class.java.name,
-			LocalVarAnnotation::class.java.name, TypeAnnotation::class.java.name, ParameterAnnotation::class.java.name,
-			FieldAnnotation::class.java.name, PropertyAnnotation::class.java.name, SetterAnnotation::class.java.name,
-			GetterAnnotation::class.java.name, PackageAnnotation::class.java.name, TypeParameterAnnotation::class.java.name)
+			ClassAnnotation::class.java.canonicalName, FunctionAnnotation::class.java.canonicalName,
+			TypeAliasAnnotation::class.java.canonicalName, LocalVarAnnotation::class.java.canonicalName,
+			TypeAnnotation::class.java.canonicalName, ParameterAnnotation::class.java.canonicalName,
+			FieldAnnotation::class.java.canonicalName, PropertyAnnotation::class.java.canonicalName,
+			SetterAnnotation::class.java.canonicalName, GetterAnnotation::class.java.canonicalName,
+			PackageAnnotation::class.java.canonicalName, TypeParameterAnnotation::class.java.canonicalName)
 
 	override fun getSupportedOptions() = setOf(KAPT_KOTLIN_GENERATED_OPTION_NAME, GENERATE_KOTLIN_CODE_OPTION, GENERATE_ERRORS_OPTION)
 	override fun getSupportedSourceVersion() = SourceVersion.latestSupported()!!
