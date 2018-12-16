@@ -1,9 +1,15 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
+import me.eugeniomarletti.kotlin.metadata.jvm.getJvmConstructorSignature
+import me.eugeniomarletti.kotlin.metadata.jvm.getJvmMethodSignature
 import me.eugeniomarletti.kotlin.metadata.shadow.load.java.JvmAbi
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
+import kotlin.Exception
+import kotlin.RuntimeException
 
 /**
  * returns a [KotlinElement] if this [Element] has a 1:1 correspondence with
@@ -13,7 +19,7 @@ import javax.lang.model.element.*
  * completely unrelated to Kotlin
  */
 fun Element.asKotlin(processingEnv: ProcessingEnvironment): KotlinRelatedElement? {
-	fun TypeElement.toKotlin(): KotlinRelatedElement {
+	fun TypeElement.translateToKotlin(): KotlinRelatedElement {
 		val metadata = kotlinMetadata!!
 
 		return when(metadata) {
@@ -39,101 +45,114 @@ fun Element.asKotlin(processingEnv: ProcessingEnvironment): KotlinRelatedElement
 		}
 	}
 
-	return if(this is KotlinRelatedElement)
-		this
-	else if(!originatesFromKotlinCode())
+	return if(!originatesFromKotlinCode())
 		null
-	else when (kind) {
-		ElementKind.CLASS,
-		ElementKind.ENUM,
-		ElementKind.INTERFACE,
-		ElementKind.ANNOTATION_TYPE -> (this as TypeElement).toKotlin()
+	else try {
+		when (kind!!) {
+			ElementKind.CLASS,
+			ElementKind.ENUM,
+			ElementKind.INTERFACE,
+			ElementKind.ANNOTATION_TYPE -> (this as TypeElement).translateToKotlin()
 
-		ElementKind.CONSTRUCTOR -> {
-			val constructors = (enclosingElement.asKotlin(processingEnv) as EnclosesKotlinConstructors).constructors
+			ElementKind.CONSTRUCTOR -> {
+				val constructors = (enclosingElement.asKotlin(processingEnv) as EnclosesKotlinConstructors).constructors
 
-			constructors.atMostOne { it.javaElement == this }
-					as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
-			?: constructors.flatMap { it.javaOverloads }.atMostOne { it.javaElement == this }
-			?: throw IllegalStateException("Can not convert element $this to Kotlin: ElementKind is CONSTRUCTOR but" +
-											"does not belong to any Kotlin constructor of its enclosing element")
+				constructors.atMostOne { it.javaElement == this }
+						as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
+				?: constructors.flatMap { it.javaOverloads }.atMostOne { it.javaElement == this }
+				?: throw IllegalStateException("Can not convert this $this to Kotlin: ElementKind is CONSTRUCTOR but" +
+											   "does not belong to any Kotlin constructor of its enclosing this")
 
+			}
+
+			ElementKind.METHOD -> {
+				val enclosingElem = enclosingElement.asKotlin(processingEnv)
+				val functions = (enclosingElem as? EnclosesKotlinFunctions)?.functions
+				val properties = (enclosingElem as? EnclosesKotlinProperties)?.properties
+				val typeAliases = (enclosingElem as? EnclosesKotlinTypeAliases)?.typeAliases
+				val annotationParams = (enclosingElem as? KotlinAnnotationElement)?.parameters
+
+				/**
+				 * A JVM method this can be any of the following:
+				 * - a Kotlin function
+				 * - Java overload of a Kotlin function
+				 * - getter of a Kotlin property
+				 * - setter of a Kotlin property
+				 * - synthetic annotation holder of a Kotlin property
+				 * - synthetic annotation holder of a Kotlin type alias
+				 * - parameter of a Kotlin annotation class
+				 *
+				 * We need to try all in order to find the corresponding Kotlin element
+				 */
+
+				functions?.atMostOne { it.javaElement == this }
+						as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
+				?: functions?.flatMap { it.javaOverloads }?.atMostOne { it.javaElement == this }
+				?: properties?.mapNotNull { it.getter }?.atMostOne { it.javaElement == this }
+				?: properties?.mapNotNull { it.setter }?.atMostOne { it.javaElement == this }
+				?: properties?.atMostOne { it.javaAnnotationHolderElement == this }
+				?: typeAliases?.atMostOne { it.javaAnnotationHolderElement == this }
+				?: annotationParams?.atMostOne { it.javaElement == this }
+				?: throw IllegalStateException(
+						"Can not convert this $this to Kotlin: ElementKind is METHOD but does not belong to " +
+						"any Kotlin function, overload, getter, setter, property annotation holder, type alias annotation" +
+						"holder or annotation class parameter of its enclosing this")
+
+			}
+
+			ElementKind.INSTANCE_INIT,
+			ElementKind.STATIC_INIT -> throw AssertionError(
+					"Element originating from Kotlin code should never be of kind INSTANCE_INIT or STATIC_INIT"
+			)
+
+			ElementKind.TYPE_PARAMETER -> {
+				//TODO("handle type parameters of KotlinCompatElements")
+				val enclosingElem = enclosingElement.asKotlin(processingEnv)
+
+				if(enclosingElem is KotlinParameterizable)
+					enclosingElem.typeParameters.single { it.javaElement == this }
+				else
+					throw AssertionError("enclosing this of this $this with kind TYPE_PARAMETER originating " +
+										 "from Kotlin is not KotlinParameterizable")
+			}
+
+			ElementKind.PARAMETER -> {
+				//TODO("handle annotated receiver parameter")
+				//TODO("handle parameters of java overloads")
+				(enclosingElement.asKotlin(processingEnv) as KotlinExecutableElement)
+						.parameters.single { it.simpleName == simpleName }
+			}
+
+			ElementKind.FIELD -> {
+				val properties = (enclosingElement.asKotlin(processingEnv) as EnclosesKotlinProperties).properties
+
+				(properties.mapNotNull { it.backingField } + properties.mapNotNull { it.delegateField })
+						.single { it == this }
+			}
+
+			ElementKind.ENUM_CONSTANT -> TODO("handle enum constants")
+
+			ElementKind.RESOURCE_VARIABLE,
+			ElementKind.EXCEPTION_PARAMETER,
+			ElementKind.LOCAL_VARIABLE -> throw AssertionError(
+					"Element to be converted is local but this library was written under the assumption " +
+					"that it is impossible to get a local Element during annotation processing (which will probably " +
+					"change in the future)"
+			)
+
+			ElementKind.MODULE -> KotlinModuleElement(this as ModuleElement, processingEnv)
+
+			ElementKind.PACKAGE -> KotlinPackageElement(this as PackageElement, kotlinMetadata as KotlinPackageMetadata, processingEnv)
+
+			ElementKind.OTHER -> throw UnsupportedOperationException(
+					"Can not convert this \"$this\" of unknown kind \"$kind\" to Kotlin")
+
+			else -> throw UnsupportedOperationException(
+					"Can not convert this \"$this\" of unsupported kind \"$kind\" to Kotlin.\n" +
+					"Element kind was probably added to the Java language at a later date")
 		}
-
-		ElementKind.METHOD -> {
-			val enclosingElem = enclosingElement.asKotlin(processingEnv)
-			val functions = (enclosingElem as? EnclosesKotlinFunctions)?.functions
-			val properties = (enclosingElem as? EnclosesKotlinProperties)?.properties
-			val typeAliases = (enclosingElem as? EnclosesKotlinTypeAliases)?.typeAliases
-			val annotationParams = (enclosingElem as? KotlinAnnotationElement)?.parameters
-
-			functions?.atMostOne { it.javaElement == this }
-					as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
-			?: functions?.flatMap { it.javaOverloads }?.atMostOne { it.javaElement == this }
-			?: properties?.mapNotNull { it.getter }?.atMostOne { it.javaElement == this }
-			?: properties?.mapNotNull { it.setter }?.atMostOne { it.javaElement == this }
-			?: properties?.atMostOne { it.javaAnnotationHolderElement == this }
-			?: typeAliases?.atMostOne { it.javaAnnotationHolderElement == this }
-			?: annotationParams?.atMostOne { it.javaElement == this }
-			?: throw IllegalStateException(
-					"Can not convert element $this to Kotlin: ElementKind is METHOD but does not belong to " +
-					"any Kotlin function, overload, getter, setter, property annotation holder, type alias annotation" +
-					"holder or annotation class parameter of its enclosing element")
-
-		}
-
-		ElementKind.INSTANCE_INIT,
-		ElementKind.STATIC_INIT -> throw AssertionError(
-				"Element originating from Kotlin code should never be of kind INSTANCE_INIT or STATIC_INIT"
-		)
-
-		ElementKind.TYPE_PARAMETER -> {
-			//TODO("handle type parameters of KotlinCompatElements")
-			val enclosingElem = enclosingElement.asKotlin(processingEnv)
-
-			if(enclosingElem is KotlinParameterizable)
-				enclosingElem.typeParameters.single { it.javaElement == this }
-			else
-				throw AssertionError("enclosing element of element $this with kind TYPE_PARAMETER originating " +
-									 "from Kotlin is not KotlinParameterizable")
-		}
-
-		ElementKind.PARAMETER -> {
-			//TODO("handle annotated receiver parameter")
-			//TODO("handle parameters of java overloads")
-			(enclosingElement.asKotlin(processingEnv) as KotlinExecutableElement)
-					.parameters.single { it.simpleName == simpleName }
-		}
-
-		ElementKind.FIELD -> {
-			val properties = (enclosingElement.asKotlin(processingEnv) as EnclosesKotlinProperties).properties
-
-			(properties.mapNotNull { it.backingField } + properties.mapNotNull { it.delegateField })
-					.single { it == this }
-		}
-
-		ElementKind.ENUM_CONSTANT -> TODO("handle enum constants")
-
-		ElementKind.RESOURCE_VARIABLE,
-		ElementKind.EXCEPTION_PARAMETER,
-		ElementKind.LOCAL_VARIABLE -> throw AssertionError(
-				"Element to be converted is local but this library was written under the assumption " +
-				"that it is impossible to get a local Element during annotation processing (which will probably " +
-				"change in the future)"
-		)
-
-		ElementKind.MODULE -> KotlinModuleElement(this as ModuleElement, processingEnv)
-
-		ElementKind.PACKAGE -> KotlinPackageElement(this as PackageElement, kotlinMetadata as KotlinPackageMetadata, processingEnv)
-
-		ElementKind.OTHER -> throw UnsupportedOperationException(
-				"Can not convert element \"$this\" of unknown kind \"$kind\" to Kotlin")
-
-		null -> throw NullPointerException("Can not convert element to Kotlin: Kind of element \"$this\" was null")
-
-		else -> throw UnsupportedOperationException(
-				"Can not convert element \"$this\" of unsupported kind \"$kind\" to Kotlin.\n" +
-				"Element kind was probably added to the Java language at a later date")
+	} catch(e: Exception) {
+		throw KotlinElementTranslationException(this, e)
 	}
 }
 

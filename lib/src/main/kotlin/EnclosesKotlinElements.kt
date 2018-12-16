@@ -108,17 +108,22 @@ internal class EnclosedElementsDelegate(
 
 	val typeAliases: Set<KotlinTypeAliasElement> by lazy {
 		protoTypeAliases.asSequence().map { protoTypeAlias ->
-			check(protoTypeAlias.hasName())
+			try {
+				check(protoTypeAlias.hasName())
 
-			val typeAliasName = protoNameResolver.getString(protoTypeAlias.name)
+				val typeAliasName = protoNameResolver.getString(protoTypeAlias.name)
 
-			val annotHolderElem = if(protoTypeAlias.hasAnnotations) {
-				javaMethodElems.single { typeAliasName == it.simpleName.toString() + ANNOTATIONS_SUFFIX }
+				val annotHolderElem = if (protoTypeAlias.hasAnnotations) {
+					javaMethodElems.single { typeAliasName == it.simpleName.toString() + ANNOTATIONS_SUFFIX }
+				}
+				else
+					null
+
+				KotlinTypeAliasElement(annotHolderElem, protoTypeAlias, protoTypeTable, protoNameResolver, enclosingKtElement, processingEnv)
 			}
-			else
-				null
-
-			KotlinTypeAliasElement(annotHolderElem, protoTypeAlias, protoTypeTable, protoNameResolver, enclosingKtElement, processingEnv)
+			catch (e : Exception) {
+				throw KotlinElementTranslationException(protoTypeAlias, protoNameResolver, e)
+			}
 		}.toSet()
 	}
 
@@ -142,67 +147,72 @@ internal class EnclosedElementsDelegate(
 
 	val properties: Set<KotlinPropertyElement> by lazy {
 		protoProps.asSequence().map { protoProperty ->
-			val propertyJvmProtoSignature = protoProperty.jvmPropertySignature!!
-			val propertyName = protoNameResolver.getString(protoProperty.name)
+			try {
+				val propertyJvmProtoSignature = protoProperty.jvmPropertySignature!!
+				val propertyName = protoNameResolver.getString(protoProperty.name)
 
-			val setterElem = if(propertyJvmProtoSignature.hasSetter()) {
-				val setterJvmSignature = propertyJvmProtoSignature.setter.jvmSignatureString(protoNameResolver)
-										 ?: throw IllegalStateException("Property setter should always have jvm name if it exists")
+				val setterElem = if (propertyJvmProtoSignature.hasSetter()) {
+					val setterJvmSignature = propertyJvmProtoSignature.setter.jvmSignatureString(protoNameResolver)
+											 ?: throw IllegalStateException("Property setter should always have jvm name if it exists")
 
-				javaMethodElems.atMostOne { it.jvmSignature() == setterJvmSignature }
-			}
-			else {
-				null
-			}
+					javaMethodElems.atMostOne { it.jvmSignature() == setterJvmSignature }
+				}
+				else {
+					null
+				}
 
-			//TODO("handle the trick where people use a getter with DeprecationLevel.HIDDEN to create properties with inaccessible getter")
-			val getterElem = if(propertyJvmProtoSignature.hasGetter()) {
-				val getterJvmSignature = propertyJvmProtoSignature.getter.jvmSignatureString(protoNameResolver)
-										 ?: throw IllegalStateException("Property getter should always have jvm name if it exists")
+				//TODO("handle the trick where people use a getter with DeprecationLevel.HIDDEN to create properties with inaccessible getter")
+				val getterElem = if (propertyJvmProtoSignature.hasGetter()) {
+					val getterJvmSignature = propertyJvmProtoSignature.getter.jvmSignatureString(protoNameResolver)
+											 ?: throw IllegalStateException("Property getter should always have jvm name if it exists")
 
-				javaMethodElems.single { it.jvmSignature() == getterJvmSignature }
-			}
-			else {
-				null
-			}
+					javaMethodElems.single { it.jvmSignature() == getterJvmSignature }
+				}
+				else {
+					null
+				}
 
-			val fieldElem = if(propertyJvmProtoSignature.hasField()) {
-				if(propertyJvmProtoSignature.field.hasName())
-					throw IllegalStateException("Afaik the field should never have a name in JvmProtoBuf.JvmFieldSignature" +
-												"because it must always be the same as the property name")
+				val fieldElem = if (propertyJvmProtoSignature.hasField()) {
+					if (propertyJvmProtoSignature.field.hasName())
+						throw IllegalStateException("Afaik the field should never have a name in JvmProtoBuf.JvmFieldSignature" +
+													"because it must always be the same as the property name")
 
-				javaFieldElems.single { it.simpleName.toString() == propertyName }
-			}
-			else {
-				null
-			}
+					javaFieldElems.single { it.simpleName.toString() == propertyName }
+				}
+				else {
+					null
+				}
 
-			/* If the Kotlin property has annotations with target [AnnotationTarget.PROPERTY]
+				/* If the Kotlin property has annotations with target [AnnotationTarget.PROPERTY]
 		 	the Kotlin compiler will generate an empty parameterless void-returning
 		 	synthetic method named "propertyName$annotations" to hold the annotations that
 		 	are targeted at the property and not backing field, getter or setter */
-			val syntheticAnnotationHolderElem = if(propertyJvmProtoSignature.hasSyntheticMethod()) {
-				val synthJvmSignature = propertyJvmProtoSignature.syntheticMethod.jvmSignatureString(protoNameResolver)
-										?: throw IllegalStateException("Property synthetic annotation holder method " +
-																	   "should always have jvm name if it exists")
+				val syntheticAnnotationHolderElem = if (propertyJvmProtoSignature.hasSyntheticMethod()) {
+					val synthJvmSignature = propertyJvmProtoSignature.syntheticMethod.jvmSignatureString(protoNameResolver)
+											?: throw IllegalStateException("Property synthetic annotation holder method " +
+																		   "should always have jvm name if it exists")
 
-				javaMethodElems.single { it.jvmSignature() == synthJvmSignature }
-			}
-			else {
-				null
-			}
+					javaMethodElems.single { it.jvmSignature() == synthJvmSignature }
+				}
+				else {
+					null
+				}
 
-			val delegateFieldElem = if(protoProperty.isDelegated) {
-				javaFieldElems.single { propertyName == it.simpleName.toString() + JvmAbi.DELEGATED_PROPERTY_NAME_SUFFIX }
-			}
-			else {
-				null
-			}
+				val delegateFieldElem = if (protoProperty.isDelegated) {
+					javaFieldElems.single { propertyName == it.simpleName.toString() + JvmAbi.DELEGATED_PROPERTY_NAME_SUFFIX }
+				}
+				else {
+					null
+				}
 
-			assert(arrayListOf(fieldElem, setterElem, getterElem).filterNotNull().isNotEmpty())
+				assert(arrayListOf(fieldElem, setterElem, getterElem).filterNotNull().isNotEmpty())
 
-			KotlinPropertyElement(fieldElem, setterElem, getterElem, syntheticAnnotationHolderElem,
-					delegateFieldElem, protoProperty, protoNameResolver, processingEnv)
+				KotlinPropertyElement(fieldElem, setterElem, getterElem, syntheticAnnotationHolderElem,
+						delegateFieldElem, protoProperty, protoNameResolver, processingEnv)
+			}
+			catch (e : Exception) {
+				throw KotlinElementTranslationException(protoProperty, protoNameResolver, protoTypeTable, e)
+			}
 		}.toSet()
 	}
 
@@ -213,13 +223,18 @@ internal class EnclosedElementsDelegate(
 	 */
 	val constructors: Set<KotlinConstructorElement> by lazy {
 		protoCtors.asSequence().map { protoCtor ->
-			val (element, overloadElements) = findCorrespondingExecutableElements(
-					protoCtor.jvmSignature(enclosingKtElement is KotlinEnumElement),
-					protoCtor.valueParameterList, javaCtorElems
-			)
+			try {
+				val (element, overloadElements) = findCorrespondingExecutableElements(
+						protoCtor.jvmSignature(enclosingKtElement is KotlinEnumElement),
+						protoCtor.valueParameterList, javaCtorElems
+				)
 
-			KotlinConstructorElement(element, overloadElements, enclosingKtElement as KotlinTypeElement,
-					protoCtor, protoNameResolver, processingEnv)
+				KotlinConstructorElement(element, overloadElements, enclosingKtElement as KotlinTypeElement,
+						protoCtor, protoNameResolver, processingEnv)
+			}
+			catch (e : Exception) {
+				throw KotlinElementTranslationException(protoCtor, protoNameResolver, protoTypeTable, e)
+			}
 		}
 				.sortedBy { !it.isPrimary }.toList() // sort list by inverse of isPrimary so that the primary ctor will come first
 				.also {
@@ -238,10 +253,14 @@ internal class EnclosedElementsDelegate(
 	 */
 	val functions: Set<KotlinFunctionElement> by lazy {
 		protoFunctions.asSequence().map { protoFunc ->
-			val (javaFunc, javaOverloads) = findCorrespondingExecutableElements(
-					protoFunc.jvmSignature(), protoFunc.valueParameterList, javaMethodElems)
+			try {
+				val (javaFunc, javaOverloads) = findCorrespondingExecutableElements(
+						protoFunc.jvmSignature(), protoFunc.valueParameterList, javaMethodElems)
 
-			KotlinFunctionElement(javaFunc, javaOverloads, enclosingKtElement, protoFunc, protoNameResolver, processingEnv)
+				KotlinFunctionElement(javaFunc, javaOverloads, enclosingKtElement, protoFunc, protoNameResolver, processingEnv)
+			} catch (e : Exception) {
+				throw KotlinElementTranslationException(protoFunc, protoNameResolver, protoTypeTable, e)
+			}
 		}.toSet()
 	}
 
