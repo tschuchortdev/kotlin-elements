@@ -90,6 +90,7 @@ tags
 # Gradle:
 .idea/**/gradle.xml
 .idea/**/libraries
+.gradle/
 
 # CMake
 cmake-build-debug/
@@ -105,6 +106,9 @@ cmake-build-release/
 
 # IntelliJ
 out/
+
+*.iml
+.idea/modules.xml
 
 # mpeltonen/sbt-idea plugin
 .idea_modules/
