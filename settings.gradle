@@ -3,4 +3,4 @@ include 'lib'
 findProject(':lib')?.name = 'kotlinelements'
 include 'test-annot-processor'
 include 'annotation-test'
-
+include 'compile-testing'
