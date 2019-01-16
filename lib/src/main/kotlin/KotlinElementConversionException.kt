@@ -11,7 +11,7 @@ import javax.lang.model.element.Element
  * to its corresponding [KotlinRelatedElement] or when the corresponding JVM-[Element] to
  * a ProtoBuf element extracted from a metadata annotation could not be found
  */
-class KotlinElementTranslationException private constructor(
+class KotlinElementConversionException private constructor(
 		processedElement: ProcessedElement, cause: Exception
 ) : RuntimeException("Could not translate element to corresponding Kotlin element: $processedElement", cause) {
 

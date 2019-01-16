@@ -27,7 +27,7 @@ class KotlinPropertyElement internal constructor(
 		private val protoProperty: ProtoBuf.Property,
 		protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), HasKotlinVisibility, HasKotlinModality {
+) : KotlinElement(), HasKotlinVisibility, HasKotlinModality {
 
 	init {
 		val presentJavaElems = arrayListOf(field, getter, setter).filterNotNull()
@@ -191,7 +191,7 @@ class KotlinPropertyElement internal constructor(
 
 	/** A [BackingField] is hidden field generated for a Kotlin property */
 	inner class BackingField(override val javaElement: VariableElement)
-		: KotlinCompatElement(javaElement, processingEnv) {
+		: KotlinCompatElement(javaElement) {
 
 		/** A backing field is enclosed by its property */
 		override val enclosingElement: KotlinPropertyElement = this@KotlinPropertyElement
@@ -204,7 +204,7 @@ class KotlinPropertyElement internal constructor(
 	 * to the delegate instance
 	 */
 	inner class DelegateField(override val javaElement: VariableElement)
-		: KotlinCompatElement(javaElement, processingEnv) {
+		: KotlinCompatElement(javaElement) {
 
 		/** A [DelegateField] is enclosed by its property */
 		override val enclosingElement: KotlinPropertyElement = this@KotlinPropertyElement
@@ -214,7 +214,7 @@ class KotlinPropertyElement internal constructor(
 
 	/** The accessor (getter or setter) of a property */
 	abstract inner class Accessor(open val javaElement: ExecutableElement)
-		: KotlinElement(processingEnv), HasKotlinVisibility, HasKotlinModality, AnnotatedConstruct by javaElement {
+		: KotlinElement(), HasKotlinVisibility, HasKotlinModality, AnnotatedConstruct by javaElement {
 
 		/** Whether this accessor is the default implementation and not a custom getter/setter written by programmer */
 		abstract val isDefaultImplementation: Boolean
@@ -260,7 +260,7 @@ class KotlinPropertyElement internal constructor(
 		val parameter: Parameter = Parameter(javaElement.parameters.first())
 
 		/** The parameter element of a Kotlin setter */
-		inner class Parameter(javaElement: VariableElement) : KotlinCompatElement(javaElement, processingEnv) {
+		inner class Parameter(javaElement: VariableElement) : KotlinCompatElement(javaElement) {
 			/** A setter parameter element is enclosed by the setter element */
 			override val enclosingElement = this@Setter
 		}

@@ -21,7 +21,7 @@ abstract class KotlinAbstractProcessor protected constructor() : AbstractProcess
 	}
 
 	/** The directory where generated files should be placed */
-	protected val kaptKotlinGeneratedDir: String by lazy { processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]!! }
+	protected val kaptKotlinGeneratedDir: String? by lazy { processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME] }
 
 	/** Whether or not to generate errors */
 	protected val generateErrors: Boolean by lazy { processingEnv.options[GENERATE_ERRORS_OPTION] == "true" }
@@ -50,25 +50,25 @@ abstract class KotlinAbstractProcessor protected constructor() : AbstractProcess
 		)
 	}
 
-	protected fun RoundEnvironment.getJavaElementsAnnotatedWith(annotation: Class<out Annotation>): Set<Element>
-			= getJavaElementsAnnotatedWithAny(setOf(annotation))
+	protected fun RoundEnvironment.getJavaElementsAnnotatedWith(annotation: Class<out Annotation>)
+			: Set<Element> = getJavaElementsAnnotatedWithAny(setOf(annotation))
 
-	protected fun RoundEnvironment.getJavaElementsAnnotatedWithAny(annotations: Set<Class<out Annotation>>): Set<Element> {
-		return getElementsAnnotatedWithAny(annotations).asSequence().filter { !it.originatesFromKotlinCode() }.toSet()
-	}
+	protected fun RoundEnvironment.getJavaElementsAnnotatedWithAny(annotations: Set<Class<out Annotation>>)
+			: Set<Element>
+			= getElementsAnnotatedWithAny(annotations).asSequence()
+		.filter { !it.originatesFromKotlinCode() }.toSet()
 
-	/*protected fun RoundEnvironment.getKotlinRelatedElementsAnnotatedWith(annotation: Class<out Annotation>): Set<KotlinRelatedElement>
+
+	protected fun RoundEnvironment.getKotlinRelatedElementsAnnotatedWith(annotation: Class<out Annotation>)
+			: Set<KotlinRelatedElement>
 			= getKotlinRelatedElementsAnnotatedWithAny(setOf(annotation))
 
-	protected fun RoundEnvironment.getKotlinRelatedElementsAnnotatedWithAny(annotations: Set<Class<out Annotation>>): Set<KotlinRelatedElement> {
-		val annotationsElements = annotations.map { javaElementUtils.getTypeElement(it.canonicalName) }
+	protected fun RoundEnvironment.getKotlinRelatedElementsAnnotatedWithAny(annotations: Set<Class<out Annotation>>)
+			: Set<KotlinRelatedElement>
+			= getElementsAnnotatedWithAny(annotations).mapNotNull { it.asKotlin(processingEnv) }.toSet()
 
-		return rootElements.mapNotNull { it.asKotlin(processingEnv) }
-				.flatMap { rootElem: KotlinRelatedElement ->
-					rootElem
-				}
-				.toSet()
-	}
+	/*
+
 
 	/**
 	 * Returns iterables of all the Kotlin and Java elements that are defined within this

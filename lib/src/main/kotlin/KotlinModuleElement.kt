@@ -14,7 +14,7 @@ import javax.lang.model.type.TypeMirror
 class KotlinModuleElement internal constructor(
 		val javaElement: ModuleElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), EnclosesKotlinPackages, KotlinQualifiedNameable,
+) : KotlinElement(), EnclosesKotlinPackages, KotlinQualifiedNameable,
 	AnnotatedConstruct by javaElement {
 
 	override val enclosingElement: Nothing? = null

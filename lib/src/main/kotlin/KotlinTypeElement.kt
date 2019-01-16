@@ -18,7 +18,7 @@ abstract class KotlinTypeElement internal constructor(
 		val javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), KotlinParameterizable, KotlinQualifiedNameable,
+) : KotlinElement(), KotlinParameterizable, KotlinQualifiedNameable,
 	HasKotlinVisibility, HasKotlinModality, AnnotatedConstruct by javaElement {
 
 	protected val protoClass: ProtoBuf.Class = metadata.data.classProto
@@ -106,6 +106,6 @@ abstract class KotlinTypeElement internal constructor(
 	private val parameterizableDelegate by lazy {
 		// lazy to avoid leaking this in ctor
 		KotlinParameterizableDelegate(this, protoClass.typeParameterList,
-				javaElement.typeParameters, protoNameResolver, processingEnv)
+				javaElement.typeParameters, protoNameResolver)
 	}
 }

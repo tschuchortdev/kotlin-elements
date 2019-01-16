@@ -23,10 +23,10 @@ class KotlinTypeAliasElement internal constructor(
 		val javaAnnotationHolderElement: ExecutableElement?,
 		protoTypeAlias: ProtoBuf.TypeAlias,
 		private val protoTypeTable: ProtoBuf.TypeTable,
-		private val protoNameResolver: NameResolver,
+		protoNameResolver: NameResolver,
 		override val enclosingElement: KotlinElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), HasKotlinVisibility, KotlinParameterizable {
+) : KotlinElement(), HasKotlinVisibility, KotlinParameterizable {
 
 	init {
 		assert(protoTypeAlias.hasAnnotations == (javaAnnotationHolderElement != null))

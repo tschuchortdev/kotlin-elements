@@ -160,7 +160,6 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			   else "") +
 			   (if (this is KotlinExecutableElement) {
 				   """
-					    jvmSignature: $jvmSignature
 					    isVarArgs: $isVarArgs
 					    receiverType: $receiverType
 					    returnType: $returnType
@@ -224,7 +223,6 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   isOperator: $isOperator
 					   isSuspend: $isSuspend
 					   isTailRec: $isTailRec
-					   kName: $kName
 				   """.trimIndent()
 
 				   is KotlinConstructorElement -> """
@@ -269,7 +267,6 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			kind: $kind
 			modifiers: $modifiers
 			origin: ${processingEnv.elementUtils.getOrigin(this)}
-			originatesFromKotlin: ${originatesFromKotlinCode()}
 			asType: ${asType()}
 			annotations: $annotationMirrors
 			""".trimIndent() + "\n" +

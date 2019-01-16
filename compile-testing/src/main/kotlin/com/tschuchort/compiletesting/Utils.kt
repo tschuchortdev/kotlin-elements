@@ -5,21 +5,21 @@ import javax.lang.model.SourceVersion
 
 internal fun <E> MutableCollection<E>.addAll(vararg elems: E) = addAll(elems)
 
-internal fun getJavaHome(): File {
+fun getJavaHome(): File {
     val path = System.getProperty("java.home")
         ?: throw IllegalStateException("no java home found")
 
     return File(path).also { check(it.isDirectory) }
 }
 
-internal fun getJdkHome()
+fun getJdkHome(): File
     = if(isJdk9OrLater())
         getJavaHome()
     else
         getJavaHome().parentFile
 
 /** Checks if the JDK of the host process is version 9 or later */
-internal fun isJdk9OrLater(): Boolean
+fun isJdk9OrLater(): Boolean
         = SourceVersion.latestSupported().compareTo(SourceVersion.RELEASE_8) > 0
 
 internal fun File.listFilesRecursively(): List<File> {

@@ -28,7 +28,7 @@ internal object NullStream : OutputStream() {
 
 /** A combined stream that writes to all the output streams in [streams]. */
 @Suppress("MemberVisibilityCanBePrivate")
-internal class TeeOutputStream(val streams: Collection<OutputStream>) : OutputStream() {
+class TeeOutputStream(val streams: Collection<OutputStream>) : OutputStream() {
 
     constructor(vararg streams: OutputStream) : this(streams.toList())
 

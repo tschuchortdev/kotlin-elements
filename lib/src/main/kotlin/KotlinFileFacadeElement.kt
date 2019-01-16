@@ -7,8 +7,8 @@ import javax.lang.model.element.TypeElement
 class KotlinFileFacadeElement private constructor(
 		override val javaElement: TypeElement,
 		private val packageData: PackageData?,
-		processingEnv: ProcessingEnvironment
-) : KotlinCompatElement(javaElement, processingEnv), EnclosesKotlinElements,
+		val processingEnv: ProcessingEnvironment
+) : KotlinCompatElement(javaElement), EnclosesKotlinElements,
 	EnclosesKotlinProperties, EnclosesKotlinFunctions, EnclosesKotlinTypes {
 
 	internal constructor(javaElement: TypeElement, metadata: KotlinFileMetadata,
@@ -22,7 +22,7 @@ class KotlinFileFacadeElement private constructor(
 	val isMultiFileClassFacade: Boolean = (packageData == null)
 
 	override val enclosingElement: KotlinPackageElement
-		get() = super.enclosingElement as KotlinPackageElement
+		get() = javaElement.enclosingElement.asKotlin(processingEnv) as KotlinPackageElement
 
 	override val enclosedKotlinElements: Set<KotlinElement>
 		get() = enclosedElementsDelegate?.kotlinElements ?: emptySet()
@@ -59,5 +59,8 @@ class KotlinFileFacadeElement private constructor(
 class KotlinMultiFileClassPartElement(
 	    override val javaElement: TypeElement,
 		metadata: KotlinMultiFileClassPartMetadata,
-		processingEnv: ProcessingEnvironment
-) : KotlinCompatElement(javaElement, processingEnv)
+		val processingEnv: ProcessingEnvironment
+) : KotlinCompatElement(javaElement) {
+	override val enclosingElement: KotlinRelatedElement
+		get() = javaElement.enclosingElement.asKotlin(processingEnv)!!
+}

@@ -19,9 +19,8 @@ abstract class KotlinExecutableElement internal constructor(
 		 */
 		val javaElement: ExecutableElement,
 		javaOverloadElements: List<ExecutableElement>,
-		override val enclosingElement: KotlinElement,
-		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), AnnotatedConstruct by javaElement {
+		override val enclosingElement: KotlinElement
+) : KotlinElement(), AnnotatedConstruct by javaElement {
 
 	init {
 		if(javaOverloadElements.isNotEmpty())
@@ -54,13 +53,6 @@ abstract class KotlinExecutableElement internal constructor(
 	val javaOverloads: List<JavaOverload> = javaOverloadElements.map(::JavaOverload)
 
 	/**
-	 * Returns the JVM signature in the form "$Name$MethodDescriptor", for example: `equals(Ljava/lang/Object;)Z`.
-	 *
-	 * For reference, see the [JVM specification, section 4.3](http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3).
-	 */
-	val jvmSignature: String = javaElement.getJvmMethodSignature(processingEnv)
-
-	/**
 	 * Returns {@code true} if this method or constructor accepts a variable
 	 * number of arguments and returns {@code false} otherwise.
 	 *
@@ -91,7 +83,7 @@ abstract class KotlinExecutableElement internal constructor(
 	abstract override fun toString(): String
 
 	inner class JavaOverload(override val javaElement: ExecutableElement)
-		: KotlinCompatElement(javaElement, processingEnv) {
+		: KotlinCompatElement(javaElement) {
 
 		override val enclosingElement: KotlinElement = this@KotlinExecutableElement.enclosingElement
 

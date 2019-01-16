@@ -18,7 +18,7 @@ class KotlinAnnotationElement internal constructor(
 	val parameters: List<KotlinAnnotationParameterElement> by lazy {
 		javaElement.enclosedElements.map {
 			check(it.kind == ElementKind.METHOD)
-			KotlinAnnotationParameterElement(it as ExecutableElement, this, processingEnv)
+			KotlinAnnotationParameterElement(it as ExecutableElement, this)
 		}
 	}
 }
@@ -36,9 +36,8 @@ class KotlinAnnotationParameterElement internal constructor(
 		/**
 		 * An annotation parameter is enclosed by its annotation class
 		 */
-		override val enclosingElement: KotlinAnnotationElement,
-		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), AnnotatedConstruct by javaElement {
+		override val enclosingElement: KotlinAnnotationElement
+) : KotlinElement(), AnnotatedConstruct by javaElement {
 
 	/**
 	 * The default value of this annotation parameter or
@@ -50,7 +49,7 @@ class KotlinAnnotationParameterElement internal constructor(
 
 	override fun asType(): TypeMirror = javaElement.asType()
 
-	override fun equals(other: Any?): Boolean = javaElement.equals(other)
+	override fun equals(other: Any?): Boolean = (javaElement == other)
 	override fun hashCode(): Int = javaElement.hashCode()
 	override fun toString(): String = javaElement.toString() //TODO("annotation parameter toString")
 }

@@ -41,9 +41,13 @@ class KotlinInterfaceDefaultImplElement(
 		override val javaElement: TypeElement,
 		metadata: KotlinSyntheticClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinCompatElement(javaElement, processingEnv) {
+) : KotlinCompatElement(javaElement) {
 
 	val correspondingInterface: KotlinInterfaceElement by lazy {
 		enclosingElement as KotlinInterfaceElement
+	}
+
+	override val enclosingElement: KotlinRelatedElement by lazy {
+		javaElement.enclosingElement.asKotlin(processingEnv)!!
 	}
 }

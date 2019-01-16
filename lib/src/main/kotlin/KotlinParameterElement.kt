@@ -18,9 +18,8 @@ import javax.lang.model.type.TypeMirror
 class KotlinParameterElement internal constructor(
 		val javaElement: VariableElement,
 		private val protoParam: ProtoBuf.ValueParameter,
-		override val enclosingElement: KotlinExecutableElement,
-		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), AnnotatedConstruct by javaElement {
+		override val enclosingElement: KotlinExecutableElement
+) : KotlinElement(), AnnotatedConstruct by javaElement {
 
 	/**
 	 * Whether this parameter has a default value

@@ -122,7 +122,7 @@ internal class EnclosedElementsDelegate(
 				KotlinTypeAliasElement(annotHolderElem, protoTypeAlias, protoTypeTable, protoNameResolver, enclosingKtElement, processingEnv)
 			}
 			catch (e : Exception) {
-				throw KotlinElementTranslationException(protoTypeAlias, protoNameResolver, e)
+				throw KotlinElementConversionException(protoTypeAlias, protoNameResolver, e)
 			}
 		}.toSet()
 	}
@@ -211,7 +211,7 @@ internal class EnclosedElementsDelegate(
 						delegateFieldElem, protoProperty, protoNameResolver, processingEnv)
 			}
 			catch (e : Exception) {
-				throw KotlinElementTranslationException(protoProperty, protoNameResolver, protoTypeTable, e)
+				throw KotlinElementConversionException(protoProperty, protoNameResolver, protoTypeTable, e)
 			}
 		}.toSet()
 	}
@@ -233,7 +233,7 @@ internal class EnclosedElementsDelegate(
 						protoCtor, protoNameResolver, processingEnv)
 			}
 			catch (e : Exception) {
-				throw KotlinElementTranslationException(protoCtor, protoNameResolver, protoTypeTable, e)
+				throw KotlinElementConversionException(protoCtor, protoNameResolver, protoTypeTable, e)
 			}
 		}
 				.sortedBy { !it.isPrimary }.toList() // sort list by inverse of isPrimary so that the primary ctor will come first
@@ -257,9 +257,10 @@ internal class EnclosedElementsDelegate(
 				val (javaFunc, javaOverloads) = findCorrespondingExecutableElements(
 						protoFunc.jvmSignature(), protoFunc.valueParameterList, javaMethodElems)
 
-				KotlinFunctionElement(javaFunc, javaOverloads, enclosingKtElement, protoFunc, protoNameResolver, processingEnv)
+				KotlinFunctionElement(javaFunc, javaOverloads, enclosingKtElement, protoFunc,
+					protoNameResolver, processingEnv.elementUtils)
 			} catch (e : Exception) {
-				throw KotlinElementTranslationException(protoFunc, protoNameResolver, protoTypeTable, e)
+				throw KotlinElementConversionException(protoFunc, protoNameResolver, protoTypeTable, e)
 			}
 		}.toSet()
 	}

@@ -36,9 +36,8 @@ class KotlinEnumElement internal constructor(
  * A Kotlin enum constant within an enum class declaration
  */
 class KotlinEnumConstantElement internal constructor(
-		val javaElement: TypeElement,
-		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), AnnotatedConstruct by javaElement {
+		val javaElement: TypeElement
+) : KotlinElement(), AnnotatedConstruct by javaElement {
 	override val enclosingElement: KotlinEnumElement
 		get() = TODO("implement enum constant enclosing element")
 

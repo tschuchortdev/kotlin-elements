@@ -2,7 +2,6 @@ dependencies {
     testImplementation 'com.squareup:kotlinpoet:1.0.0-RC1'
     testImplementation 'com.squareup:javapoet:1.11.1'
 
-    implementation "com.squareup.okio:okio:2.1.0"
     implementation 'io.github.classgraph:classgraph:4.6.10'
 
     // the Kotlin compiler should be near the end of the list because its .jar file includes

@@ -21,7 +21,7 @@ class KotlinConstructorElement internal constructor(
 		private val protoConstructor: ProtoBuf.Constructor,
 		private val protoNameResolver: NameResolver,
 		processingEnv: ProcessingEnvironment
-) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement, processingEnv), HasKotlinVisibility {
+) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement), HasKotlinVisibility {
 
 	/** Whether this constructor is the primary constructor of its class */
 	val isPrimary: Boolean
@@ -34,7 +34,7 @@ class KotlinConstructorElement internal constructor(
 	override val parameters: List<KotlinParameterElement> by lazy{
 		protoConstructor.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->
 			if (doParametersMatch(javaParam, protoParam, protoNameResolver))
-				KotlinParameterElement(javaParam, protoParam, this, processingEnv)
+				KotlinParameterElement(javaParam, protoParam, this)
 			else
 				throw AssertionError("Kotlin ProtoBuf.Parameters should always " +
 									 "match up with Java VariableElements")

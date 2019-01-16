@@ -13,9 +13,8 @@ import javax.lang.model.type.TypeMirror
 class KotlinTypeParameterElement internal constructor(
 		val javaElement: TypeParameterElement,
 		protoTypeParam: ProtoBuf.TypeParameter,
-		override val enclosingElement: KotlinElement,
-		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), AnnotatedConstruct by javaElement {
+		override val enclosingElement: KotlinElement
+) : KotlinElement(), AnnotatedConstruct by javaElement {
 
 	//TODO("test type parameter annotations")
 

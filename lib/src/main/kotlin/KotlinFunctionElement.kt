@@ -5,6 +5,7 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
+import javax.lang.model.util.Elements
 
 class KotlinFunctionElement internal constructor(
 		javaElement: ExecutableElement,
@@ -12,8 +13,8 @@ class KotlinFunctionElement internal constructor(
 		enclosingElement: KotlinElement,
 		private val protoFunction: ProtoBuf.Function,
 		private val protoNameResolver: NameResolver,
-		processingEnv: ProcessingEnvironment
-) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement, processingEnv),
+		elemUtils: Elements
+) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement),
 	KotlinParameterizable, HasKotlinModality, HasKotlinVisibility {
 
 	val isInline: Boolean = protoFunction.isInline
@@ -22,8 +23,6 @@ class KotlinFunctionElement internal constructor(
 	val isSuspend: Boolean = protoFunction.isSuspend
 	val isOperator: Boolean = protoFunction.isOperator
 
-	//TODO("remove kName debug property")
-	val kName = protoNameResolver.getString(protoFunction.name)
 	//TODO("is free function")
 	//TODO("is extension function")
 
@@ -55,7 +54,7 @@ class KotlinFunctionElement internal constructor(
 	override val parameters: List<KotlinParameterElement> by lazy {
 		protoFunction.valueParameterList.zipWith(javaElement.parameters) { protoParam, javaParam ->
 			if (doParametersMatch(javaParam, protoParam, protoNameResolver))
-				KotlinParameterElement(javaParam, protoParam, this, processingEnv)
+				KotlinParameterElement(javaParam, protoParam, this)
 			else
 				throw AssertionError("Kotlin ProtoBuf.Parameters should always " +
 									 "match up with Java VariableElements")
@@ -67,7 +66,7 @@ class KotlinFunctionElement internal constructor(
 
 	override val simpleName: Name
 			// if JvmName is used, the name of the Kotlin function may be different than the jvm name
-			get() = processingEnv.elementUtils.getName(protoNameResolver.getString(protoFunction.name))
+			= elemUtils.getName(protoNameResolver.getString(protoFunction.name))
 
 	override fun toString(): String {
 		// if JvmName is used, the name of the Kotlin function may be different than the jvm name
@@ -79,6 +78,6 @@ class KotlinFunctionElement internal constructor(
 	private val parameterizableDelegate by lazy {
 		// lazy to avoid leaking this in ctor
 		KotlinParameterizableDelegate(this, protoFunction.typeParameterList,
-				javaElement.typeParameters, protoNameResolver, processingEnv)
+				javaElement.typeParameters, protoNameResolver)
 	}
 }

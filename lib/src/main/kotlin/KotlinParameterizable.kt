@@ -20,14 +20,13 @@ internal class KotlinParameterizableDelegate(
 		private val enclosingKtElement: KotlinElement,
 		private val protoTypeParams: List<ProtoBuf.TypeParameter>,
 		private val javaTypeParams: List<TypeParameterElement>,
-		private val protoNameResolver: NameResolver,
-		processingEnv: ProcessingEnvironment
+		private val protoNameResolver: NameResolver
 ) : KotlinParameterizable {
 
 	override val typeParameters: List<KotlinTypeParameterElement> by lazy {
 		protoTypeParams.zipWith(javaTypeParams) { protoTypeParam, javaTypeParam ->
 			if (doTypeParamsMatch(javaTypeParam, protoTypeParam))
-				KotlinTypeParameterElement(javaTypeParam, protoTypeParam, enclosingKtElement, processingEnv)
+				KotlinTypeParameterElement(javaTypeParam, protoTypeParam, enclosingKtElement)
 			else
 				throw AssertionError("Kotlin ProtoBuf.TypeParameters should always " +
 									 "match up with Java TypeParameterElements")

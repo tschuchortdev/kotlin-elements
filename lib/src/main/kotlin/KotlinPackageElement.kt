@@ -18,7 +18,7 @@ class KotlinPackageElement internal constructor(
 		val javaElement: PackageElement,
 		metadata: KotlinPackageMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(processingEnv), AnnotatedConstruct by javaElement, KotlinQualifiedNameable,
+) : KotlinElement(), AnnotatedConstruct by javaElement, KotlinQualifiedNameable,
 	EnclosesKotlinElements, EnclosesKotlinTypes, EnclosesKotlinPackages, EnclosesKotlinFunctions,
 	EnclosesKotlinProperties, EnclosesKotlinTypeAliases {
 
