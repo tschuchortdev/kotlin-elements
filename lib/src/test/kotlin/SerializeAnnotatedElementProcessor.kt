@@ -1,10 +1,8 @@
 package com.tschuchort.kotlinelements
 
 import com.esotericsoftware.kryo.io.Output
-import com.squareup.kotlinpoet.FileSpec
 import okio.Buffer
-import serialization.SerializedMessage
-import java.io.File
+import serialization.SerializedMsgOverStdout
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
@@ -37,7 +35,7 @@ class SerializeAnnotatedElementProcessor : KotlinAbstractProcessor() {
             out.close()
 
             val base64Encoded = Base64.getEncoder().encodeToString(buffer.readByteArray())
-            processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, SerializedMessage(base64Encoded).print())
+            processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, SerializedMsgOverStdout(base64Encoded).print())
         }
 
         return false

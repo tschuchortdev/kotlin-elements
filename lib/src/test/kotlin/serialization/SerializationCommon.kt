@@ -3,6 +3,7 @@
 package serialization
 
 import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.KryoException
 import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.SerializerFactory
 import com.esotericsoftware.kryo.io.Input
@@ -10,7 +11,6 @@ import com.esotericsoftware.kryo.io.Output
 import com.esotericsoftware.kryo.serializers.CollectionSerializer
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import com.esotericsoftware.minlog.Log
-import com.tschuchort.kotlinelements.KotlinElement
 import de.javakaffee.kryoserializers.*
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.io.Serializable
@@ -48,7 +48,7 @@ fun getKryo(): Kryo {
         SynchronizedCollectionsSerializer.registerSerializers(this)
 
         addJavaLangModelSerializers(
-            serializeEnclosingPackages = false,
+            serializeEnclosingPackages = true,
             serializeDeclaredTypeAsElement = false)
     }
 }
@@ -94,7 +94,7 @@ class NotSerializedException : UnsupportedOperationException(
     "This operation is not supported because the object wasn't serialized completely."
 )
 
-data class SerializedMessage(val content: String) {
+data class SerializedMsgOverStdout(val content: String) {
     fun print() = MSG_PREFIX + content + MSG_SUFFIX
 
     init {
@@ -105,11 +105,11 @@ data class SerializedMessage(val content: String) {
         private const val MSG_PREFIX = "begin_serialized{"
         private const val MSG_SUFFIX = "}end_serialized"
 
-        fun parseAllIn(s: String): List<SerializedMessage> {
+        fun parseAllIn(s: String): List<SerializedMsgOverStdout> {
             val pattern = Regex(Regex.escape(MSG_PREFIX) + "(.+)?" + Regex.escape(MSG_SUFFIX))
             return pattern.findAll(s)
                 .map { match ->
-                    SerializedMessage(match.destructured.component1())
+                    SerializedMsgOverStdout(match.destructured.component1())
                 }.toList()
         }
     }
@@ -139,7 +139,14 @@ open class ImmutableInterfaceSerializer<T : Any>(
 
     final override fun write(kryo: Kryo, output: Output, obj: T) {
         noArgMethods.forEach {
-            serializeReturnValue(kryo, output, obj, it)
+            try {
+                serializeReturnValue(kryo, output, obj, it)
+            }
+            catch (e: KryoException) {
+                throw e.apply { addTrace(kryoExceptionTraceFor(it, obj.javaClass)) }
+            } catch (t: Throwable) {
+                throw KryoException(t).apply { addTrace(kryoExceptionTraceFor(it, obj.javaClass)) }
+            }
         }
     }
 
@@ -178,7 +185,14 @@ open class ImmutableInterfaceSerializer<T : Any>(
         kryo.reference(o)
 
         noArgMethods.forEach {
-            methodValueMap[it] = deserializeReturnValue(kryo, input, type, it)
+            try {
+                methodValueMap[it] = deserializeReturnValue(kryo, input, type, it)
+            }
+            catch (e: KryoException) {
+                throw e.apply { addTrace(kryoExceptionTraceFor(it, type)) }
+            } catch (t: Throwable) {
+                throw KryoException(t).apply { addTrace(kryoExceptionTraceFor(it, type)) }
+            }
         }
 
         initialized = true
@@ -219,6 +233,9 @@ open class ImmutableInterfaceSerializer<T : Any>(
         /** The method won't be serialized */
         object NotSerialized : SerializedReturnValue(), Serializable
     }
+
+    private fun kryoExceptionTraceFor(method: Method, type: Class<*>)
+            = method.name + " (" + type.name + ")"
 }
 
 /**

@@ -1,9 +1,6 @@
 package com.tschuchort.kotlinelements
 
-import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.io.Input
-import com.esotericsoftware.kryo.io.Output
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.TeeOutputStream
 import com.tschuchort.compiletesting.getJdkHome
@@ -46,14 +43,15 @@ class KotlinElementsTests {
 
         Assertions.assertThat(result.exitCode).isEqualTo(KotlinCompilation.ExitCode.OK)
 
-        SerializedMessage.parseAllIn(result.systemOut).forEach { msg ->
+        SerializedMsgOverStdout.parseAllIn(result.systemOut).forEach { msg ->
             val base64Encoded = msg.content
             val inp = Input(Base64.getDecoder().decode(base64Encoded))
             val elem = getKryo().readClassAndObject(inp) as Element
+            println()
         }
     }
 
-    
+
     private fun compilationPreset(): KotlinCompilation {
         val jdkHome = getJdkHome()
 
