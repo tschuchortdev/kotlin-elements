@@ -14,7 +14,7 @@ import javax.lang.model.element.Name
  *
  * Note that annotation classes do not actually have constructors
  */
-class KotlinConstructorElement internal constructor(
+class KotlinConstructorElementImpl internal constructor(
 		javaElement: ExecutableElement,
 		javaOverloadElements: List<ExecutableElement>,
 		override val enclosingElement: KotlinTypeElement,

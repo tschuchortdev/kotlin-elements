@@ -8,14 +8,14 @@ import javax.lang.model.element.TypeElement
 /**
  * A regular Kotlin class declaration
  */
-class KotlinClassElement internal constructor(
+class KotlinClassElementImpl internal constructor(
 		javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinTypeElement(javaElement, metadata, processingEnv), EnclosesKotlinConstructors,
+) : KotlinClassElement(javaElement, metadata, processingEnv), EnclosesKotlinConstructors,
 	EnclosesKotlinFunctions, EnclosesKotlinProperties, EnclosesKotlinTypes, HasKotlinCompanion {
 
-	val isDataClass: Boolean = protoClass.isDataClass
+	override val isDataClass: Boolean = protoClass.isDataClass
 
 	override val companion: KotlinObjectElement? by lazy { enclosedElementsDelegate.companion }
 
@@ -25,7 +25,7 @@ class KotlinClassElement internal constructor(
 
 	override val properties: Set<KotlinPropertyElement> by lazy { enclosedElementsDelegate.properties }
 
-	override val types: Set<KotlinTypeElement> by lazy { enclosedElementsDelegate.types }
+	override val kotlinTypes: Set<KotlinTypeElement> by lazy { enclosedElementsDelegate.types }
 
 	override val enclosedKotlinElements: Set<KotlinElement> by lazy { enclosedElementsDelegate.kotlinElements }
 }

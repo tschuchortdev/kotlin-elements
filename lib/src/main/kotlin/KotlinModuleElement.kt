@@ -1,21 +1,16 @@
 package com.tschuchort.kotlinelements
 
 import java.util.*
+import java.util.stream.Collectors.toSet
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.AnnotatedConstruct
-import javax.lang.model.element.Element
-import javax.lang.model.element.ModuleElement
-import javax.lang.model.element.Name
+import javax.lang.model.element.*
 import javax.lang.model.type.TypeMirror
 
-/**
- * A [KotlinModuleElement] is a module that contains at least one [KotlinPackageElement]
- */
-class KotlinModuleElement internal constructor(
-		val javaElement: ModuleElement,
+internal class KotlinModuleElementImpl internal constructor(
+		override val javaElement: ModuleElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(), EnclosesKotlinPackages, KotlinQualifiedNameable,
-	AnnotatedConstruct by javaElement {
+) : KotlinModuleElement(), AnnotatedConstruct by javaElement {
 
 	override val enclosingElement: Nothing? = null
 
@@ -23,18 +18,20 @@ class KotlinModuleElement internal constructor(
 
 	override val simpleName: Name = javaElement.simpleName
 
-	val isOpen: Boolean = javaElement.isOpen
+	override val isOpen: Boolean = javaElement.isOpen
 
-	val isUnnamed: Boolean = javaElement.isUnnamed
+	override val isUnnamed: Boolean = javaElement.isUnnamed
 
-	val directives: List<ModuleElement.Directive> = javaElement.directives
+	override val directives: List<ModuleElement.Directive> = javaElement.directives
 
-	/**
-	 * Elements enclosed by this package that aren't Kotlin elements
-	 */
-	val enclosedJavaElements: Set<Element> by lazy {
-		javaElement.enclosedElements.asSequence()
-				.filter { !it.originatesFromKotlinCode() }.toSet()
+	override val javaPackages: Set<PackageElement> by lazy {
+		javaElement.enclosedElements
+			.filter { !it.originatesFromKotlinCode() }
+			.map {
+				assert(it.kind == ElementKind.PACKAGE)
+				it as PackageElement
+			}
+			.toSet()
 	}
 
 	override val enclosedKotlinElements: Set<KotlinPackageElement> get() = kotlinPackages

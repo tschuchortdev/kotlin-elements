@@ -11,7 +11,7 @@ import javax.lang.model.type.TypeMirror
  *  in Kotlin source code, but may correspond to several Java [ExecutableElement]s that are
  *  generated when @[JvmOverloads] is used
  */
-abstract class KotlinExecutableElement internal constructor(
+abstract class KotlinExecutableElementImpl internal constructor(
 		/**
 		 * the Java method associated with this Kotlin method or the one that
 		 * has the same signature (all parameters) if there are multiple associated
@@ -72,9 +72,9 @@ abstract class KotlinExecutableElement internal constructor(
 
 	val receiverType: TypeMirror? = javaElement.receiverType //TODO("handle Kotlin receiver type")
 
-	val thrownTypes: List<TypeMirror> = javaElement.thrownTypes //TODO("handle Kotlin thrown types")
+	val thrownTypes: List<TypeMirror> = javaElement.thrownTypes //TODO("handle Kotlin thrown kotlinTypes")
 
-	val returnType: TypeMirror = javaElement.returnType //TODO("handle Kotlin return types")
+	val returnType: TypeMirror = javaElement.returnType //TODO("handle Kotlin return kotlinTypes")
 
 	override fun asType(): TypeMirror = javaElement.asType() //TODO("handle kotlin executable element asType")
 

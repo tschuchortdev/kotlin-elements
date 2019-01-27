@@ -14,27 +14,27 @@ import javax.lang.model.type.TypeMirror
 /**
  * A kotlin type alias
  */
-class KotlinTypeAliasElement internal constructor(
+class KotlinTypeAliasElementImpl internal constructor(
 		/**
 		 * If the Kotlin type alias has annotations the Kotlin compiler will generate
 		 * an empty parameterless void-returning synthetic method named
 		 * "aliasName$annotations" to hold the annotations
 		 */
-		val javaAnnotationHolderElement: ExecutableElement?,
+		override val javaAnnotationHolderElement: ExecutableElement?,
 		protoTypeAlias: ProtoBuf.TypeAlias,
 		private val protoTypeTable: ProtoBuf.TypeTable,
 		protoNameResolver: NameResolver,
 		override val enclosingElement: KotlinElement,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(), HasKotlinVisibility, KotlinParameterizable {
+) : KotlinTypeAliasElement() {
 
 	init {
 		assert(protoTypeAlias.hasAnnotations == (javaAnnotationHolderElement != null))
 	}
 
-	val underlyingType: TypeMirror = TODO("alias underlying type")
+	override val underlyingType: TypeMirror = TODO("alias underlying type")
 
-	val expandedType: TypeMirror = TODO("alias expanded type")
+	override val expandedType: TypeMirror = TODO("alias expanded type")
 
 	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoTypeAlias.visibility!!)
 

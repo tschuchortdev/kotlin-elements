@@ -7,7 +7,7 @@ import javax.lang.model.element.TypeElement
 /**
  * A Kotlin interface declaration
  */
-class KotlinInterfaceElement internal constructor(
+class KotlinInterfaceElementImpl internal constructor(
 		javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
@@ -26,7 +26,7 @@ class KotlinInterfaceElement internal constructor(
 	override val properties: Set<KotlinPropertyElement>
 		get() = enclosedElementsDelegate.properties
 
-	override val types: Set<KotlinTypeElement>
+	override val kotlinTypes: Set<KotlinTypeElement>
 		get() = enclosedElementsDelegate.types
 
 	val interfaceDefaultImpls: KotlinInterfaceDefaultImplElement?

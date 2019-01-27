@@ -10,7 +10,7 @@ import javax.lang.model.type.TypeMirror
 /**
  * A Kotlin enum class declaration
  */
-class KotlinEnumElement internal constructor(
+class KotlinEnumElementImpl internal constructor(
 		javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
@@ -27,7 +27,7 @@ class KotlinEnumElement internal constructor(
 
 	override val properties: Set<KotlinPropertyElement> by lazy { enclosedElementsDelegate.properties }
 
-	override val types: Set<KotlinTypeElement> by lazy { enclosedElementsDelegate.types }
+	override val kotlinTypes: Set<KotlinTypeElement> by lazy { enclosedElementsDelegate.types }
 
 	override val enclosedKotlinElements: Set<KotlinElement> by lazy { enclosedElementsDelegate.kotlinElements }
 }
@@ -35,13 +35,13 @@ class KotlinEnumElement internal constructor(
 /**
  * A Kotlin enum constant within an enum class declaration
  */
-class KotlinEnumConstantElement internal constructor(
+class KotlinEnumConstantElementImpl internal constructor(
 		val javaElement: TypeElement
 ) : KotlinElement(), AnnotatedConstruct by javaElement {
 	override val enclosingElement: KotlinEnumElement
 		get() = TODO("implement enum constant enclosing element")
 
-	//TODO("check if enum constants are types in all cases")
+	//TODO("check if enum constants are kotlinTypes in all cases")
 
 	override val simpleName: Name = javaElement.simpleName
 

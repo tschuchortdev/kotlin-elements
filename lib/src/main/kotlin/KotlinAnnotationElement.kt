@@ -9,41 +9,62 @@ import javax.lang.model.type.TypeMirror
 /**
  * A declaration of an annotation class
  */
-class KotlinAnnotationElement internal constructor(
-		javaElement: TypeElement,
-		metadata: KotlinClassMetadata,
-		processingEnv: ProcessingEnvironment
-) : KotlinTypeElement(javaElement, metadata, processingEnv) {
+class KotlinAnnotationElementImpl internal constructor(
+		override val javaElement: TypeElement,
+		metadata: KotlinClassMetadata
+) : KotlinAnnotationElement(), AnnotatedConstruct by javaElement {
 
-	val parameters: List<KotlinAnnotationParameterElement> by lazy {
+	override val enclosingElement: KotlinElement?
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+	override val simpleName: Name
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+	override fun asType(): TypeMirror {
+	}
+
+	override fun toString(): String {
+	}
+
+	override fun equals(other: Any?): Boolean {
+	}
+
+	override fun hashCode(): Int {
+	}
+
+	override val superclass: TypeMirror
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val typeParameters: List<KotlinTypeParameterElement>
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val qualifiedName: Name
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val visibility: KotlinVisibility
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val modality: KotlinModality
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val isExpect: Boolean
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val isExternal: Boolean
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+	override val isInner: Boolean = false
+
+	override val interfaces: List<TypeMirror> = javaElement.interfaces
+
+	override val parameters: List<KotlinAnnotationParameterElement> by lazy {
 		javaElement.enclosedElements.map {
 			check(it.kind == ElementKind.METHOD)
-			KotlinAnnotationParameterElement(it as ExecutableElement, this)
+			KotlinAnnotationParameterElementImpl(it as ExecutableElement, this)
 		}
 	}
 }
 
-/**
- * Parameter of an annotation class
- *
- * Annotation parameters are special because annotation classes
- * don't really have a constructor in Java. Instead they are
- * declared as methods of an interface and can be accessed
- * like a property in Kotlin
- */
-class KotlinAnnotationParameterElement internal constructor(
-		val javaElement: ExecutableElement,
-		/**
-		 * An annotation parameter is enclosed by its annotation class
-		 */
+class KotlinAnnotationParameterElementImpl internal constructor(
+		override val javaElement: ExecutableElement,
 		override val enclosingElement: KotlinAnnotationElement
-) : KotlinElement(), AnnotatedConstruct by javaElement {
+) : KotlinAnnotationParameterElement(), AnnotatedConstruct by javaElement {
 
-	/**
-	 * The default value of this annotation parameter or
-	 * `null` if it doesn't have one
-	 */
-	val defaultValue: Any? = javaElement.defaultValue
+	override val defaultValue: Any? = javaElement.defaultValue
 
 	override val simpleName: Name = javaElement.simpleName
 

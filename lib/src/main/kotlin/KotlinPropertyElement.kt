@@ -12,7 +12,7 @@ import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 
 /** A Kotlin property */
-class KotlinPropertyElement internal constructor(
+class KotlinPropertyElementImpl internal constructor(
 		field: VariableElement?,
 		setter: ExecutableElement?,
 		getter: ExecutableElement?,

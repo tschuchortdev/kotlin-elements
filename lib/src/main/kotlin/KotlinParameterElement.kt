@@ -15,7 +15,7 @@ import javax.lang.model.type.TypeMirror
 /**
  * A value parameter of a function, method or constructor
  */
-class KotlinParameterElement internal constructor(
+class KotlinParameterElementImpl internal constructor(
 		val javaElement: VariableElement,
 		private val protoParam: ProtoBuf.ValueParameter,
 		override val enclosingElement: KotlinExecutableElement
@@ -48,5 +48,5 @@ class KotlinParameterElement internal constructor(
 
 internal fun doParametersMatch(javaParamElem: VariableElement, protoParam: ProtoBuf.ValueParameter, protoNameResolver: NameResolver)
 		= (javaParamElem.simpleName.toString() == protoNameResolver.getString(protoParam.name))
-	//TODO("also check that parameter types match")
+	//TODO("also check that parameter kotlinTypes match")
 

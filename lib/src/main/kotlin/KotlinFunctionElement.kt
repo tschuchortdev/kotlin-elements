@@ -7,7 +7,7 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
 import javax.lang.model.util.Elements
 
-class KotlinFunctionElement internal constructor(
+class KotlinFunctionElementImpl internal constructor(
 		javaElement: ExecutableElement,
 		javaOverloadElements: List<ExecutableElement>,
 		enclosingElement: KotlinElement,

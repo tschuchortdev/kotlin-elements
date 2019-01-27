@@ -9,7 +9,7 @@ import javax.lang.model.element.TypeElement
 /**
  * A Kotlin object declaration
  */
-class KotlinObjectElement internal constructor(
+class KotlinObjectElementImpl internal constructor(
 		javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
@@ -22,7 +22,7 @@ class KotlinObjectElement internal constructor(
 
 	override val properties: Set<KotlinPropertyElement> by lazy { enclosedElementsDelegate.properties }
 
-	override val types: Set<KotlinTypeElement> by lazy { enclosedElementsDelegate.types }
+	override val kotlinTypes: Set<KotlinTypeElement> by lazy { enclosedElementsDelegate.types }
 
 	override val enclosedKotlinElements: Set<KotlinElement> by lazy { enclosedElementsDelegate.kotlinElements }
 }

@@ -14,11 +14,11 @@ import javax.lang.model.type.TypeMirror
 /**
  * An element that declares a new type like a class, object, interface or annotation class
  */
-abstract class KotlinTypeElement internal constructor(
+internal class KotlinTypeElementDelegate(
 		val javaElement: TypeElement,
 		metadata: KotlinClassMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(), KotlinParameterizable, KotlinQualifiedNameable,
+) : KotlinTypeElement(), KotlinParameterizable, KotlinQualifiedNameable,
 	HasKotlinVisibility, HasKotlinModality, AnnotatedConstruct by javaElement {
 
 	protected val protoClass: ProtoBuf.Class = metadata.data.classProto

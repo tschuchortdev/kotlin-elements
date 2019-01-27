@@ -14,15 +14,13 @@ import javax.lang.model.type.TypeMirror
  *
  * It doesn't necessarily contain _only_ Kotlin code
  */
-class KotlinPackageElement internal constructor(
-		val javaElement: PackageElement,
+class KotlinPackageElementImpl internal constructor(
+		override val javaElement: PackageElement,
 		metadata: KotlinPackageMetadata,
 		processingEnv: ProcessingEnvironment
-) : KotlinElement(), AnnotatedConstruct by javaElement, KotlinQualifiedNameable,
-	EnclosesKotlinElements, EnclosesKotlinTypes, EnclosesKotlinPackages, EnclosesKotlinFunctions,
-	EnclosesKotlinProperties, EnclosesKotlinTypeAliases {
+) : KotlinPackageElement(), AnnotatedConstruct by javaElement {
 
-	val isUnnamed: Boolean = javaElement.isUnnamed
+	override val isUnnamed: Boolean = javaElement.isUnnamed
 
 	override val qualifiedName: Name = javaElement.qualifiedName
 
@@ -35,16 +33,16 @@ class KotlinPackageElement internal constructor(
 	/**
 	 * Elements enclosed by this package that aren't Kotlin elements
 	 */
-	val enclosedJavaElements: Set<Element> by lazy {
+	override val enclosedJavaElements: Set<Element> by lazy {
 		javaElement.enclosedElements.asSequence().filter { !it.originatesFromKotlinCode() }.toSet()
 	}
 
-	val javaPackages: Set<PackageElement> by lazy {
+	override val javaPackages: Set<PackageElement> by lazy {
 		enclosedJavaElements.filter { it.kind == ElementKind.PACKAGE }
 				.castList<PackageElement>().toSet()
 	}
 
-	val javaTypes: Set<TypeElement> by lazy {
+	override val javaTypes: Set<TypeElement> by lazy {
 		enclosedJavaElements.mapNotNull { it.asTypeElement() }.toSet()
 	}
 
@@ -57,7 +55,7 @@ class KotlinPackageElement internal constructor(
 	override val properties: Set<KotlinPropertyElement>
 		get() = enclosedElementsDelegate.properties
 
-	override val types: Set<KotlinTypeElement>
+	override val kotlinTypes: Set<KotlinTypeElement>
 		get() = enclosedElementsDelegate.types
 
 	override val kotlinPackages: Set<KotlinPackageElement>
