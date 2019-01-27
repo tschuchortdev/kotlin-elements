@@ -12,6 +12,7 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.jvm.JvmProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.name.NameUtils
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
+import javax.lang.model.type.TypeKind
 import javax.lang.model.util.ElementScanner9
 
 //TODO("make internal for release")
@@ -213,4 +214,27 @@ internal fun getNameResolver(elem: Element): NameResolver? {
 /** Returns the [KotlinMetadata] of the closest parent javaElement (or this javaElement) that has one */
 internal fun getMetadata(elem: Element): KotlinMetadata?
 		= elem.kotlinMetadata ?: elem.enclosingElement?.let(::getMetadata)
+
+/**
+ * true if this java element may be a synthetic annotation holder for
+ * property annotations with [AnnotationTarget.PROPERTY]
+ */
+internal fun ExecutableElement.maybeSyntheticPropertyAnnotHolder()
+//TODO("replace string with constant from JvmAbi but it is private")
+		= simpleName.toString().endsWith(ANNOTATIONS_SUFFIX)
+		&& returnType.kind == TypeKind.VOID
+		&& parameters.isEmpty()
+
+/** true if this javaElement may be a kotlin generated getter of a property */
+internal fun ExecutableElement.maybeKotlinGetter()
+		= JvmAbi.isGetterName(simpleName.toString())
+		&& returnType.kind != TypeKind.VOID
+		&& parameters.isEmpty()
+
+/** true if this javaElement may be a kotlin generated setter of a property */
+internal fun ExecutableElement.maybeKotlinSetter()
+		= JvmAbi.isSetterName(simpleName.toString())
+		&& returnType.kind == TypeKind.VOID
+		&& parameters.isNotEmpty()
+
 

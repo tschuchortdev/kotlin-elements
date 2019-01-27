@@ -1,7 +1,6 @@
-package com.tschuchort.kotlinelements
+package mixins
 
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
-import javax.lang.model.element.Element
 
 /**
  * Mixin interface for Kotlin elements that have visibility.

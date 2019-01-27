@@ -1,4 +1,4 @@
-package com.tschuchort.kotlinelements
+package mixins
 
 /**
  * Mixin interface for Kotlin declarations that can have an external implementation.

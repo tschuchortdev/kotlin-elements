@@ -2,6 +2,7 @@ package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.shadow.load.java.JvmAbi
+import mixins.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
 
@@ -92,7 +93,6 @@ object KotlinElementFactory {
                 UnspecifiedKotlinCompatElement(elem, elem.enclosingElement.asKotlin(processingEnv)!!)
         is KotlinUnknownMetadata -> throw AssertionError("Element $elem has unknown kotlin metadata: $metadata.")
     }
-
 
     private fun convertConstructor(elem: ExecutableElement, processingEnv: ProcessingEnvironment): KotlinRelatedElement {
         assert(elem.kind == ElementKind.CONSTRUCTOR)

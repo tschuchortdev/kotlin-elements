@@ -1,4 +1,4 @@
-package com.tschuchort.kotlinelements
+package mixins
 
 import javax.lang.model.element.Element
 

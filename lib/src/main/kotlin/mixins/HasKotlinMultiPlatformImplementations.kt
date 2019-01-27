@@ -1,4 +1,4 @@
-package com.tschuchort.kotlinelements
+package mixins
 
 /**
  * Mixin interface for elements that can have different implementations

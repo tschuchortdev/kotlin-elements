@@ -1,6 +1,7 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
+import mixins.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeElement
 
@@ -40,16 +41,16 @@ class KotlinFileFacadeElement private constructor(
 
 	private val enclosedElementsDelegate = packageData?.packageProto?.let { facadeProto ->
 		EnclosedElementsDelegate(
-				enclosingKtElement = enclosingElement,
-				protoTypeAliases = facadeProto.typeAliasList,
-				protoProps = facadeProto.propertyList,
-				protoCtors = emptyList(),
-				protoFunctions = facadeProto.functionList,
-				companionSimpleName = null,
-				enclosedJavaElems = javaElement.enclosedElements,
-				protoNameResolver = packageData.nameResolver,
-				protoTypeTable = facadeProto.typeTable,
-				processingEnv = processingEnv
+			enclosingKtElement = enclosingElement,
+			protoTypeAliases = facadeProto.typeAliasList,
+			protoProps = facadeProto.propertyList,
+			protoCtors = emptyList(),
+			protoFunctions = facadeProto.functionList,
+			companionSimpleName = null,
+			enclosedJavaElems = javaElement.enclosedElements,
+			protoNameResolver = packageData.nameResolver,
+			protoTypeTable = facadeProto.typeTable,
+			processingEnv = processingEnv
 		)
 	}
 }
