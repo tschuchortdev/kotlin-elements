@@ -14,7 +14,6 @@ import com.esotericsoftware.minlog.Log
 import de.javakaffee.kryoserializers.*
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.io.Serializable
-import java.lang.IllegalStateException
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
@@ -23,6 +22,7 @@ import java.util.*
 import javax.lang.model.AnnotatedConstruct
 import javax.lang.model.element.*
 import javax.lang.model.type.*
+import kotlin.IllegalStateException
 import kotlin.reflect.KClass
 
 
@@ -84,6 +84,8 @@ fun Kryo.addJavaLangModelSerializers(serializeEnclosingPackages: Boolean, serial
 
     addDefaultSerializer(Name::class.java, NameSerializer())
     addDefaultSerializer(AnnotationValue::class.java, AnnotationValueSerializer())
+
+    addDefaultSerializer(Lazy::class.java, LazySerializer())
 }
 
 /**
@@ -305,4 +307,29 @@ class JavacAwareListSerializerFactory(
             return kryo.readClassAndObject(input) as List<*>
         }
     }
+}
+
+class LazySerializer : Serializer<Lazy<*>>() {
+    override fun write(kryo: Kryo, output: Output, obj: Lazy<*>) {
+        kryo.writeClassAndObject(output, obj.value)
+    }
+
+    override fun read(kryo: Kryo, input: Input, type: Class<out Lazy<*>>): Lazy<*> {
+        var content_: Any? = null
+        var initialized = false
+
+        val o = lazy {
+            if(initialized)
+                content_
+            else
+                throw IllegalStateException("Deserialized object not initialized yet")
+        }
+
+        kryo.reference(o)
+
+        content_ = kryo.readClassAndObject(input)
+
+        return o
+    }
+
 }
