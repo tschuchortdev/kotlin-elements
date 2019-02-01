@@ -51,8 +51,7 @@ object KotlinElementFactory {
 
                 ElementKind.MODULE -> KotlinModuleElement(elem as ModuleElement, processingEnv)
 
-                ElementKind.PACKAGE -> KotlinPackageElement(elem as PackageElement,
-                    elem.kotlinMetadata as KotlinPackageMetadata, processingEnv)
+                ElementKind.PACKAGE -> KotlinPackageElement(elem as PackageElement, processingEnv)
 
                 ElementKind.OTHER -> throw UnsupportedOperationException(
                     "Can not convert element $this of unknown kind ${elem.kind} to Kotlin.")
@@ -193,10 +192,10 @@ fun Element.originatesFromKotlinCode(): Boolean {
         ElementKind.CLASS,
         ElementKind.ENUM,
         ElementKind.INTERFACE,
-        ElementKind.ANNOTATION_TYPE,
-        ElementKind.PACKAGE -> false
+        ElementKind.ANNOTATION_TYPE -> false
 
-        ElementKind.MODULE -> enclosedElements.any { originatesFromKotlinCode() }  //TODO("check module metadata instead")
+        ElementKind.PACKAGE,
+        ElementKind.MODULE -> enclosedElements.any { it.originatesFromKotlinCode() }  //TODO("check module metadata instead")
 
         ElementKind.OTHER -> throw UnsupportedOperationException("Encountered unknown element kind.")
 

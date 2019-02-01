@@ -12,7 +12,7 @@ class KotlinFileFacadeElement private constructor(
 		private val packageData: PackageData?,
 		val processingEnv: ProcessingEnvironment
 ) : KotlinCompatElement(javaElement), EnclosesKotlinElements,
-	EnclosesKotlinProperties, EnclosesKotlinFunctions, EnclosesKotlinTypes {
+	EnclosesKotlinProperties, EnclosesKotlinFunctions, EnclosesKotlinTypes, EnclosesKotlinTypeAliases {
 
 	internal constructor(javaElement: TypeElement, metadata: KotlinFileMetadata,
 						 processingEnv: ProcessingEnvironment)
@@ -38,6 +38,9 @@ class KotlinFileFacadeElement private constructor(
 
 	override val kotlinTypes: Set<KotlinTypeElement>
 		get() = enclosedElementsDelegate?.types ?: emptySet()
+
+	override val typeAliases: Set<KotlinTypeAliasElement>
+		get() = enclosedElementsDelegate?.typeAliases ?: emptySet()
 
 	private val enclosedElementsDelegate = packageData?.packageProto?.let { facadeProto ->
 		EnclosedElementsDelegate(
