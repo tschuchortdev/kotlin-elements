@@ -11,7 +11,11 @@ import com.esotericsoftware.kryo.io.Output
 import com.esotericsoftware.kryo.serializers.CollectionSerializer
 import com.esotericsoftware.kryo.util.DefaultInstantiatorStrategy
 import com.esotericsoftware.minlog.Log
+import com.tschuchort.kotlinelements.*
+import com.tschuchort.kotlinelements.serialization.KotlinCompatElementSerializer
+import com.tschuchort.kotlinelements.serialization.KotlinElementSerializer
 import de.javakaffee.kryoserializers.*
+import org.mockito.Mockito
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.io.Serializable
 import java.lang.reflect.InvocationHandler
@@ -22,9 +26,9 @@ import java.util.*
 import javax.lang.model.AnnotatedConstruct
 import javax.lang.model.element.*
 import javax.lang.model.type.*
-import kotlin.IllegalStateException
 import kotlin.reflect.KClass
-
+import kotlin.reflect.jvm.javaGetter
+import kotlin.reflect.jvm.javaMethod
 
 fun getKryo(): Kryo {
     Log.WARN()
@@ -49,14 +53,15 @@ fun getKryo(): Kryo {
 
         addJavaLangModelSerializers(
             serializeEnclosingPackages = true,
-            serializeDeclaredTypeAsElement = false)
+            serializeDeclaredTypeAsElement = false
+        )
     }
 }
 
 fun Kryo.addJavaLangModelSerializers(serializeEnclosingPackages: Boolean, serializeDeclaredTypeAsElement: Boolean) {
     addDefaultSerializer(List::class.java, JavacAwareListSerializerFactory())
 
-    addDefaultSerializer(AnnotatedConstruct::class.java, ImmutableInterfaceSerializer(AnnotatedConstruct::class))
+    addDefaultSerializer(AnnotatedConstruct::class.java, JavaReflectImmutableInterfaceSerializer(AnnotatedConstruct::class))
 
     addDefaultSerializer(Element::class.java, ElementSerializer(Element::class, serializeEnclosingPackages))
     addDefaultSerializer(ExecutableElement::class.java, ElementSerializer(ExecutableElement::class, serializeEnclosingPackages))
@@ -65,8 +70,8 @@ fun Kryo.addJavaLangModelSerializers(serializeEnclosingPackages: Boolean, serial
     addDefaultSerializer(TypeElement::class.java, ElementSerializer(TypeElement::class, serializeEnclosingPackages))
     addDefaultSerializer(TypeParameterElement::class.java, ElementSerializer(TypeParameterElement::class, serializeEnclosingPackages))
     addDefaultSerializer(VariableElement::class.java, ElementSerializer(VariableElement::class, serializeEnclosingPackages))
-    addDefaultSerializer(AnnotationMirror::class.java, ImmutableInterfaceSerializer(AnnotationMirror::class))
-    addDefaultSerializer(ModuleElement.Directive::class.java, ImmutableInterfaceSerializer(ModuleElement.Directive::class))
+    addDefaultSerializer(AnnotationMirror::class.java, JavaReflectImmutableInterfaceSerializer(AnnotationMirror::class))
+    addDefaultSerializer(ModuleElement.Directive::class.java, JavaReflectImmutableInterfaceSerializer(ModuleElement.Directive::class))
 
     addDefaultSerializer(TypeMirror::class.java, TypeMirrorSerializer(TypeMirror::class))
     addDefaultSerializer(ExecutableType::class.java, TypeMirrorSerializer(ExecutableType::class))
@@ -86,6 +91,32 @@ fun Kryo.addJavaLangModelSerializers(serializeEnclosingPackages: Boolean, serial
     addDefaultSerializer(AnnotationValue::class.java, AnnotationValueSerializer())
 
     addDefaultSerializer(Lazy::class.java, LazySerializer())
+
+    addDefaultSerializer(KotlinClassElement::class.java, KotlinElementSerializer(KotlinClassElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinInterfaceElement::class.java, KotlinElementSerializer(KotlinInterfaceElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinObjectElement::class.java, KotlinElementSerializer(KotlinObjectElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinInterfaceElement::class.java, KotlinElementSerializer(KotlinInterfaceElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinEnumElement::class.java, KotlinElementSerializer(KotlinEnumElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinEnumConstantElement::class.java, KotlinElementSerializer(KotlinEnumConstantElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinAnnotationElement::class.java, KotlinElementSerializer(KotlinAnnotationElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinAnnotationParameterElement::class.java, KotlinElementSerializer(KotlinAnnotationParameterElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinFunctionElement::class.java, KotlinElementSerializer(KotlinFunctionElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinConstructorElement::class.java, KotlinElementSerializer(KotlinConstructorElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinParameterElement::class.java, KotlinElementSerializer(KotlinParameterElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinSetterParameterElement::class.java, KotlinElementSerializer(KotlinSetterParameterElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinPropertyElement::class.java, KotlinElementSerializer(KotlinPropertyElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinGetterElement::class.java, KotlinElementSerializer(KotlinGetterElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinSetterElement::class.java, KotlinElementSerializer(KotlinSetterElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinPropertyElement.BackingField::class.java, KotlinCompatElementSerializer(KotlinPropertyElement.BackingField::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinPropertyElement.DelegateField::class.java, KotlinCompatElementSerializer(KotlinPropertyElement.DelegateField::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinPackageElement::class.java, KotlinElementSerializer(KotlinPackageElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinModuleElement::class.java, KotlinElementSerializer(KotlinModuleElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinTypeAliasElement::class.java, KotlinElementSerializer(KotlinTypeAliasElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinTypeParameterElement::class.java, KotlinElementSerializer(KotlinTypeParameterElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinElement::class.java, KotlinElementSerializer(KotlinElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinTypeElement::class.java, KotlinElementSerializer(KotlinTypeElement::class, serializeEnclosingPackages))
+
+    addDefaultSerializer(RuntimeException::class.java, CompletionFailureSerializer())
 }
 
 /**
@@ -117,9 +148,9 @@ data class SerializedMsgOverStdout(val content: String) {
     }
 }
 
-open class ImmutableInterfaceSerializer<T : Any>(
-    protected val clazz: KClass<T>,
-    /**
+open class JavaReflectImmutableInterfaceSerializer<T : Any>(
+        protected val clazz: KClass<T>,
+        /**
      * Whether exceptions thrown by methods of the object should be serialized
      * as well or rethrown.
      */
@@ -169,6 +200,7 @@ open class ImmutableInterfaceSerializer<T : Any>(
         kryo.writeClassAndObject(output, value)
     }
 
+    @Suppress("UNCHECKED_CAST")
     final override fun read(kryo: Kryo, input: Input, type: Class<out T>): T {
         val methodValueMap = mutableMapOf<Method, SerializedReturnValue>()
         var initialized = false
@@ -265,9 +297,10 @@ class GenericThrowableSerializer : Serializer<Throwable>() {
 
         cause_ = readClassAndObject(input) as Throwable?
         message_ = "Deserialized exception of type: $type with message: " + readClassAndObject(input) as String?
+        @Suppress("UNCHECKED_CAST")
         o.stackTrace = readClassAndObject(input) as Array<StackTraceElement>
 
-        return o
+        throw o
     }
 }
 
@@ -333,3 +366,72 @@ class LazySerializer : Serializer<Lazy<*>>() {
     }
 
 }
+
+/**
+ * Serializer for the internal com.sun.tools.javac.code.Symbol.CompletionFailure exception that
+ * sometimes gets thrown by the java element API.
+ */
+class CompletionFailureSerializer : SerializerFactory<Serializer<RuntimeException>> {
+    override fun newSerializer(kryo: Kryo?, type: Class<*>?): Serializer<RuntimeException> {
+        return SerializerImpl()
+    }
+
+    override fun isSupported(type: Class<*>): Boolean {
+        return type.thisOrAnySuperclass {
+            it.name == "com.sun.tools.javac.code.Symbol\$CompletionFailure"
+        }
+    }
+
+    private class SerializerImpl : Serializer<RuntimeException>() {
+        override fun write(kryo: Kryo, output: Output?, obj: RuntimeException) = with(kryo) {
+            writeClassAndObject(output, obj.message)
+            writeClassAndObject(output, obj.localizedMessage)
+            writeClassAndObject(output, obj.cause)
+            writeClassAndObject(output, obj.stackTrace)
+            writeClassAndObject(output, obj.suppressed)
+        }
+
+        @Suppress("LocalVariableName")
+        override fun read(kryo: Kryo, input: Input, type: Class<out RuntimeException>): RuntimeException {
+            var initialized = false
+
+            var message_: String? = null
+            var localizedMessage_: String? = null
+            var cause_: String? = null
+            var stacktrace_: Array<StackTraceElement>? = null
+            var suppressed_: Array<Throwable>? = null
+
+            val mockInstance = Mockito.mock(type) { invocation ->
+                if(!initialized)
+                    throw IllegalStateException("Mock of serialized exception is not initialized yet")
+
+                when(invocation.method) {
+                    RuntimeException::message.javaGetter -> message_
+                    RuntimeException::getLocalizedMessage.javaMethod -> localizedMessage_
+                    RuntimeException::cause.javaGetter -> cause_
+                    RuntimeException::getStackTrace.javaMethod -> stacktrace_
+                    RuntimeException::getSuppressed.javaMethod -> suppressed_
+                    else -> throw NotSerializedException()
+                }
+            }
+
+            with(kryo) {
+                reference(mockInstance)
+
+                message_ = readClassAndObject(input) as String?
+                localizedMessage_ = readClassAndObject(input) as String?
+                cause_ = readClassAndObject(input) as String?
+                @Suppress("UNCHECKED_CAST")
+                stacktrace_ = readClassAndObject(input) as Array<StackTraceElement>?
+                @Suppress("UNCHECKED_CAST")
+                suppressed_ = readClassAndObject(input) as Array<Throwable>?
+            }
+
+            initialized = true
+            return mockInstance
+        }
+    }
+}
+
+internal fun Class<*>.thisOrAnySuperclass(condition: (Class<*>) -> Boolean): Boolean
+    = condition(this) || superclass?.thisOrAnySuperclass(condition) ?: false

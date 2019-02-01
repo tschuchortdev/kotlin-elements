@@ -28,10 +28,12 @@ class SerializeAnnotatedElementProcessor : KotlinAbstractProcessor() {
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         val kryo = getKryo()
 
-        for(annotatedElem in roundEnv.getElementsAnnotatedWith(SerializeElem::class.java)) {
+        for(jElem in roundEnv.getElementsAnnotatedWith(SerializeElem::class.java)) {
+            val kElem = jElem.asKotlin(processingEnv) as? KotlinElement
+
             val buffer = Buffer()
             val out = Output(buffer.outputStream())
-            kryo.writeClassAndObject(out, annotatedElem)
+            kryo.writeClassAndObject(out, kElem ?: jElem)
             out.close()
 
             val base64Encoded = Base64.getEncoder().encodeToString(buffer.readByteArray())

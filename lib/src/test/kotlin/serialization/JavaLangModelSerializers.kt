@@ -6,6 +6,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
+import com.tschuchort.kotlinelements.JavaReflectImmutableInterfaceSerializer
 import java.lang.reflect.Method
 import javax.lang.model.element.*
 import javax.lang.model.type.DeclaredType
@@ -16,7 +17,6 @@ import kotlin.reflect.jvm.javaMethod
 /**
  * Serializers for the package javax.lang.model
  */
-
 open class ElementSerializer<T : Element>(
     /** The class to be serialized */
     clazz: KClass<T>,
@@ -26,7 +26,7 @@ open class ElementSerializer<T : Element>(
      * Disabling this can be useful for performance reasons.
      */
     private val serializeEnclosingPackage: Boolean = true
-) : ImmutableInterfaceSerializer<T>(clazz, true) {
+) : JavaReflectImmutableInterfaceSerializer<T>(clazz, true) {
 
     override fun serializeReturnValue(
         kryo: Kryo, output: Output, obj: T,
@@ -53,7 +53,7 @@ open class ElementSerializer<T : Element>(
 }
 
 open class TypeMirrorSerializer<T : TypeMirror>(clazz: KClass<T>)
-    : ImmutableInterfaceSerializer<T>(clazz, true) {
+    : JavaReflectImmutableInterfaceSerializer<T>(clazz, true) {
 
     override fun onProxyMethodCall(
         obj: T, method: Method, args: Array<Any?>,
@@ -125,7 +125,7 @@ class AnnotationValueSerializer : Serializer<AnnotationValue>() {
 
         reference(o)
 
-        value = readClassAndObject(input) as Any?
+        value = readClassAndObject(input)
         toString = readClassAndObject(input) as String
         hashCode = readClassAndObject(input) as Int
 

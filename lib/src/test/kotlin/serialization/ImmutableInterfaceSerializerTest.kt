@@ -4,11 +4,11 @@ package com.tschuchort.kotlinelements.serialization
 
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
+import com.tschuchort.kotlinelements.JavaReflectImmutableInterfaceSerializer
 import okio.Buffer
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.catchThrowable
 import org.junit.Test
-import serialization.ImmutableInterfaceSerializer
 import serialization.getKryo
 import serialization.NotSerializedException
 
@@ -16,7 +16,7 @@ import serialization.NotSerializedException
 class ImmutableInterfaceSerializerTest {
 
     val kryo = getKryo().apply {
-        addDefaultSerializer(A::class.java, ImmutableInterfaceSerializer(A::class))
+        addDefaultSerializer(A::class.java, JavaReflectImmutableInterfaceSerializer(A::class))
     }
 
     interface A {
