@@ -1,5 +1,6 @@
-package com.tschuchort.kotlinelements
+package mixins
 
+import com.tschuchort.kotlinelements.*
 import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.jvm.*
 import me.eugeniomarletti.kotlin.metadata.shadow.load.java.JvmAbi
@@ -9,60 +10,110 @@ import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
 
+/** Mixin interface for Kotlin elements that may also enclose Java elements */
+interface EnclosesJavaElements {
+	val enclosedJavaElements: Set<Element>
+}
+
+/** Mixin interface for Kotlin elements that may also enclose Java package elements */
+interface EnclosesJavaPackages : EnclosesJavaElements {
+    override val enclosedJavaElements: Set<Element>
+        get() = javaPackages
+
+    val javaPackages: Set<PackageElement>
+}
+
+/** Mixin interface for Kotlin elements that may also enclose Java type elements */
+interface EnclosesJavaTypes : EnclosesJavaElements {
+    override val enclosedJavaElements: Set<Element>
+        get() = javaTypes
+
+    val javaTypes: Set<TypeElement>
+}
+
 /**
- * An element that "encloses" other [KotlinElement]s. A class, object, enum class or interface
- * encloses the methods encloses the constructors, methods, properties and other types that are
- * defined within. A package encloses the free functions, extension functions, and top-level
- * types enclosed within it, but not subpackages. Other kinds of elements (annotation classes
- * in particular) are not currently considered to enclose any elements; however, that may
- * change as this API or the programming language evolves.
+ * Mixin interface for an element that "encloses" other [KotlinElement]s.
+ *
+ * A class, object, enum class or interface encloses the methods encloses the constructors,
+ * methods, properties and other kotlinTypes that are defined within. A package encloses the free
+ * functions, extension functions, and top-level kotlinTypes enclosed within it, but not subpackages.
+ * Other kinds of elements (annotation classes in particular) are not currently considered to
+ * enclose any elements; however, that maychange as this API or the programming language evolves.
  */
 interface EnclosesKotlinElements {
 	val enclosedKotlinElements: Set<KotlinElement>
 }
 
+/** Mixin interface for an element that may have a companion object */
 interface HasKotlinCompanion : EnclosesKotlinElements {
-	val companion: KotlinObjectElement?
+    override val enclosedKotlinElements: Set<KotlinElement>
+        get() = setOfNotNull(companion)
+
+    val companion: KotlinObjectElement?
 }
 
+/** Mixin interface for an element that may have constructors */
 interface EnclosesKotlinConstructors : EnclosesKotlinElements {
+    override val enclosedKotlinElements: Set<KotlinElement>
+        get() = constructors
+
 	val constructors: Set<KotlinConstructorElement>
 
 	val primaryConstructor: KotlinConstructorElement
 		get() = constructors.single { it.isPrimary }
 }
 
+/** Mixin interface for an element that may enclose type aliases */
 interface EnclosesKotlinTypeAliases : EnclosesKotlinElements {
+    override val enclosedKotlinElements: Set<KotlinElement>
+        get() = typeAliases
+
 	val typeAliases: Set<KotlinTypeAliasElement>
 }
 
+/** Mixin interface for an element that may enclose kotlin packages */
 interface EnclosesKotlinPackages : EnclosesKotlinElements {
+    override val enclosedKotlinElements: Set<KotlinElement>
+        get() = kotlinPackages
+
 	val kotlinPackages: Set<KotlinPackageElement>
 }
 
+/** Mixin interface for an element that may enclose properties */
 interface EnclosesKotlinProperties : EnclosesKotlinElements {
+    override val enclosedKotlinElements: Set<KotlinElement>
+        get() = properties
+
 	val properties: Set<KotlinPropertyElement>
 }
 
+/** Mixin interface for an element that may enclose functions */
 interface EnclosesKotlinFunctions : EnclosesKotlinElements {
+    override val enclosedKotlinElements: Set<KotlinElement>
+        get() = functions
+
 	val functions: Set<KotlinFunctionElement>
 }
 
+/** Mixin interface for an element that may enclose kotlin kotlinTypes */
 interface EnclosesKotlinTypes : EnclosesKotlinElements {
-	val types: Set<KotlinTypeElement>
+    override val enclosedKotlinElements: Set<KotlinElement>
+        get() = kotlinTypes
+
+	val kotlinTypes: Set<KotlinTypeElement>
 }
 
 internal class EnclosedElementsDelegate(
-		enclosingKtElement: KotlinElement,
-		protoTypeAliases: List<ProtoBuf.TypeAlias> = emptyList(),
-		protoProps: List<ProtoBuf.Property> = emptyList(),
-		protoCtors: List<ProtoBuf.Constructor> = emptyList(),
-		protoFunctions: List<ProtoBuf.Function> = emptyList(),
-		companionSimpleName: String? = null,
-		enclosedJavaElems: List<Element>,
-		private val protoNameResolver: NameResolver,
-		private val protoTypeTable: ProtoBuf.TypeTable,
-		private val processingEnv: ProcessingEnvironment
+	enclosingKtElement: KotlinElement,
+	protoTypeAliases: List<ProtoBuf.TypeAlias> = emptyList(),
+	protoProps: List<ProtoBuf.Property> = emptyList(),
+	protoCtors: List<ProtoBuf.Constructor> = emptyList(),
+	protoFunctions: List<ProtoBuf.Function> = emptyList(),
+	companionSimpleName: String? = null,
+	enclosedJavaElems: List<Element>,
+	private val protoNameResolver: NameResolver,
+	private val protoTypeTable: ProtoBuf.TypeTable,
+	private val processingEnv: ProcessingEnvironment
 ) {
 
 	init {
@@ -100,7 +151,7 @@ internal class EnclosedElementsDelegate(
 	}
 
 	val kotlinElements: Set<KotlinElement> by lazy {
-		//don't add companion object here. It should already be included in types
+		//don't add companion object here. It should already be included in kotlinTypes
 		@Suppress("unchecked_cast")
 		(typeAliases + types + constructors +
 		 functions + properties + packages) as Set<KotlinElement>
@@ -119,10 +170,15 @@ internal class EnclosedElementsDelegate(
 				else
 					null
 
-				KotlinTypeAliasElement(annotHolderElem, protoTypeAlias, protoTypeTable, protoNameResolver, enclosingKtElement, processingEnv)
+				KotlinTypeAliasElement(annotHolderElem, protoTypeAlias, protoTypeTable,
+                    protoNameResolver, enclosingKtElement, processingEnv.elementUtils)
 			}
 			catch (e : Exception) {
-				throw KotlinElementConversionException(protoTypeAlias, protoNameResolver, e)
+				throw KotlinElementConversionException(
+					protoTypeAlias,
+					protoNameResolver,
+					e
+				)
 			}
 		}.toSet()
 	}
@@ -130,12 +186,6 @@ internal class EnclosedElementsDelegate(
 	val types: Set<KotlinTypeElement> by lazy {
 		javaTypeElems.mapNotNull {
 			it.asKotlin(processingEnv) as? KotlinTypeElement
-		}.toSet()
-	}
-
-	val enclosedModules: Set<KotlinModuleElement> by lazy {
-		javaModuleElems.mapNotNull {
-			it.asKotlin(processingEnv) as? KotlinModuleElement
 		}.toSet()
 	}
 
@@ -153,7 +203,8 @@ internal class EnclosedElementsDelegate(
 
 				val setterElem = if (propertyJvmProtoSignature.hasSetter()) {
 					val setterJvmSignature = propertyJvmProtoSignature.setter.jvmSignatureString(protoNameResolver)
-											 ?: throw IllegalStateException("Property setter should always have jvm name if it exists")
+											 ?: throw IllegalStateException(
+                                                 "Property setter should always have jvm name if it exists")
 
 					javaMethodElems.atMostOne { it.jvmSignature() == setterJvmSignature }
 				}
@@ -164,7 +215,8 @@ internal class EnclosedElementsDelegate(
 				//TODO("handle the trick where people use a getter with DeprecationLevel.HIDDEN to create properties with inaccessible getter")
 				val getterElem = if (propertyJvmProtoSignature.hasGetter()) {
 					val getterJvmSignature = propertyJvmProtoSignature.getter.jvmSignatureString(protoNameResolver)
-											 ?: throw IllegalStateException("Property getter should always have jvm name if it exists")
+											 ?: throw IllegalStateException(
+                                                 "Property getter should always have jvm name if it exists")
 
 					javaMethodElems.single { it.jvmSignature() == getterJvmSignature }
 				}
@@ -199,7 +251,9 @@ internal class EnclosedElementsDelegate(
 				}
 
 				val delegateFieldElem = if (protoProperty.isDelegated) {
-					javaFieldElems.single { propertyName == it.simpleName.toString() + JvmAbi.DELEGATED_PROPERTY_NAME_SUFFIX }
+					javaFieldElems.single {
+                        propertyName == it.simpleName.toString() + JvmAbi.DELEGATED_PROPERTY_NAME_SUFFIX
+                    }
 				}
 				else {
 					null
@@ -211,7 +265,12 @@ internal class EnclosedElementsDelegate(
 						delegateFieldElem, protoProperty, protoNameResolver, processingEnv)
 			}
 			catch (e : Exception) {
-				throw KotlinElementConversionException(protoProperty, protoNameResolver, protoTypeTable, e)
+				throw KotlinElementConversionException(
+					protoProperty,
+					protoNameResolver,
+					protoTypeTable,
+					e
+				)
 			}
 		}.toSet()
 	}
@@ -230,10 +289,12 @@ internal class EnclosedElementsDelegate(
 				)
 
 				KotlinConstructorElement(element, overloadElements, enclosingKtElement as KotlinTypeElement,
-						protoCtor, protoNameResolver, processingEnv)
+					protoCtor, protoNameResolver)
 			}
 			catch (e : Exception) {
-				throw KotlinElementConversionException(protoCtor, protoNameResolver, protoTypeTable, e)
+				throw KotlinElementConversionException(
+					protoCtor, protoNameResolver, protoTypeTable, e
+				)
 			}
 		}
 				.sortedBy { !it.isPrimary }.toList() // sort list by inverse of isPrimary so that the primary ctor will come first
@@ -260,7 +321,9 @@ internal class EnclosedElementsDelegate(
 				KotlinFunctionElement(javaFunc, javaOverloads, enclosingKtElement, protoFunc,
 					protoNameResolver, processingEnv.elementUtils)
 			} catch (e : Exception) {
-				throw KotlinElementConversionException(protoFunc, protoNameResolver, protoTypeTable, e)
+				throw KotlinElementConversionException(
+					protoFunc, protoNameResolver, protoTypeTable, e
+				)
 			}
 		}.toSet()
 	}
@@ -317,7 +380,12 @@ internal class EnclosedElementsDelegate(
 		// now find those other Java executable elements that are generated by @JvmOverloads
 		// and belong to this Kotlin method
 		val jvmOverloadElems = executableElements.filter { overloadElem ->
-			val overloadElemParams = overloadElem.parameters.map { JavaParameter(it, processingEnv) }
+			val overloadElemParams = overloadElem.parameters.map {
+				JavaParameter(
+					it,
+					processingEnv
+				)
+			}
 
 			// overload executable javaElement must have...
 			overloadElem.simpleName == matchingElement.simpleName // ...the same name

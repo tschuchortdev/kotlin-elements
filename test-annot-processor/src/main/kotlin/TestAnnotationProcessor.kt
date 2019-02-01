@@ -8,7 +8,10 @@ import javax.lang.model.SourceVersion
 import javax.lang.model.element.*
 import javax.tools.Diagnostic
 import PackageAnnotation
-import javax.lang.model.AnnotatedConstruct
+import mixins.EnclosesKotlinElements
+import mixins.HasKotlinModality
+import mixins.HasKotlinVisibility
+import mixins.KotlinParameterizable
 
 @Target(AnnotationTarget.CLASS)
 annotation class ClassAnnotation
@@ -180,11 +183,11 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					"\ngetter:" + getter?.printKotlinSummary()?.prependIndent("\t")	+
 					"\nbacking field:" + backingField?.printKotlinSummary()?.prependIndent("\t")
 
-				   is KotlinPropertyElement.Getter -> """
+				   is KotlinGetterElement -> """
 				   """.trimIndent()
 
-				   is KotlinPropertyElement.Setter ->
-					   "\nsetter parameter:" + parameter.printKotlinSummary().prependIndent("\t")
+				   is KotlinSetterElement ->
+					   "\nsetter parameter:" + parameters.first().printKotlinSummary().prependIndent("\t")
 
 				   is KotlinTypeElement -> """
 					   isExternal: $isExternal

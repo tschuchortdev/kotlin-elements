@@ -1,9 +1,12 @@
 package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
+import mixins.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeElement
 
+/** A Kotlin file facade. File facades are needed because Kotlin files can contain top-level
+ * free functions, but Java doesn't support those, so a facade class is generated to hold them */
 class KotlinFileFacadeElement private constructor(
 		override val javaElement: TypeElement,
 		private val packageData: PackageData?,
@@ -33,21 +36,21 @@ class KotlinFileFacadeElement private constructor(
 	override val properties: Set<KotlinPropertyElement>
 		get() = enclosedElementsDelegate?.properties ?: emptySet()
 
-	override val types: Set<KotlinTypeElement>
+	override val kotlinTypes: Set<KotlinTypeElement>
 		get() = enclosedElementsDelegate?.types ?: emptySet()
 
 	private val enclosedElementsDelegate = packageData?.packageProto?.let { facadeProto ->
 		EnclosedElementsDelegate(
-				enclosingKtElement = enclosingElement,
-				protoTypeAliases = facadeProto.typeAliasList,
-				protoProps = facadeProto.propertyList,
-				protoCtors = emptyList(),
-				protoFunctions = facadeProto.functionList,
-				companionSimpleName = null,
-				enclosedJavaElems = javaElement.enclosedElements,
-				protoNameResolver = packageData.nameResolver,
-				protoTypeTable = facadeProto.typeTable,
-				processingEnv = processingEnv
+			enclosingKtElement = enclosingElement,
+			protoTypeAliases = facadeProto.typeAliasList,
+			protoProps = facadeProto.propertyList,
+			protoCtors = emptyList(),
+			protoFunctions = facadeProto.functionList,
+			companionSimpleName = null,
+			enclosedJavaElems = javaElement.enclosedElements,
+			protoNameResolver = packageData.nameResolver,
+			protoTypeTable = facadeProto.typeTable,
+			processingEnv = processingEnv
 		)
 	}
 }

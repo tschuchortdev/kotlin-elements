@@ -14,7 +14,8 @@ data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 
 */
 
-class A()
+class A {
+}
 
 interface I {
 	fun bar(): String
