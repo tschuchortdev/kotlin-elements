@@ -2,6 +2,7 @@ package com.tschuchort.kotlinelements
 
 import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.shadow.load.java.JvmAbi
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import mixins.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
@@ -73,7 +74,11 @@ object KotlinElementFactory {
             = when (val metadata = elem.kotlinMetadata!!) {
         is KotlinClassMetadata -> when (elem.kind!!) {
             ElementKind.ENUM -> KotlinEnumElement(elem, metadata, processingEnv)
-            ElementKind.CLASS -> KotlinClassElement(elem, metadata, processingEnv)
+            ElementKind.CLASS -> if(metadata.data.classProto.classKind == ProtoBuf.Class.Kind.COMPANION_OBJECT
+                    || metadata.data.classProto.classKind == ProtoBuf.Class.Kind.OBJECT)
+                KotlinObjectElement(elem, metadata, processingEnv)
+            else
+                KotlinClassElement(elem, metadata, processingEnv) as KotlinElement
             ElementKind.INTERFACE -> KotlinInterfaceElement(elem, metadata, processingEnv)
             ElementKind.ANNOTATION_TYPE -> KotlinAnnotationElement(elem, metadata, processingEnv)
             else -> throw AssertionError("Only TypeElements should have Kotlin metadata")
