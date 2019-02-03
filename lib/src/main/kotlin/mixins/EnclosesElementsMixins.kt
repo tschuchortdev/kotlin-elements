@@ -283,6 +283,7 @@ internal class EnclosedElementsDelegate(
 	val constructors: Set<KotlinConstructorElement> by lazy {
 		protoCtors.asSequence().map { protoCtor ->
 			try {
+				// TODO("deal with the implicit parameter to enclosing class for inner class ctors")
 				val (element, overloadElements) = findCorrespondingExecutableElements(
 						protoCtor.jvmSignature(enclosingKtElement is KotlinEnumElement),
 						protoCtor.valueParameterList, javaCtorElems
@@ -291,9 +292,9 @@ internal class EnclosedElementsDelegate(
 				KotlinConstructorElement(element, overloadElements, enclosingKtElement as KotlinTypeElement,
 					protoCtor, protoNameResolver)
 			}
-			catch (e : Exception) {
+			catch (t : Throwable) {
 				throw KotlinElementConversionException(
-					protoCtor, protoNameResolver, protoTypeTable, e
+					protoCtor, protoNameResolver, protoTypeTable, t
 				)
 			}
 		}
@@ -320,9 +321,9 @@ internal class EnclosedElementsDelegate(
 
 				KotlinFunctionElement(javaFunc, javaOverloads, enclosingKtElement, protoFunc,
 					protoNameResolver, processingEnv.elementUtils)
-			} catch (e : Exception) {
+			} catch (t : Throwable) {
 				throw KotlinElementConversionException(
-					protoFunc, protoNameResolver, protoTypeTable, e
+					protoFunc, protoNameResolver, protoTypeTable, t
 				)
 			}
 		}.toSet()
@@ -369,8 +370,17 @@ internal class EnclosedElementsDelegate(
 		so we can zip them together.
 		But better assert that they have the same name just to be sure
 		 */
+
 		val params = matchingElement.parameters.zipWith(protoParams) { paramElem, protoParam ->
-			assert(paramElem.simpleName.toString() == protoNameResolver.getString(protoParam.name))
+			val javaParamName = paramElem.simpleName.toString()
+			val protoParamName = protoNameResolver.getString(protoParam.name)
+
+			assert(javaParamName == protoParamName
+					|| protoJvmSignature == "equals(Ljava/lang/Object;)Z") {
+				// ugly edge case here where the java parameter name is "p0" on data class generated equals
+				// method while Kotlin parameter name will is "other"
+				"Java parameter name ($javaParamName) and proto parameter name ($protoParamName) should be identical"
+			}
 
 			object : JavaParameter(paramElem, processingEnv) {
 				val required = protoParam.declaresDefaultValue
@@ -381,10 +391,7 @@ internal class EnclosedElementsDelegate(
 		// and belong to this Kotlin method
 		val jvmOverloadElems = executableElements.filter { overloadElem ->
 			val overloadElemParams = overloadElem.parameters.map {
-				JavaParameter(
-					it,
-					processingEnv
-				)
+				JavaParameter(it, processingEnv)
 			}
 
 			// overload executable javaElement must have...
