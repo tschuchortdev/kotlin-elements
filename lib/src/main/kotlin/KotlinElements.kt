@@ -88,7 +88,7 @@ sealed class KotlinTypeElement(
 	processingEnv: ProcessingEnvironment
 ) : KotlinElement(), KotlinParameterizable,
 	KotlinQualifiedNameable, HasKotlinVisibility, HasKotlinModality, Has1To1JavaMapping,
-	HasKotlinMultiPlatformImplementations, HasKotlinExternalImplementation, AnnotatedConstruct by javaElement {
+	HasKotlinMultiPlatformImplementations, AnnotatedConstruct by javaElement {
 
 	protected final val protoClass: ProtoBuf.Class = metadata.data.classProto
 	protected final val protoNameResolver: NameResolver = metadata.data.nameResolver
@@ -110,8 +110,6 @@ sealed class KotlinTypeElement(
 	val superclass: TypeMirror = javaElement.superclass
 
 	final override val isExpect: Boolean = protoClass.isExpectClass
-
-	final override val isExternal: Boolean = protoClass.isExternalClass
 
 	override val enclosingElement: KotlinElement by lazy {
 		javaElement.enclosingElement.asKotlin(processingEnv) as KotlinElement
