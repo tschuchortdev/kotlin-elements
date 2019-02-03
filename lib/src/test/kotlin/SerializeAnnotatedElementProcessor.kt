@@ -12,13 +12,21 @@ import java.util.*
 import serialization.getKryo
 
 
-annotation class SerializeElem
+/**
+ * Mark element to be serialized for testing by [SerializeAnnotatedElementProcessor].
+ */
+annotation class SerializeElemForTesting
 
+/**
+ * An annotation processor for testing purposes that serializes the annotated element
+ * and then sends it base64-encoded via stdout so it can be deserialized and inspected
+ * in a JUnit test.
+ */
 class SerializeAnnotatedElementProcessor : KotlinAbstractProcessor() {
 
     override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latest()
 
-    override fun getSupportedAnnotationTypes(): Set<String> = setOf(SerializeElem::class.java.canonicalName)
+    override fun getSupportedAnnotationTypes(): Set<String> = setOf(SerializeElemForTesting::class.java.canonicalName)
 
     override fun init(processingEnv: ProcessingEnvironment) {
         processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "${this::class.simpleName} init")
@@ -28,7 +36,7 @@ class SerializeAnnotatedElementProcessor : KotlinAbstractProcessor() {
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         val kryo = getKryo()
 
-        for(jElem in roundEnv.getElementsAnnotatedWith(SerializeElem::class.java)) {
+        for(jElem in roundEnv.getElementsAnnotatedWith(SerializeElemForTesting::class.java)) {
             val kElem = jElem.asKotlin(processingEnv) as? KotlinElement
 
             val buffer = Buffer()
