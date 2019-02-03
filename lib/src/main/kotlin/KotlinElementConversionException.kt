@@ -12,28 +12,28 @@ import javax.lang.model.element.Element
  * a ProtoBuf element extracted from a metadata annotation could not be found
  */
 class KotlinElementConversionException private constructor(
-		processedElement: ProcessedElement, cause: Exception
+		processedElement: ProcessedElement, cause: Throwable
 ) : RuntimeException("Could not translate element to corresponding Kotlin element: $processedElement", cause) {
 
-	constructor(javaElement: Element, cause: Exception)
+	constructor(javaElement: Element, cause: Throwable)
 			: this(ProcessedElement.JavaElement(javaElement), cause)
 
-	constructor(protoBufClass: ProtoBuf.Class, nameResolver: NameResolver, cause: Exception)
+	constructor(protoBufClass: ProtoBuf.Class, nameResolver: NameResolver, cause: Throwable)
 			: this(ProcessedElement.ProtoBufClass(protoBufClass, nameResolver), cause)
 
-	constructor(protoBufTypeAlias: ProtoBuf.TypeAlias, nameResolver: NameResolver, cause: Exception)
+	constructor(protoBufTypeAlias: ProtoBuf.TypeAlias, nameResolver: NameResolver, cause: Throwable)
 			: this(ProcessedElement.ProtoBufTypeAlias(protoBufTypeAlias, nameResolver), cause)
 
 	constructor(protoBufConstructor: ProtoBuf.Constructor, nameResolver: NameResolver,
-				typeTable: ProtoBuf.TypeTable, cause: Exception)
+				typeTable: ProtoBuf.TypeTable, cause: Throwable)
 			: this(ProcessedElement.ProtoBufConstructor(protoBufConstructor, nameResolver, typeTable), cause)
 
 	constructor(protoBufFunction: ProtoBuf.Function, nameResolver: NameResolver,
-				typeTable: ProtoBuf.TypeTable, cause: Exception)
+				typeTable: ProtoBuf.TypeTable, cause: Throwable)
 			: this(ProcessedElement.ProtoBufFunction(protoBufFunction, nameResolver, typeTable), cause)
 
 	constructor(protoBufProperty: ProtoBuf.Property, nameResolver: NameResolver,
-				typeTable: ProtoBuf.TypeTable, cause: Exception)
+				typeTable: ProtoBuf.TypeTable, cause: Throwable)
 			: this(ProcessedElement.ProtoBufProperty(protoBufProperty, nameResolver, typeTable), cause)
 
 	sealed class ProcessedElement {
