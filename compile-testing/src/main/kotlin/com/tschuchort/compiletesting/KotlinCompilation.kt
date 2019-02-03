@@ -150,7 +150,8 @@ data class KotlinCompilation(
 	var allWarningsAsErrors: Boolean = false,
 	var reportOutputFiles: Boolean = false,
 	var reportPerformance: Boolean = false,
-	var loadBuiltInsFromDependencies: Boolean = false
+	var loadBuiltInsFromDependencies: Boolean = false,
+	var multiplatform: Boolean = false
 ) {
 
 	// Directory for input source files
@@ -346,6 +347,8 @@ data class KotlinCompilation(
 		val k2JvmArgs = commonK2JVMArgs().also {
 			it.freeArgs = sources.map(File::getAbsolutePath)
 				.distinct() + addKotlincArgs
+
+			it.multiPlatform = multiplatform
 		}
 
         return convertKotlinExitCode(
