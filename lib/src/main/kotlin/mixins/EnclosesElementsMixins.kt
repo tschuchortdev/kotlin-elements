@@ -285,7 +285,10 @@ internal class EnclosedElementsDelegate(
 			try {
 				// TODO("deal with the implicit parameter to enclosing class for inner class ctors")
 				val (element, overloadElements) = findCorrespondingExecutableElements(
-						protoCtor.jvmSignature(enclosingKtElement is KotlinEnumElement),
+						protoCtor.jvmSignature(
+								isEnumConstructor = enclosingKtElement is KotlinEnumElement,
+								isInnerClassConstructor = (enclosingKtElement as? KotlinClassElement)?.isInner
+									?: false),
 						protoCtor.valueParameterList, javaCtorElems
 				)
 
@@ -424,7 +427,8 @@ internal class EnclosedElementsDelegate(
 		}
 	}
 
-	private fun ProtoBuf.Constructor.jvmSignature(isEnumConstructor: Boolean)
+	private fun ProtoBuf.Constructor.jvmSignature(isEnumConstructor: Boolean,
+												  isInnerClassConstructor: Boolean)
 			= with(processingEnv.kotlinMetadataUtils) {
 		val signature = this@jvmSignature.getJvmConstructorSignature(protoNameResolver, protoTypeTable)
 						?: throw IllegalArgumentException("could not get JVM signature for ProtoBuf.Constructor")
@@ -437,6 +441,15 @@ internal class EnclosedElementsDelegate(
 			from the signature so they will match */
 			check(signature.startsWith("<init>(Ljava/lang/String;I"))
 			signature.removeFirstOccurance("Ljava/lang/String;I")
+		}
+		else if(isInnerClassConstructor) {
+			/* If the constructor belongs to an inner class the first parameter will be
+			a reference to the outer class. The JVM signature that we get doesn't have
+			that parameter, so we need to remove it to match them later. */
+			val (nameAndOpeningBracket, firstParameter, rest)
+					= Regex("(<init>\\()" + "(L.*?;)(.*)") .matchEntire(signature)!!.destructured
+
+			nameAndOpeningBracket + rest
 		}
 		else
 			signature
