@@ -174,11 +174,7 @@ internal class EnclosedElementsDelegate(
                     protoNameResolver, enclosingKtElement, processingEnv.elementUtils)
 			}
 			catch (e : Exception) {
-				throw KotlinElementConversionException(
-					protoTypeAlias,
-					protoNameResolver,
-					e
-				)
+				throw KotlinElementConversionException(protoTypeAlias, protoNameResolver, e)
 			}
 		}.toSet()
 	}

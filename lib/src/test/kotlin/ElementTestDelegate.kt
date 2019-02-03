@@ -66,7 +66,8 @@ class ElementTester(private val temporaryFolder: TemporaryFolder) {
 				skipRuntimeVersionCheck = true,
 				correctErrorTypes = true,
 				verbose = true,
-				reportOutputFiles = true
+				reportOutputFiles = true,
+				multiplatform = true
 		)
 	}
 
