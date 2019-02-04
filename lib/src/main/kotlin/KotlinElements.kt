@@ -1,5 +1,6 @@
 package com.tschuchort.kotlinelements
 
+import com.tschuchort.kotlinelements.mixins.HasSyntheticMethodForAnnotations
 import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.jvm.jvmClassModuleName
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
@@ -539,12 +540,12 @@ class KotlinPropertyElement internal constructor(
 	 * synthetic method named "propertyName$annotations" to hold the annotations that
 	 * are targeted at the property and not backing field, getter or setter
 	 */
-	val javaAnnotationHolderElement: ExecutableElement?,
+	override val javaAnnotationHolderElement: ExecutableElement?,
 	delegateField: VariableElement?,
 	protoProperty: ProtoBuf.Property,
 	protoNameResolver: NameResolver,
 	processingEnv: ProcessingEnvironment
-) : KotlinElement(), HasKotlinVisibility, HasKotlinModality,
+) : KotlinElement(), HasKotlinVisibility, HasKotlinModality, HasSyntheticMethodForAnnotations,
 	HasKotlinExternalImplementation, HasKotlinMultiPlatformImplementations {
 
 	init {
@@ -767,8 +768,9 @@ class KotlinSetterElement internal constructor(
 	override val modality: KotlinModality = KotlinModality.fromProtoBuf(protoProperty.setterModality!!)
 	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoProperty.setterVisibility!!)
 
-	override val parameters: List<KotlinParameterElement>
-			= listOf(KotlinSetterParameterElement(this, javaElement.parameters.first()))
+	override val parameters: List<KotlinParameterElement> by lazy {
+		listOf(KotlinSetterParameterElement(this, javaElement.parameters.first()))
+	}
 }
 
 /** Parameter of a Kotlin setter */
@@ -907,13 +909,13 @@ class KotlinTypeAliasElement internal constructor(
 		 * an empty parameterless void-returning synthetic method named
 		 * "aliasName$annotations" to hold the annotations
 		 */
-		final val javaAnnotationHolderElement: ExecutableElement?,
+		final override val javaAnnotationHolderElement: ExecutableElement?,
 		protoTypeAlias: ProtoBuf.TypeAlias,
 		protoTypeTable: ProtoBuf.TypeTable,
 		protoNameResolver: NameResolver,
 		override val enclosingElement: KotlinElement,
 		elementUtils: Elements
-) : KotlinElement(), HasKotlinVisibility, KotlinParameterizable {
+) : KotlinElement(), HasKotlinVisibility, KotlinParameterizable, HasSyntheticMethodForAnnotations {
 
 	init {
 		assert(protoTypeAlias.hasAnnotations == (javaAnnotationHolderElement != null))

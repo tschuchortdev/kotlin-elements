@@ -9,6 +9,7 @@ import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameRe
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.*
+import javax.lang.model.type.*
 
 /** Mixin interface for Kotlin elements that may also enclose Java elements */
 interface EnclosesJavaElements {
@@ -279,7 +280,6 @@ internal class EnclosedElementsDelegate(
 	val constructors: Set<KotlinConstructorElement> by lazy {
 		protoCtors.asSequence().map { protoCtor ->
 			try {
-				// TODO("deal with the implicit parameter to enclosing class for inner class ctors")
 				val (element, overloadElements) = findCorrespondingExecutableElements(
 						protoCtor.jvmSignature(
 								isEnumConstructor = enclosingKtElement is KotlinEnumElement,
