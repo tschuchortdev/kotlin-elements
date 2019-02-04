@@ -103,6 +103,7 @@ fun Kryo.addJavaLangModelSerializers(serializeEnclosingPackages: Boolean, serial
     addDefaultSerializer(KotlinFunctionElement::class.java, KotlinElementSerializer(KotlinFunctionElement::class, serializeEnclosingPackages))
     addDefaultSerializer(KotlinConstructorElement::class.java, KotlinElementSerializer(KotlinConstructorElement::class, serializeEnclosingPackages))
     addDefaultSerializer(KotlinParameterElement::class.java, KotlinElementSerializer(KotlinParameterElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinFunctionParameterElement::class.java, KotlinElementSerializer(KotlinFunctionParameterElement::class, serializeEnclosingPackages))
     addDefaultSerializer(KotlinSetterParameterElement::class.java, KotlinElementSerializer(KotlinSetterParameterElement::class, serializeEnclosingPackages))
     addDefaultSerializer(KotlinPropertyElement::class.java, KotlinElementSerializer(KotlinPropertyElement::class, serializeEnclosingPackages))
     addDefaultSerializer(KotlinGetterElement::class.java, KotlinElementSerializer(KotlinGetterElement::class, serializeEnclosingPackages))
