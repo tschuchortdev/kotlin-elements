@@ -337,7 +337,8 @@ internal class EnclosedElementsDelegate(
 	 * Also it can not be a an inner class or _once again_ the compiler will produce garbage
 	 * (VerifyError: Bad type on operand stack) 😐🔫
 	 */
-	private open class JavaParameter(paramElem: VariableElement, val processingEnv: ProcessingEnvironment) {
+	private open class JavaParameter(paramElem: VariableElement, val processingEnv: ProcessingEnvironment,
+									 val required: Boolean? = null) {
 		val simpleName = paramElem.simpleName.toString()
 		val type = paramElem.asType()
 
@@ -390,9 +391,7 @@ internal class EnclosedElementsDelegate(
 					"Java parameter name ($javaParamName) and proto parameter name ($protoParamName) should be identical"
 				}
 
-				object : JavaParameter(paramElem, processingEnv) {
-					val required = protoParam.declaresDefaultValue
-				}
+				return@zipWith JavaParameter(paramElem, processingEnv, protoParam.declaresDefaultValue)
 			}
 		}
 		catch (t: Throwable) {
@@ -411,7 +410,7 @@ internal class EnclosedElementsDelegate(
 			overloadElem.simpleName == matchingElement.simpleName // ...the same name
 			&& overloadElem.jvmSignature() != protoJvmSignature // ...a different signature, or it would just be the matching javaElement
 			&& params.containsAll(overloadElemParams) // ...a subset of the parameters
-			&& overloadElemParams.containsAll(params.filter { it.required }) // ...all the required (non-default) parameters
+			&& overloadElemParams.containsAll(params.filter { it.required!! }) // ...all the required (non-default) parameters
 		}
 
 		return@run object {
