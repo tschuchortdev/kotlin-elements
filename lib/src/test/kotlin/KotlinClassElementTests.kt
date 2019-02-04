@@ -13,7 +13,7 @@ internal class KotlinClassElementTests {
 	@JvmField
 	val temporaryFolder = TemporaryFolder()
 
-	val elementTester = ElementTester(temporaryFolder)
+	private val elementTester = ElementTester(temporaryFolder)
 
 	@Test
 	fun `Class can be converted to KotlinElement`() {
@@ -433,7 +433,7 @@ internal class KotlinClassElementTests {
             package com.tschuchort.kotlinelements
 
 			@SerializeElemForTesting
-            class KClass<out T : MutableList<Int>, S>
+            class KClass<out T : O, S>
         """.trimIndent()
 				)
 		)
@@ -441,7 +441,6 @@ internal class KotlinClassElementTests {
 		assertThat(elem.typeParameters.map { it.simpleName.toString() }).containsExactly("T", "S")
 		assertThat(elem.typeParameters.first().variance).isEqualTo(KotlinTypeParameterElement.Variance.OUT)
 		assertThat(elem.typeParameters.first().bounds).hasSize(1)
-		assertThat(elem.typeParameters.first().bounds.first().toString()).isEqualTo("MutableList<Int>")
-
+		assertThat(elem.typeParameters.first().bounds.first().toString()).isEqualTo(O::class.qualifiedName)
 	}
 }

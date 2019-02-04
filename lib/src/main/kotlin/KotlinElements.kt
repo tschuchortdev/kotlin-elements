@@ -497,7 +497,7 @@ sealed class KotlinParameterElement(
 	override val enclosingElement: KotlinExecutableElement
 ) : KotlinElement(), Has1To1JavaMapping, AnnotatedConstruct by javaElement {
 	override val simpleName: Name = javaElement.simpleName
-	override fun asType(): TypeMirror = javaElement.asType()
+	override fun asType(): TypeMirror = javaElement.asType() //TODO("resolve parameter types correctly")
 
 	override fun equals(other: Any?): Boolean
 			= (other as? KotlinFunctionParameterElement)?.javaElement == javaElement

@@ -41,9 +41,8 @@ internal class KotlinTypeAliasElementTests {
 			typealias Alias = Any
         """.trimIndent()))
 
-		assertThat(elem.annotationMirrors.map { it.annotationType.toString() }).containsExactlyInAnyOrder(
-				SerializeElemForTesting::class.qualifiedName
-		)
+		assertThat(elem.annotationMirrors.map { it.annotationType.toString() })
+				.containsExactlyInAnyOrder(SerializeElemForTesting::class.qualifiedName)
 	}
 
 	@Test
@@ -55,10 +54,10 @@ internal class KotlinTypeAliasElementTests {
             package com.tschuchort.kotlinelements
 
             @SerializeElemForTesting
-			typealias Alias = MutableList<Int>
+			typealias Alias = O
         """.trimIndent()))
 
-		assertThat(elem.underlyingType.toString()).isEqualTo("MutableList<Int>")
+		assertThat(elem.underlyingType.toString()).isEqualTo(O::class.qualifiedName)
 	}
 
 	@Test
@@ -70,10 +69,10 @@ internal class KotlinTypeAliasElementTests {
             package com.tschuchort.kotlinelements
 
             @SerializeElemForTesting
-			typealias Alias = MutableList<Int>
+			typealias Alias = Any
         """.trimIndent()))
 
-		assertThat(elem.expandedType.toString()).isEqualTo("Alias")
+		assertThat(elem.expandedType.toString()).isEqualTo("com.tschuchort.kotlinelements.Alias")
 	}
 
 	@Test
