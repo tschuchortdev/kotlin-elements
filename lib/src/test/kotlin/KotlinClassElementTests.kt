@@ -423,4 +423,25 @@ internal class KotlinClassElementTests {
 			it.simpleName.toString()
 		}).containsExactlyInAnyOrderElementsOf(expectedElems)
 	}
+
+	@Test
+	fun `Has type parameters`() {
+		val elem = elementTester.getSingleSerializedFrom(
+				KotlinClassElement::class,
+				KotlinCompilation.SourceFile(
+						"KClass.kt", """
+            package com.tschuchort.kotlinelements
+
+			@SerializeElemForTesting
+            class KClass<out T : MutableList<Int>, S>
+        """.trimIndent()
+				)
+		)
+
+		assertThat(elem.typeParameters.map { it.simpleName.toString() }).containsExactly("T", "S")
+		assertThat(elem.typeParameters.first().variance).isEqualTo(KotlinTypeParameterElement.Variance.OUT)
+		assertThat(elem.typeParameters.first().bounds).hasSize(1)
+		assertThat(elem.typeParameters.first().bounds.first().toString()).isEqualTo("MutableList<Int>")
+
+	}
 }
