@@ -15,6 +15,11 @@ import serialization.getKryo
 /**
  * Mark element to be serialized for testing by [SerializeAnnotatedElementProcessor].
  */
+@Target(AnnotationTarget.TYPEALIAS, AnnotationTarget.CLASS, AnnotationTarget.TYPE, AnnotationTarget.ANNOTATION_CLASS,
+        AnnotationTarget.CONSTRUCTOR, AnnotationTarget.FIELD, AnnotationTarget.FILE, AnnotationTarget.PROPERTY_GETTER,
+        AnnotationTarget.FUNCTION, AnnotationTarget.LOCAL_VARIABLE, AnnotationTarget.PROPERTY,
+        AnnotationTarget.PROPERTY_SETTER, AnnotationTarget.TYPE_PARAMETER, AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
 annotation class SerializeElemForTesting
 
 /**
