@@ -40,7 +40,7 @@ object KotlinElementFactory {
 
                 ElementKind.FIELD -> convertField(elem as VariableElement, processingEnv)
 
-                ElementKind.ENUM_CONSTANT -> TODO("handle enum constants")
+                ElementKind.ENUM_CONSTANT -> KotlinEnumConstantElement(elem as VariableElement, processingEnv)
 
                 ElementKind.RESOURCE_VARIABLE,
                 ElementKind.EXCEPTION_PARAMETER,

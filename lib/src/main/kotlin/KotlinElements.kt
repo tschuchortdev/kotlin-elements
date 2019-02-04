@@ -288,7 +288,10 @@ class KotlinEnumElement internal constructor(
 	HasKotlinCompanion {
 
 	/** The enum constants defined by this enum declaration */
-	val enumConstants: List<KotlinEnumConstantElement> get() = TODO("Kotlin enum constants list")
+	val enumConstants: List<KotlinEnumConstantElement> by lazy {
+		javaElement.enclosedElements.filter { it.kind == ElementKind.ENUM_CONSTANT }
+				.map { KotlinEnumConstantElement(it as VariableElement, processingEnv) }
+	}
 
 	override val enclosedKotlinElements: Set<KotlinElement> = super<KotlinTypeElement>.enclosedKotlinElements
 	override val companion: KotlinObjectElement? = super.companion
@@ -300,11 +303,13 @@ class KotlinEnumElement internal constructor(
 
 /** A declaration of an enum constant */
 class KotlinEnumConstantElement internal constructor(
-		final override val javaElement: Element
+		final override val javaElement: VariableElement,
+		processingEnv: ProcessingEnvironment
 ) : KotlinElement(), Has1To1JavaMapping, AnnotatedConstruct by javaElement {
 
-	override val enclosingElement: KotlinEnumElement
-		get() = TODO("implement enum constant enclosing element")
+	override val enclosingElement: KotlinEnumElement by lazy {
+		javaElement.enclosingElement.asKotlin(processingEnv) as KotlinEnumElement
+	}
 
 	//TODO("check if enum constants are kotlinTypes in all cases")
 
