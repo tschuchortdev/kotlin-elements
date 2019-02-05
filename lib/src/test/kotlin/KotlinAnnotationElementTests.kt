@@ -195,9 +195,8 @@ class KotlinAnnotationElementTests {
 		assertThat(elem.qualifiedName.toString())
 				.isEqualTo("com.tschuchort.kotlinelements.Ann")
 	}
-
 	@Test
-	fun `asType() is correct`() {
+	fun `asType() is correct with type parameters`() {
 		val elem = elementTester.getSingleSerializedFrom(
 				KotlinAnnotationElement::class,
 				KotlinCompilation.SourceFile(
@@ -205,12 +204,34 @@ class KotlinAnnotationElementTests {
             package com.tschuchort.kotlinelements
 
 			@SerializeElemForTesting
-            annotation class Ann
+            annotation class Ann<T,S>
         """.trimIndent()
 				)
 		)
 
 		assertThat(elem.asType()).isInstanceOf(DeclaredType::class.java)
-		assertThat((elem.asType() as DeclaredType).toString()).isEqualTo("com.tschuchort.kotlinelements.Ann")
+		assertThat((elem.asType() as DeclaredType).toString()).isEqualTo("com.tschuchort.kotlinelements.Ann<T,S>")
+		assertThat((elem.asType() as DeclaredType).typeArguments.map { it.toString() })
+				.containsExactly("T", "S")
+	}
+
+	@Test
+	fun `Has type parameters`() {
+		val elem = elementTester.getSingleSerializedFrom(
+				KotlinAnnotationElement::class,
+				KotlinCompilation.SourceFile(
+						"Ann.kt", """
+            package com.tschuchort.kotlinelements
+
+			@SerializeElemForTesting
+            annotation class Ann<out T : O, S>
+        """.trimIndent()
+				)
+		)
+
+		assertThat(elem.typeParameters.map { it.simpleName.toString() }).containsExactly("T", "S")
+		assertThat(elem.typeParameters.first().variance).isEqualTo(KotlinTypeParameterElement.Variance.OUT)
+		assertThat(elem.typeParameters.first().bounds).hasSize(1)
+		assertThat(elem.typeParameters.first().bounds.first().toString()).isEqualTo(O::class.qualifiedName)
 	}
 }
