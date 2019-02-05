@@ -7,6 +7,7 @@ import org.assertj.core.api.Assertions.*
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import javax.lang.model.type.DeclaredType
 
 internal class KotlinClassElementTests {
 	@Rule
@@ -442,5 +443,26 @@ internal class KotlinClassElementTests {
 		assertThat(elem.typeParameters.first().variance).isEqualTo(KotlinTypeParameterElement.Variance.OUT)
 		assertThat(elem.typeParameters.first().bounds).hasSize(1)
 		assertThat(elem.typeParameters.first().bounds.first().toString()).isEqualTo(O::class.qualifiedName)
+	}
+
+	@Test
+	fun `asType() is correct with type parameters`() {
+		val elem = elementTester.getSingleSerializedFrom(
+				KotlinClassElement::class,
+				KotlinCompilation.SourceFile(
+						"KClass.kt", """
+            package com.tschuchort.kotlinelements
+
+			@SerializeElemForTesting
+            class KClass <T,S> {
+			}
+        """.trimIndent()
+				)
+		)
+
+		assertThat(elem.asType()).isInstanceOf(DeclaredType::class.java)
+		assertThat((elem.asType() as DeclaredType).toString()).isEqualTo("com.tschuchort.kotlinelements.KClass<T,S>")
+		assertThat((elem.asType() as DeclaredType).typeArguments.map { it.toString() })
+				.containsExactly("T", "S")
 	}
 }

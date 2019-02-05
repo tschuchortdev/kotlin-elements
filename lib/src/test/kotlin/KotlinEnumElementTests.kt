@@ -6,6 +6,7 @@ import org.assertj.core.api.Assertions.*
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import javax.lang.model.type.DeclaredType
 
 class KotlinEnumElementTests {
 	@Rule
@@ -219,6 +220,24 @@ class KotlinEnumElementTests {
 
 		assertThat(elem.kotlinTypes).hasSize(1)
 		assertThat(elem.kotlinTypes.first().simpleName.toString()).isEqualTo("Nested")
+	}
+
+	@Test
+	fun `asType() is correct`() {
+		val elem = elementTester.getSingleSerializedFrom(
+				KotlinEnumElement::class,
+				KotlinCompilation.SourceFile(
+						"Enum.kt", """
+            package com.tschuchort.kotlinelements
+
+			@SerializeElemForTesting
+            enum class Enum
+        """.trimIndent()
+				)
+		)
+
+		assertThat(elem.asType()).isInstanceOf(DeclaredType::class.java)
+		assertThat((elem.asType() as DeclaredType).toString()).isEqualTo("com.tschuchort.kotlinelements.Enum")
 	}
 
 }
