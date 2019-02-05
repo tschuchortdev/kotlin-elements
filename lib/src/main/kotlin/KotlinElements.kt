@@ -101,9 +101,6 @@ sealed class KotlinTypeElement(
 
 	override val modality: KotlinModality = KotlinModality.fromProtoBuf(protoClass.modality!!)
 
-	/** Whether this type is an inner type */
-	val isInner: Boolean = protoClass.isInnerClass
-
 	/** The interfaces implemented by this type */
 	val interfaces: List<TypeMirror> = javaElement.interfaces
 
@@ -181,6 +178,9 @@ class KotlinClassElement internal constructor(
 
 	/** Whether this class is a data class */
 	val isDataClass: Boolean = protoClass.isDataClass
+
+	/** Whether this type is an inner type */
+	val isInner: Boolean = protoClass.isInnerClass
 
 	override val enclosedKotlinElements: Set<KotlinElement> = super<KotlinTypeElement>.enclosedKotlinElements
 	override val companion: KotlinObjectElement? = super.companion
@@ -267,7 +267,7 @@ class KotlinAnnotationParameterElement internal constructor(
 	 * The default value of this annotation parameter or
 	 * [null] if it doesn't have one
 	 */
-	val defaultValue: Any? = javaElement.defaultValue
+	val defaultValue: AnnotationValue? = javaElement.defaultValue
 
 	override val simpleName: Name = javaElement.simpleName
 
