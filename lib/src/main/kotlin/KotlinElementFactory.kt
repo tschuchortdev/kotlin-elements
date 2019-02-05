@@ -115,7 +115,6 @@ object KotlinElementFactory {
         val functions = (enclosingKotlinElem as? EnclosesKotlinFunctions)?.functions
         val properties = (enclosingKotlinElem as? EnclosesKotlinProperties)?.properties
         val typeAliases = (enclosingKotlinElem as? EnclosesKotlinTypeAliases)?.typeAliases
-        val annotationParams = (enclosingKotlinElem as? KotlinAnnotationElement)?.parameters
 
         /**
          * A JVM method element can be any of the following:
@@ -130,18 +129,20 @@ object KotlinElementFactory {
          * We need to try all in order to find the corresponding Kotlin element
          */
 
-        return functions?.atMostOne { it.javaElement == elem }
-                as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
-            ?: functions?.flatMap { it.javaOverloads }?.atMostOne { it.javaElement == elem }
-            ?: properties?.mapNotNull { it.getter }?.atMostOne { it.javaElement == elem }
-            ?: properties?.mapNotNull { it.setter }?.atMostOne { it.javaElement == elem }
-            ?: properties?.atMostOne { it.javaAnnotationHolderElement == elem }
-            ?: typeAliases?.atMostOne { it.javaAnnotationHolderElement == elem }
-            ?: annotationParams?.atMostOne { it.javaElement == elem }
-            ?: throw IllegalStateException(
-                "Can not convert elem $elem to Kotlin: ElementKind is METHOD but does not belong to " +
-                        "any Kotlin function, overload, getter, setter, property annotation holder, type alias annotation" +
-                        "holder or annotation class parameter of its enclosing elem.")
+        return if(enclosingKotlinElem is KotlinAnnotationElement)
+            enclosingKotlinElem.parameters.single { it.javaElement == elem }
+        else
+            functions?.atMostOne { it.javaElement == elem }
+                    as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
+                ?: functions?.flatMap { it.javaOverloads }?.atMostOne { it.javaElement == elem }
+                ?: properties?.mapNotNull { it.getter }?.atMostOne { it.javaElement == elem }
+                ?: properties?.mapNotNull { it.setter }?.atMostOne { it.javaElement == elem }
+                ?: properties?.atMostOne { it.javaAnnotationHolderElement == elem }
+                ?: typeAliases?.atMostOne { it.javaAnnotationHolderElement == elem }
+                ?: throw IllegalStateException(
+                        "Can not convert elem $elem to Kotlin: ElementKind is METHOD but does not belong to " +
+                                "any Kotlin function, overload, getter, setter, property annotation holder, type alias annotation" +
+                                "holder or annotation class parameter of its enclosing elem.")
     }
 
     private fun convertTypeParam(elem: TypeParameterElement, processingEnv: ProcessingEnvironment): KotlinRelatedElement {
