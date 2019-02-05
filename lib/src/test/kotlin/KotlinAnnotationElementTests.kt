@@ -195,6 +195,7 @@ class KotlinAnnotationElementTests {
 		assertThat(elem.qualifiedName.toString())
 				.isEqualTo("com.tschuchort.kotlinelements.Ann")
 	}
+
 	@Test
 	fun `asType() is correct with type parameters`() {
 		val elem = elementTester.getSingleSerializedFrom(
