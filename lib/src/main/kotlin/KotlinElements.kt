@@ -282,7 +282,11 @@ class KotlinAnnotationParameterElement internal constructor(
 
 	override fun equals(other: Any?): Boolean = (javaElement == other)
 	override fun hashCode(): Int = javaElement.hashCode()
-	override fun toString(): String = javaElement.toString() //TODO("annotation parameter toString")
+
+	override fun toString(): String {
+		assert(javaElement.toString().endsWith("()"))
+		return javaElement.toString().removeSuffix("()")
+	}
 }
 
 /** A declaration of an enum class */
