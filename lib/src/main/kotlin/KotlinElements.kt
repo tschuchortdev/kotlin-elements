@@ -271,7 +271,7 @@ class KotlinAnnotationParameterElement internal constructor(
 
 	override val simpleName: Name = javaElement.simpleName
 
-	override fun asType(): TypeMirror = javaElement.asType()
+	override fun asType(): TypeMirror = javaElement.returnType
 
 	override fun equals(other: Any?): Boolean = (javaElement == other)
 	override fun hashCode(): Int = javaElement.hashCode()
