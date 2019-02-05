@@ -87,7 +87,7 @@ sealed class KotlinTypeElement(
 	final override val javaElement: TypeElement,
 	metadata: KotlinClassMetadata,
 	processingEnv: ProcessingEnvironment
-) : KotlinElement(), KotlinParameterizable,
+) : KotlinElement(),
 	KotlinQualifiedNameable, HasKotlinVisibility, HasKotlinModality, Has1To1JavaMapping,
 	HasKotlinMultiPlatformImplementations, AnnotatedConstruct by javaElement {
 
@@ -113,7 +113,7 @@ sealed class KotlinTypeElement(
 		javaElement.enclosingElement.asKotlin(processingEnv) as KotlinElement
 	}
 
-	final override val typeParameters: List<KotlinTypeParameterElement>
+	protected val typeParameters: List<KotlinTypeParameterElement>
 		get() = parameterizableDelegate.typeParameters
 
 	final override fun asType(): TypeMirror = javaElement.asType()
@@ -174,7 +174,7 @@ class KotlinClassElement internal constructor(
 	processingEnv: ProcessingEnvironment
 ) : KotlinTypeElement(javaElement, metadata, processingEnv), EnclosesKotlinConstructors,
 	EnclosesKotlinFunctions, EnclosesKotlinProperties, EnclosesKotlinTypes,
-	HasKotlinCompanion {
+	HasKotlinCompanion, KotlinParameterizable {
 
 	/** Whether this class is a data class */
 	val isDataClass: Boolean = protoClass.isDataClass
@@ -188,6 +188,8 @@ class KotlinClassElement internal constructor(
 	override val functions: Set<KotlinFunctionElement> = super.functions
 	override val properties: Set<KotlinPropertyElement> = super.properties
 	override val kotlinTypes: Set<KotlinTypeElement> = super.kotlinTypes
+
+	override val typeParameters: List<KotlinTypeParameterElement> = super.typeParameters
 }
 
 /** A Kotlin interface declaration */
@@ -197,13 +199,16 @@ class KotlinInterfaceElement internal constructor(
 	processingEnv: ProcessingEnvironment
 ) : KotlinTypeElement(javaElement, metadata, processingEnv),
 	EnclosesKotlinFunctions, EnclosesKotlinProperties, EnclosesKotlinTypes,
-	HasKotlinCompanion {
+	HasKotlinCompanion, KotlinParameterizable {
 
 	override val enclosedKotlinElements: Set<KotlinElement> = super<KotlinTypeElement>.enclosedKotlinElements
 	override val companion: KotlinObjectElement? = super.companion
 	override val functions: Set<KotlinFunctionElement> = super.functions
 	override val properties: Set<KotlinPropertyElement> = super.properties
 	override val kotlinTypes: Set<KotlinTypeElement> = super.kotlinTypes
+
+	override val typeParameters: List<KotlinTypeParameterElement> = super.typeParameters
+
 }
 
 /**
@@ -244,7 +249,7 @@ class KotlinAnnotationElement internal constructor(
 	javaElement: TypeElement,
 	metadata: KotlinClassMetadata,
 	processingEnv: ProcessingEnvironment
-) : KotlinTypeElement(javaElement, metadata, processingEnv) {
+) : KotlinTypeElement(javaElement, metadata, processingEnv), KotlinParameterizable {
 	/** The parameters of the annotation */
 	val parameters: List<KotlinAnnotationParameterElement> by lazy {
 		javaElement.enclosedElements.map {
@@ -252,6 +257,8 @@ class KotlinAnnotationElement internal constructor(
 			KotlinAnnotationParameterElement(it as ExecutableElement, this)
 		}
 	}
+
+	override val typeParameters: List<KotlinTypeParameterElement> = super.typeParameters
 }
 
 /** A parameter of an annotation class */
