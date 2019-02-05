@@ -278,7 +278,16 @@ internal class EnclosedElementsDelegate(
 	 * The primary constructor will be the first one in the list
 	 */
 	val constructors: Set<KotlinConstructorElement> by lazy {
-		protoCtors.asSequence().map { protoCtor ->
+		/* If the enclosing element is an annotation class, the proto class will contain
+		a constructor signature, but in reality annotations don't really have constructors
+		so no corresponding ExecutableElement exists. We will ignore it here. */
+		if(enclosingKtElement is KotlinAnnotationElement) {
+			assert(protoCtors.size == 1)
+			assert(javaCtorElems.isEmpty())
+			return@lazy emptySet<KotlinConstructorElement>()
+		}
+
+		return@lazy protoCtors.asSequence().map { protoCtor ->
 			try {
 				val (element, overloadElements) = findCorrespondingExecutableElements(
 						protoCtor.jvmSignature(
