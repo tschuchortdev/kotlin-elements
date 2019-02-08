@@ -231,7 +231,7 @@ class KotlinObjectElement internal constructor(
 	metadata: KotlinClassMetadata,
 	processingEnv: ProcessingEnvironment
 ) : KotlinTypeElement(javaElement, metadata, processingEnv), EnclosesKotlinTypes,
-	EnclosesKotlinProperties, EnclosesKotlinFunctions {
+	EnclosesKotlinProperties, EnclosesKotlinFunctions, EnclosesKotlinConstructors {
 
 	/** Whether this object is a companion object */
 	val isCompanion: Boolean = (protoClass.classKind == ProtoBuf.Class.Kind.COMPANION_OBJECT)
@@ -240,6 +240,7 @@ class KotlinObjectElement internal constructor(
 	override val companion: KotlinObjectElement? = super.companion
 	override val functions: Set<KotlinFunctionElement> = super.functions
 	override val properties: Set<KotlinPropertyElement> = super.properties
+	override val constructors: Set<KotlinConstructorElement> = super.constructors
 	override val kotlinTypes: Set<KotlinTypeElement> = super.kotlinTypes
 }
 
