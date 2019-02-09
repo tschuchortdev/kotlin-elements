@@ -116,6 +116,7 @@ fun Kryo.addElementSerializers(serializeEnclosingPackages: Boolean, serializeDec
     addDefaultSerializer(KotlinTypeParameterElement::class.java, KotlinElementSerializer(KotlinTypeParameterElement::class, serializeEnclosingPackages))
     addDefaultSerializer(KotlinElement::class.java, KotlinElementSerializer(KotlinElement::class, serializeEnclosingPackages))
     addDefaultSerializer(KotlinTypeElement::class.java, KotlinElementSerializer(KotlinTypeElement::class, serializeEnclosingPackages))
+    addDefaultSerializer(KotlinFileFacadeElement::class.java, KotlinCompatElementSerializer(KotlinFileFacadeElement::class, serializeEnclosingPackages))
 
     addDefaultSerializer(RuntimeException::class.java, CompletionFailureSerializer())
 }
