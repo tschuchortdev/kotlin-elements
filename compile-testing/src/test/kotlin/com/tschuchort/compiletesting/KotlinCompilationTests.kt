@@ -161,6 +161,27 @@ class KotlinCompilationTests {
 	}
 
 	@Test
+	fun `Java doesn't inherit classpath`() {
+		val source = KotlinCompilation.SourceFile("Source.java", """
+    package com.tschuchort.compiletesting;
+
+    class Source {
+    	void foo() {
+    		String s = KotlinCompilationTests.InheritedClass.class.getName();
+    	}
+    }
+    	""".trimIndent())
+
+		val result = compilationPreset().copy(
+				sources = listOf(source),
+				inheritClassPath = false
+		).compile_()
+
+		assertThat(result.exitCode).isEqualTo(ExitCode.COMPILATION_ERROR)
+	}
+
+
+	@Test
 	fun `Kotlin inherits classpath`() {
 		val source = KotlinCompilation.SourceFile("Source.kt", """
     package com.tschuchort.compiletesting
@@ -172,13 +193,32 @@ class KotlinCompilationTests {
     }
 		""".trimIndent())
 
-
 		val result = compilationPreset().copy(
 			sources = listOf(source),
 			inheritClassPath = true
 		).compile_()
 
 		assertThat(result.exitCode).isEqualTo(ExitCode.OK)
+	}
+
+	@Test
+	fun `Kotlin doesn't inherit classpath`() {
+		val source = KotlinCompilation.SourceFile("Source.kt", """
+    package com.tschuchort.compiletesting
+
+    class Source {
+    	fun foo() {
+    		val s = KotlinCompilationTests.InheritedClass::class.java.name
+    	}
+    }
+		""".trimIndent())
+
+		val result = compilationPreset().copy(
+				sources = listOf(source),
+				inheritClassPath = false
+		).compile_()
+
+		assertThat(result.exitCode).isEqualTo(ExitCode.COMPILATION_ERROR)
 	}
 
 	@Test
