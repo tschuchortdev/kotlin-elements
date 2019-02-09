@@ -31,7 +31,7 @@ open class KotlinElementSerializer<T : KotlinElement>(
 	) {
 		// don't serialize packages for performance reasons
 		if(!serializeEnclosingPackage
-				&& method == KotlinElement::enclosingElement.javaGetter
+				&& method.overridesOrEquals(KotlinElement::enclosingElement.javaGetter)
 				&& obj.enclosingElement is KotlinPackageElement
 		)
 			super.serializeReturnValue(kryo, output, obj, method, SerializedReturnValue.NotSerialized)
@@ -60,7 +60,7 @@ open class KotlinCompatElementSerializer<T : KotlinCompatElement>(
 	) {
 		// don't serialize packages for performance reasons
 		if(!serializeEnclosingPackage
-				&& method == KotlinCompatElement::enclosingElement.javaGetter
+				&& method.overridesOrEquals(KotlinCompatElement::enclosingElement.javaGetter)
 				&& obj.enclosingElement is KotlinPackageElement
 		)
 			super.serializeReturnValue(kryo, output, obj, method, SerializedReturnValue.NotSerialized)
@@ -68,4 +68,14 @@ open class KotlinCompatElementSerializer<T : KotlinCompatElement>(
 			super.serializeReturnValue(kryo, output, obj, method, value)
 	}
 }
+
+
+fun Method.overridesOrEquals(other: Method?): Boolean = when (other) {
+	null -> false
+	this -> true
+	else -> other.declaringClass.isAssignableFrom(declaringClass)
+			&& name == other.name
+			&& (parameterTypes ?: emptyArray()).contentEquals(other.parameterTypes ?: emptyArray())
+}
+
 

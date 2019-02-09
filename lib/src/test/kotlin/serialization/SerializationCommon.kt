@@ -51,14 +51,14 @@ fun getKryo(): Kryo {
         UnmodifiableCollectionsSerializer.registerSerializers(this)
         SynchronizedCollectionsSerializer.registerSerializers(this)
 
-        addJavaLangModelSerializers(
-            serializeEnclosingPackages = true,
+        addElementSerializers(
+            serializeEnclosingPackages = false,
             serializeDeclaredTypeAsElement = false
         )
     }
 }
 
-fun Kryo.addJavaLangModelSerializers(serializeEnclosingPackages: Boolean, serializeDeclaredTypeAsElement: Boolean) {
+fun Kryo.addElementSerializers(serializeEnclosingPackages: Boolean, serializeDeclaredTypeAsElement: Boolean) {
     addDefaultSerializer(List::class.java, JavacAwareListSerializerFactory())
 
     addDefaultSerializer(AnnotatedConstruct::class.java, JavaReflectImmutableInterfaceSerializer(AnnotatedConstruct::class))
