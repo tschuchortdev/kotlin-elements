@@ -172,7 +172,7 @@ internal class EnclosedElementsDelegate(
 					null
 
 				KotlinTypeAliasElement(annotHolderElem, protoTypeAlias, protoTypeTable,
-                    protoNameResolver, enclosingKtElement, processingEnv.elementUtils)
+                    protoNameResolver, enclosingKtElement, processingEnv.elementUtils, processingEnv.typeUtils)
 			}
 			catch (e : Exception) {
 				throw KotlinElementConversionException(protoTypeAlias, protoNameResolver, e)

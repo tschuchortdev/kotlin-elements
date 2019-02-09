@@ -5,13 +5,16 @@ import me.eugeniomarletti.kotlin.metadata.*
 import me.eugeniomarletti.kotlin.metadata.jvm.jvmClassModuleName
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
+import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.abbreviatedType
 import mixins.*
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.AnnotatedConstruct
 import javax.lang.model.element.*
+import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 
 /**
  * A static Kotlin- or Java-language level construct that originates from Kotlin source code.
@@ -44,6 +47,10 @@ abstract class KotlinCompatElement(
 
 	abstract val enclosingElement: KotlinRelatedElement
 
+	val simpleName: Name get() = javaElement.simpleName
+
+	fun asType(): TypeMirror = javaElement.asType()
+
 	final override fun toString(): String = javaElement.toString()
 	final override fun equals(other: Any?): Boolean = (javaElement == other)
 	final override fun hashCode(): Int = javaElement.hashCode()
@@ -69,7 +76,7 @@ class UnspecifiedKotlinCompatElement(
  * to only a single Java [Element] (for example: methods with @[JvmOverloads] annotation)
  */
 sealed class KotlinElement: KotlinRelatedElement(), AnnotatedConstruct {
-	abstract val enclosingElement: KotlinElement?
+	abstract val enclosingElement: KotlinRelatedElement?
 
 	abstract val simpleName: Name
 
@@ -415,7 +422,7 @@ abstract class KotlinExecutableElement internal constructor(
 	abstract override fun toString(): String
 
 	/** Java overload of a Kotlin function with default parameters and [JvmOverloads] annotation */
-	inner class JavaOverload(override val javaElement: ExecutableElement)
+	inner class JavaOverload(final override val javaElement: ExecutableElement)
 		: KotlinCompatElement(javaElement) {
 
 		/** A [JavaOverload] is enclosed by its corresponding non-overloaded Kotlin function */
@@ -638,13 +645,13 @@ class KotlinPropertyElement internal constructor(
 			?: getter?.run { javaElement.returnType!! }
 			?: setter?.run { parameters.first().javaElement.asType() }!!
 
-	override val enclosingElement: KotlinElement by lazy {
+	override val enclosingElement: KotlinRelatedElement by lazy {
 		val nonNullJavaElem = backingField?.javaElement
 			?: this.getter?.javaElement
 			?: this.setter?.javaElement
 			?: throw AssertionError("at least one java javaElement must be non-null")
 
-		nonNullJavaElem.enclosingElement!!.asKotlin(processingEnv) as KotlinElement
+		nonNullJavaElem.enclosingElement!!.asKotlin(processingEnv) as KotlinRelatedElement
 	}
 
 	override fun <A : Annotation?> getAnnotationsByType(annotationType: Class<A>): Array<A> {
@@ -845,7 +852,9 @@ class KotlinPackageElement internal constructor(
 	}
 
 	override val kotlinTypes: Set<KotlinTypeElement> by lazy {
-		kotlinFileFacades.flatMap { it.kotlinTypes }.toSet()
+		enclosedJavaElements.mapNotNull {
+			it.asTypeElement()?.asKotlin(processingEnv) as KotlinTypeElement?
+		}.toSet()
 	}
 
 	override val kotlinPackages: Set<KotlinPackageElement> by lazy {
@@ -931,23 +940,25 @@ class KotlinTypeAliasElement internal constructor(
 		protoTypeTable: ProtoBuf.TypeTable,
 		protoNameResolver: NameResolver,
 		override val enclosingElement: KotlinElement,
-		elementUtils: Elements
+		elementUtils: Elements,
+		typeUtils: Types
 ) : KotlinElement(), HasKotlinVisibility, KotlinParameterizable, HasSyntheticMethodForAnnotations {
 
 	init {
 		assert(protoTypeAlias.hasAnnotations == (javaAnnotationHolderElement != null))
+		//TODO("remove check. type aliases may have annotations even without synthetic annotation holder")
 	}
 
-	val underlyingType: TypeMirror = TODO("alias underlying type")
+	val underlyingType: TypeMirror = typeUtils.getNoType(TypeKind.NONE) //TODO("alias underlying type")
 
-	val expandedType: TypeMirror = TODO("alias expanded type")
+	val expandedType: TypeMirror = typeUtils.getNoType(TypeKind.NONE) //TODO("alias expanded type")
 
 	override val visibility: KotlinVisibility = KotlinVisibility.fromProtoBuf(protoTypeAlias.visibility!!)
 
 	override val simpleName: Name = elementUtils.getName(protoNameResolver.getString(protoTypeAlias.name))
 
 	override val typeParameters: List<KotlinTypeParameterElement>
-		get() = TODO("type alias type parameters")
+		get() = emptyList() //TODO("type alias type parameters")
 
 	override fun <A : Annotation?> getAnnotationsByType(annotationType: Class<A>): Array<A>
 			= javaAnnotationHolderElement?.getAnnotationsByType(annotationType)
