@@ -10,6 +10,7 @@ import javax.lang.model.element.*
 import javax.tools.Diagnostic
 import java.util.*
 import serialization.getKryo
+import javax.annotation.processing.AbstractProcessor
 
 
 /**
@@ -17,7 +18,7 @@ import serialization.getKryo
  */
 @Target(AnnotationTarget.TYPEALIAS, AnnotationTarget.CLASS, AnnotationTarget.TYPE, AnnotationTarget.ANNOTATION_CLASS,
         AnnotationTarget.CONSTRUCTOR, AnnotationTarget.FIELD, AnnotationTarget.FILE, AnnotationTarget.PROPERTY_GETTER,
-        AnnotationTarget.FUNCTION, AnnotationTarget.LOCAL_VARIABLE, AnnotationTarget.PROPERTY,
+        AnnotationTarget.FUNCTION, AnnotationTarget.LOCAL_VARIABLE, AnnotationTarget.PROPERTY, AnnotationTarget.FILE,
         AnnotationTarget.PROPERTY_SETTER, AnnotationTarget.TYPE_PARAMETER, AnnotationTarget.VALUE_PARAMETER)
 @Retention(AnnotationRetention.RUNTIME)
 annotation class SerializeElemForTesting
@@ -31,7 +32,8 @@ class SerializeAnnotatedElementProcessor : KotlinAbstractProcessor() {
 
     override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latest()
 
-    override fun getSupportedAnnotationTypes(): Set<String> = setOf(SerializeElemForTesting::class.java.canonicalName)
+    override fun getSupportedAnnotationTypes(): Set<String>
+            = setOf(SerializeElemForTesting::class.java.canonicalName)
 
     override fun init(processingEnv: ProcessingEnvironment) {
         processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "${this::class.simpleName} init")
@@ -42,7 +44,7 @@ class SerializeAnnotatedElementProcessor : KotlinAbstractProcessor() {
         val kryo = getKryo()
 
         for(jElem in roundEnv.getElementsAnnotatedWith(SerializeElemForTesting::class.java)) {
-            val kElem = jElem.asKotlin(processingEnv) as? KotlinElement
+            val kElem = jElem.asKotlin(processingEnv)
 
             val buffer = Buffer()
             val out = Output(buffer.outputStream())
