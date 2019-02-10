@@ -809,8 +809,8 @@ class KotlinPackageElement internal constructor(
 		final override val javaElement: PackageElement,
 		processingEnv: ProcessingEnvironment
 ) : KotlinElement(), KotlinQualifiedNameable,
-	EnclosesKotlinTypes, EnclosesKotlinPackages, EnclosesKotlinFunctions,
-	EnclosesKotlinProperties, EnclosesKotlinTypeAliases, EnclosesJavaPackages,
+	EnclosesKotlinTypes, EnclosesKotlinFunctions,
+	EnclosesKotlinProperties, EnclosesKotlinTypeAliases,
 	EnclosesJavaTypes, Has1To1JavaMapping, AnnotatedConstruct by javaElement {
 
 	/** Whether this package is unnamed */
@@ -830,17 +830,12 @@ class KotlinPackageElement internal constructor(
 		javaElement.enclosedElements.asSequence().filter { !it.originatesFromKotlinCode() }.toSet()
 	}
 
-	override val javaPackages: Set<PackageElement> by lazy {
-		enclosedJavaElements.filter { it.kind == ElementKind.PACKAGE }
-			.castList<PackageElement>().toSet()
-	}
-
 	override val javaTypes: Set<TypeElement> by lazy {
 		enclosedJavaElements.mapNotNull { it.asTypeElement() }.toSet()
 	}
 
 	override val enclosedKotlinElements: Set<KotlinElement> by lazy {
-		(functions + properties + kotlinTypes + kotlinPackages + typeAliases) as Set<KotlinElement>
+		(functions + properties + kotlinTypes + typeAliases) as Set<KotlinElement>
 	}
 
 	override val functions: Set<KotlinFunctionElement> by lazy {
@@ -852,27 +847,19 @@ class KotlinPackageElement internal constructor(
 	}
 
 	override val kotlinTypes: Set<KotlinTypeElement> by lazy {
-		enclosedJavaElements.mapNotNull {
-			it.asTypeElement()?.asKotlin(processingEnv) as KotlinTypeElement?
+		javaElement.enclosedElements.mapNotNull {
+			it.asTypeElement()?.asKotlin(processingEnv) as? KotlinTypeElement
 		}.toSet()
-	}
-
-	override val kotlinPackages: Set<KotlinPackageElement> by lazy {
-		javaElement.enclosedElements.asSequence()
-				.filter { it is PackageElement  }
-				.mapNotNull { it.asKotlin(processingEnv) as KotlinPackageElement? }
-				.toSet()
 	}
 
 	override val typeAliases: Set<KotlinTypeAliasElement>  by lazy {
 		kotlinFileFacades.flatMap { it.typeAliases }.toSet()
 	}
 
-	private val kotlinFileFacades: Collection<KotlinFileFacadeElement> by lazy {
-		javaElement.enclosedElements.asSequence()
-				.filter { it is TypeElement  }
-				.mapNotNull { it.asKotlin(processingEnv) as KotlinFileFacadeElement? }
-				.toSet()
+	val kotlinFileFacades: Set<KotlinFileFacadeElement> by lazy {
+		javaElement.enclosedElements.asSequence().mapNotNull {
+					it.asTypeElement()?.asKotlin(processingEnv) as? KotlinFileFacadeElement
+		}.toSet()
 	}
 
 	override fun toString() = javaElement.toString()
@@ -981,9 +968,14 @@ class KotlinTypeAliasElement internal constructor(
 
 	override fun hashCode(): Int = Objects.hash(enclosingElement, simpleName)
 
-	override fun toString(): String
-			= simpleName.toString() + typeParameters.joinToString(", ", "<", ">")
+	override fun toString(): String {
+		val generics = if(typeParameters.isNotEmpty())
+			typeParameters.joinToString(", ", "<", ">")
+		else
+			""
 
+		return simpleName.toString() + generics
+	}
 }
 
 /** Type parameter of a [KotlinParameterizable] element */
