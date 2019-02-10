@@ -104,6 +104,7 @@ class KotlinFileFacadeElementTests {
 		)
 
 		val expectedElems = with(elem) {
+			@Suppress("UNCHECKED_CAST")
 			(functions + properties + typeAliases) as Set<KotlinElement>
 		}.map { it.simpleName.toString() }.distinct()
 

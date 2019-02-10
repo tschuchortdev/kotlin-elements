@@ -28,9 +28,9 @@ class ElementTester(private val temporaryFolder: TemporaryFolder) {
 			Processor::class, SerializeAnnotatedElementProcessor::class
 	)
 
-	fun getSerializedFrom(source: KotlinCompilation.SourceFile): List<Any?> {
+	fun getSerializedFrom(sources: List<KotlinCompilation.SourceFile>): List<Any?> {
 		val result = compilationPreset().copy(
-				sources = listOf(source),
+				sources = sources,
 				services = listOf(serializeProcService),
 				inheritClassPath = true
 		).compile_()
@@ -44,13 +44,16 @@ class ElementTester(private val temporaryFolder: TemporaryFolder) {
 		}
 	}
 
-	fun <T : Any> getSingleSerializedFrom(type: KClass<T>, source: KotlinCompilation.SourceFile): T {
-		val objects = getSerializedFrom(source)
+	fun <T : Any> getSingleSerializedFrom(type: KClass<T>, sources: List<KotlinCompilation.SourceFile>): T {
+		val objects = getSerializedFrom(sources)
 		assertThat(objects).hasSize(1)
 		val obj = objects.first()
 		assertThat(obj).isInstanceOf(type.java)
 		return obj as T
 	}
+
+	fun <T : Any> getSingleSerializedFrom(type: KClass<T>, source: KotlinCompilation.SourceFile): T
+			= getSingleSerializedFrom(type, listOf(source))
 
 	private fun compilationPreset(): KotlinCompilation {
 		val jdkHome = getJdkHome()
@@ -62,7 +65,7 @@ class ElementTester(private val temporaryFolder: TemporaryFolder) {
 					null
 				else
 					File(jdkHome, "lib\\tools.jar"),
-				inheritClassPath = false,
+				inheritClassPath = true,
 				skipRuntimeVersionCheck = true,
 				correctErrorTypes = true,
 				verbose = true,

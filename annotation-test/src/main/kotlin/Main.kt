@@ -1,5 +1,6 @@
 //TODO("handle JvmName for Kotlin files
 @file:JvmName("RenamedFile")
+@file:FileAnnotation
 
 package com.tschuchort.kotlinelements
 
@@ -13,15 +14,7 @@ data class A<out T, in S, U : Integer, V : Int, W>(val a: Integer) {
 }
 
 */
-
-class A {
-}
-
-interface I {
-	fun bar(): String
-}
-
-@ClassAnnotation
+/*@ClassAnnotation
 enum class E(val prop: A) : I {
 	E1(A()) {
 		@FunctionAnnotation
@@ -31,7 +24,7 @@ enum class E(val prop: A) : I {
 	};
 
 	fun foo() {}
-}
+}*/
 
 /*
 //TODO("handle illegal java names")

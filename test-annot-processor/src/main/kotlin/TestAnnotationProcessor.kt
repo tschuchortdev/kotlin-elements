@@ -7,7 +7,6 @@ import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.*
 import javax.tools.Diagnostic
-import PackageAnnotation
 import mixins.EnclosesKotlinElements
 import mixins.HasKotlinModality
 import mixins.HasKotlinVisibility
@@ -72,7 +71,8 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 			TypeAnnotation::class.java.canonicalName, ParameterAnnotation::class.java.canonicalName,
 			FieldAnnotation::class.java.canonicalName, PropertyAnnotation::class.java.canonicalName,
 			SetterAnnotation::class.java.canonicalName, GetterAnnotation::class.java.canonicalName,
-			PackageAnnotation::class.java.canonicalName, TypeParameterAnnotation::class.java.canonicalName)
+			PackageAnnotation::class.java.canonicalName, TypeParameterAnnotation::class.java.canonicalName,
+			FileAnnotation::class.java.canonicalName)
 
 	override fun getSupportedOptions() = setOf(KAPT_KOTLIN_GENERATED_OPTION_NAME, GENERATE_KOTLIN_CODE_OPTION, GENERATE_ERRORS_OPTION)
 	override fun getSupportedSourceVersion() = SourceVersion.latestSupported()!!
@@ -89,9 +89,9 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 	override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
 		log("annotation processing... $annotations")
 
-		for (annotatedElem in roundEnv.getElementsAnnotatedWith(ClassAnnotation::class.java)) {
-			log(annotatedElem.asKotlin(processingEnv)!!.printKotlinSummary())
-			//log(annotatedElem.printSummary())
+		for (annotatedElem in roundEnv.getElementsAnnotatedWith(PackageAnnotation::class.java)) {
+			//log(annotatedElem.asKotlin(processingEnv)!!.printKotlinSummary())
+			log(annotatedElem.printSummary())
 		}
 
 
@@ -190,9 +190,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 					   "\nsetter parameter:" + parameters.first().printKotlinSummary().prependIndent("\t")
 
 				   is KotlinTypeElement -> """
-					   isExternal: $isExternal
 					   isExpect: $isExpect
-					   isInner: $isInner
 					   superclass: $superclass
 					   interfaces: $interfaces
 				   """.trimIndent()
@@ -245,9 +243,7 @@ internal class TestAnnotationProcessor : AbstractProcessor() {
 
 				   is KotlinPackageElement -> """
 					   isUnnamed: $isUnnamed
-				   """.trimIndent() +
-						"\njavaPackages:\n" + javaPackages.printSummary().prependIndent("\t") +
-						"\nkotlinPackages:\n" + kotlinPackages.printKotlinSummary().prependIndent("\t")
+				   """.trimIndent()
 				   else -> ""
 			   } +
 			   (if(this is EnclosesKotlinElements)

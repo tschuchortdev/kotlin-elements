@@ -253,6 +253,7 @@ internal class KotlinObjectElementTests {
 		)
 
 		val expectedElems = with(elem) {
+			@Suppress("UNCHECKED_CAST")
 			(functions + properties + constructors + kotlinTypes) as Set<KotlinElement>
 		}.map { it.simpleName.toString() }.distinct()
 

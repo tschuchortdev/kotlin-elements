@@ -10,7 +10,6 @@ import javax.lang.model.element.*
 import javax.tools.Diagnostic
 import java.util.*
 import serialization.getKryo
-import javax.annotation.processing.AbstractProcessor
 
 
 /**
@@ -33,7 +32,8 @@ class SerializeAnnotatedElementProcessor : KotlinAbstractProcessor() {
     override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latest()
 
     override fun getSupportedAnnotationTypes(): Set<String>
-            = setOf(SerializeElemForTesting::class.java.canonicalName)
+            = setOf(SerializeElemForTesting::class.java.canonicalName,
+			SerializePackageForTesting::class.java.canonicalName)
 
     override fun init(processingEnv: ProcessingEnvironment) {
         processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "${this::class.simpleName} init")
@@ -43,7 +43,9 @@ class SerializeAnnotatedElementProcessor : KotlinAbstractProcessor() {
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         val kryo = getKryo()
 
-        for(jElem in roundEnv.getElementsAnnotatedWith(SerializeElemForTesting::class.java)) {
+        for(jElem in roundEnv.getElementsAnnotatedWithAny(setOf(SerializeElemForTesting::class.java,
+				SerializePackageForTesting::class.java))) {
+
             val kElem = jElem.asKotlin(processingEnv)
 
             val buffer = Buffer()
