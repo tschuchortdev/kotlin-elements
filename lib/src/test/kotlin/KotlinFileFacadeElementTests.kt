@@ -87,6 +87,24 @@ class KotlinFileFacadeElementTests {
 	}
 
 	@Test
+	fun `Has type alias`() {
+		val elem = elementTester.getSingleSerializedFrom(
+				KotlinFileFacadeElement::class,
+				KotlinCompilation.SourceFile(
+						"FileFacade.kt", """
+            @file:SerializeElemForTesting
+            package com.tschuchort.kotlinelements
+
+			typealias Alias = O
+        """.trimIndent()
+				)
+		)
+
+		assertThat(elem.typeAliases).hasSize(1)
+		assertThat(elem.typeAliases.first().simpleName.toString()).isEqualTo("Alias")
+	}
+
+	@Test
 	fun `Enclosed elements are equal to property + function + typealias`() {
 		val elem = elementTester.getSingleSerializedFrom(
 				KotlinFileFacadeElement::class,
