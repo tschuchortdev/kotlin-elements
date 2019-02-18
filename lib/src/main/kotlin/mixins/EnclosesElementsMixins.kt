@@ -298,7 +298,7 @@ internal class EnclosedElementsDelegate(
 				)
 
 				KotlinConstructorElement(element, overloadElements, enclosingKtElement as KotlinTypeElement,
-					protoCtor, protoNameResolver)
+					protoCtor, protoNameResolver, processingEnv.typeUtils)
 			}
 			catch (t : Throwable) {
 				throw KotlinElementConversionException(
@@ -328,7 +328,7 @@ internal class EnclosedElementsDelegate(
 						protoFunc.jvmSignature(), protoFunc.valueParameterList, javaMethodElems)
 
 				KotlinFunctionElement(javaFunc, javaOverloads, enclosingKtElement, protoFunc,
-					protoNameResolver, processingEnv.elementUtils)
+					protoNameResolver, processingEnv.elementUtils, processingEnv.typeUtils)
 			} catch (t : Throwable) {
 				throw KotlinElementConversionException(
 					protoFunc, protoNameResolver, protoTypeTable, t
@@ -400,7 +400,7 @@ internal class EnclosedElementsDelegate(
 					"Java parameter name ($javaParamName) and proto parameter name ($protoParamName) should be identical"
 				}
 
-				return@zipWith JavaParameter(paramElem, processingEnv, protoParam.declaresDefaultValue)
+				return@zipWith JavaParameter(paramElem, processingEnv, !protoParam.declaresDefaultValue)
 			}
 		}
 		catch (t: Throwable) {

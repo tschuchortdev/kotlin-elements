@@ -11,6 +11,8 @@ import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.AnnotatedConstruct
 import javax.lang.model.element.*
+import javax.lang.model.type.ArrayType
+import javax.lang.model.type.ExecutableType
 import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Elements
@@ -356,7 +358,8 @@ abstract class KotlinExecutableElement internal constructor(
 	 */
 	final override val javaElement: ExecutableElement,
 	javaOverloadElements: List<ExecutableElement>,
-	override val enclosingElement: KotlinElement
+	override val enclosingElement: KotlinElement,
+	protected val typeUtils: Types
 ) : KotlinElement(), Has1To1JavaMapping, AnnotatedConstruct by javaElement {
 
 	init {
@@ -390,15 +393,6 @@ abstract class KotlinExecutableElement internal constructor(
 	val javaOverloads: List<JavaOverload> = javaOverloadElements.map(::JavaOverload)
 
 	/**
-	 * Returns {@code true} if this method or constructor accepts a variable
-	 * number of arguments and returns {@code false} otherwise.
-	 *
-	 * @return {@code true} if this method or constructor accepts a variable
-	 * number of arguments and {@code false} otherwise
-	 */
-	val isVarArgs: Boolean = javaElement.isVarArgs
-
-	/**
 	 * The formal parameters of this executable.
 	 * They are returned in declaration order.
 	 *
@@ -407,13 +401,29 @@ abstract class KotlinExecutableElement internal constructor(
 	 */
 	abstract val parameters: List<KotlinParameterElement>
 
-	val receiverType: TypeMirror? = javaElement.receiverType //TODO("handle Kotlin receiver type")
+	val receiverType: TypeMirror get() {
+		// TODO("handle Kotlin receiver type")
+		return javaElement.receiverType
+			?: typeUtils.getNoType(TypeKind.NONE)
+		// this is to fix a bug in later JDK versions where receiverType is null
+		// although it should never be according to docs
+		// https://bugs.openjdk.java.net/browse/JDK-8078583
+	}
 
 	val thrownTypes: List<TypeMirror> = javaElement.thrownTypes //TODO("handle Kotlin thrown kotlinTypes")
 
 	val returnType: TypeMirror = javaElement.returnType //TODO("handle Kotlin return kotlinTypes")
 
-	final override fun asType(): TypeMirror = javaElement.asType() //TODO("handle kotlin executable element asType")
+	override fun asType(): TypeMirror {
+		 //TODO("handle kotlin executable element asType")
+		return object : ExecutableType by javaElement.asType() as ExecutableType {
+			// this is to fix a bug in later JDK versions where receiverType is null
+			// although it should never be according to docs
+			// https://bugs.openjdk.java.net/browse/JDK-8078583
+			override fun getReceiverType(): TypeMirror
+					= this@KotlinExecutableElement.receiverType
+		}
+	}
 
 	final override fun equals(other: Any?)
 			= (other as? KotlinExecutableElement)?.javaElement == javaElement
@@ -437,8 +447,9 @@ class KotlinFunctionElement internal constructor(
 	enclosingElement: KotlinElement,
 	private val protoFunction: ProtoBuf.Function,
 	private val protoNameResolver: NameResolver,
-	elemUtils: Elements
-) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement),
+	elemUtils: Elements,
+	typeUtils: Types
+) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement, typeUtils),
 	KotlinParameterizable, HasKotlinModality, HasKotlinVisibility,
 	HasKotlinMultiPlatformImplementations, HasKotlinExternalImplementation {
 
@@ -497,8 +508,9 @@ class KotlinConstructorElement internal constructor(
 	javaOverloadElements: List<ExecutableElement>,
 	override val enclosingElement: KotlinTypeElement,
 	protoConstructor: ProtoBuf.Constructor,
-	protoNameResolver: NameResolver
-) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement), HasKotlinVisibility {
+	protoNameResolver: NameResolver,
+	typeUtils: Types
+) : KotlinExecutableElement(javaElement, javaOverloadElements, enclosingElement, typeUtils), HasKotlinVisibility {
 
 	/** Whether this constructor is the primary constructor of its class */
 	val isPrimary: Boolean = protoConstructor.isPrimary
@@ -511,6 +523,19 @@ class KotlinConstructorElement internal constructor(
 	}
 
 	override val simpleName: Name = javaElement.simpleName
+
+	override val receiverType: TypeMirror
+		get() {
+			// this is to fix a bug in later JDK versions where the receiverType of
+			// constructors is always null, but it should never be
+			// When the constructor belongs to an inner class, the receiverType should
+			// the outer class
+			// https://bugs.openjdk.java.net/browse/JDK-8078583
+			return if ((enclosingElement as? KotlinClassElement)?.isInner == true)
+				enclosingElement.asType()
+			else
+				super.receiverType
+		}
 
 	override fun toString(): String = javaElement.toString()
 }
@@ -551,6 +576,29 @@ class KotlinFunctionParameterElement internal constructor(
 
 	/** Whether this parameter has the `noinline` modifier */
 	val isNoInline: Boolean = protoParam.isNoInline
+
+	/** Whether this paramater has the `vararg` modifier */
+	val isVararg: Boolean = protoParam.hasVarargElementType()
+
+	/**
+	 * Returns the type of this parameter
+	 *
+	 * If the parameter is a vararg parameter, the type of a single argument will be returned,
+	 * not an array type.
+	 */
+	override fun asType(): TypeMirror {
+		// TODO("resolve Kotlin types correctly")
+		return if(isVararg) {
+			// If the type is a vararg type, asType() will return an array type
+			// but we only want the component type to return the type that is actually
+			// written in source code
+			assert(super.asType().kind == TypeKind.ARRAY)
+			(super.asType() as ArrayType).componentType
+		}
+		else {
+			super.asType()
+		}
+	}
 }
 
 /** A Kotlin property declaration */
@@ -591,10 +639,10 @@ class KotlinPropertyElement internal constructor(
 	final val backingField: BackingField? = field?.let { BackingField(it) }
 
 	/** The setter of this property, if it has one */
-	final val setter: KotlinSetterElement? = setter?.let { KotlinSetterElement(this, it, protoProperty) }
+	final val setter: KotlinSetterElement? = setter?.let { KotlinSetterElement(this, it, protoProperty, processingEnv.typeUtils) }
 
 	/** The getter of this property, if it has one */
-	final val getter: KotlinGetterElement? = getter?.let { KotlinGetterElement(this, it, protoProperty) }
+	final val getter: KotlinGetterElement? = getter?.let { KotlinGetterElement(this, it, protoProperty, processingEnv.typeUtils) }
 
 	/**
 	 * If the Kotlin property is delegated a field is generated to hold
@@ -748,9 +796,10 @@ class KotlinPropertyElement internal constructor(
 sealed class KotlinAccessorElement(
 	/** An accessor is enclosed by its property */
 	final override val enclosingElement: KotlinPropertyElement,
-	javaElement: ExecutableElement
-) : KotlinExecutableElement(javaElement, emptyList<Nothing>(), enclosingElement), HasKotlinVisibility,
-	HasKotlinModality, HasKotlinExternalImplementation {
+	javaElement: ExecutableElement,
+	typeUtils: Types
+) : KotlinExecutableElement(javaElement, emptyList<Nothing>(), enclosingElement, typeUtils),
+	HasKotlinVisibility, HasKotlinModality, HasKotlinExternalImplementation {
 
 	/** Whether this accessor is the default implementation and not a custom getter/setter written by programmer */
 	abstract val isDefaultImplementation: Boolean
@@ -769,8 +818,9 @@ sealed class KotlinAccessorElement(
 class KotlinGetterElement internal constructor(
 	enclosingElement: KotlinPropertyElement,
 	javaElement: ExecutableElement,
-	protoProperty: ProtoBuf.Property
-) : KotlinAccessorElement(enclosingElement, javaElement) {
+	protoProperty: ProtoBuf.Property,
+	typeUtils: Types
+) : KotlinAccessorElement(enclosingElement, javaElement, typeUtils) {
 
 	override val parameters: List<Nothing> = emptyList()
 	override val isDefaultImplementation: Boolean = protoProperty.isGetterDefault
@@ -784,8 +834,9 @@ class KotlinGetterElement internal constructor(
 class KotlinSetterElement internal constructor(
 	enclosingElement: KotlinPropertyElement,
 	javaElement: ExecutableElement,
-	protoProperty: ProtoBuf.Property
-) : KotlinAccessorElement(enclosingElement, javaElement) {
+	protoProperty: ProtoBuf.Property,
+	typeUtils: Types
+) : KotlinAccessorElement(enclosingElement, javaElement, typeUtils) {
 	override val isDefaultImplementation: Boolean = protoProperty.isSetterDefault
 	override val isExternal: Boolean = protoProperty.isSetterExternal
 	override val isInline: Boolean = protoProperty.isSetterInline

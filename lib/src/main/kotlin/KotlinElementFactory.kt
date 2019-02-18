@@ -106,7 +106,7 @@ object KotlinElementFactory {
         return constructors.atMostOne { it.javaElement == elem }
                 as KotlinRelatedElement? // unnecessary cast to prevent the compiler from inferring the wrong type
             ?: constructors.flatMap { it.javaOverloads }.atMostOne { it.javaElement == elem }
-            ?: throw IllegalStateException("Can not convert this $this to Kotlin: ElementKind is CONSTRUCTOR but" +
+            ?: throw IllegalStateException("Can not convert this $this to Kotlin: ElementKind is CONSTRUCTOR but " +
                     "does not belong to any Kotlin constructor of its enclosing this.")
     }
 
