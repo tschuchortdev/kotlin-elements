@@ -28,6 +28,9 @@ class ElementTester(private val temporaryFolder: TemporaryFolder) {
 			Processor::class, SerializeAnnotatedElementProcessor::class
 	)
 
+	fun getSerializedFrom(source: KotlinCompilation.SourceFile)
+			= getSerializedFrom(listOf(source))
+
 	fun getSerializedFrom(sources: List<KotlinCompilation.SourceFile>): List<Any?> {
 		val result = compilationPreset().copy(
 				sources = sources,
