@@ -184,10 +184,10 @@ class KotlinClassElement internal constructor(
 	HasKotlinCompanion, KotlinParameterizable {
 
 	/** Whether this class is a data class */
-	val isDataClass: Boolean = protoClass.isDataClass
+	val isDataClass: Boolean get() = protoClass.isDataClass
 
 	/** Whether this type is an inner type */
-	val isInner: Boolean = protoClass.isInnerClass
+	val isInner: Boolean get() = protoClass.isInnerClass
 
 	override val enclosedKotlinElements: Set<KotlinElement> = super<KotlinTypeElement>.enclosedKotlinElements
 	override val companion: KotlinObjectElement? = super.companion
