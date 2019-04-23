@@ -2,14 +2,32 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="annotation-test.com.tschuchort.kotlinelements.annotation-test.main" target="1.10" />
+      <module name="annotation-test.com.tschuchort.kotlinelements.annotation-test.test" target="1.10" />
       <module name="com.tschuchort.kotlinelements.annotation-test.main" target="1.10" />
       <module name="com.tschuchort.kotlinelements.annotation-test.test" target="1.10" />
       <module name="com.tschuchort.kotlinelements.compile-testing.main" target="1.10" />
       <module name="com.tschuchort.kotlinelements.compile-testing.test" target="1.10" />
       <module name="com.tschuchort.kotlinelements.kotlinelements.main" target="1.10" />
       <module name="com.tschuchort.kotlinelements.kotlinelements.test" target="1.10" />
+      <module name="com.tschuchort.kotlinelements.lib.main" target="1.10" />
+      <module name="com.tschuchort.kotlinelements.lib.test" target="1.10" />
       <module name="com.tschuchort.kotlinelements.test-annot-processor.main" target="1.10" />
       <module name="com.tschuchort.kotlinelements.test-annot-processor.test" target="1.10" />
+      <module name="compile-testing.com.tschuchort.kotlinelements.compile-testing.main" target="1.10" />
+      <module name="compile-testing.com.tschuchort.kotlinelements.compile-testing.test" target="1.10" />
+      <module name="kotlinelements.annotation-test.main" target="1.10" />
+      <module name="kotlinelements.annotation-test.test" target="1.10" />
+      <module name="kotlinelements.compile-testing.main" target="1.10" />
+      <module name="kotlinelements.compile-testing.test" target="1.10" />
+      <module name="kotlinelements.kotlinelements.main" target="1.10" />
+      <module name="kotlinelements.kotlinelements.test" target="1.10" />
+      <module name="kotlinelements.test-annot-processor.main" target="1.10" />
+      <module name="kotlinelements.test-annot-processor.test" target="1.10" />
+      <module name="lib.com.tschuchort.kotlinelements.kotlinelements.main" target="1.10" />
+      <module name="lib.com.tschuchort.kotlinelements.kotlinelements.test" target="1.10" />
+      <module name="test-annot-processor.com.tschuchort.kotlinelements.test-annot-processor.main" target="1.10" />
+      <module name="test-annot-processor.com.tschuchort.kotlinelements.test-annot-processor.test" target="1.10" />
     </bytecodeTargetLevel>
   </component>
 </project>

@@ -1,4 +1,0 @@
-dependencies {
-    kapt project(":test-annot-processor")
-    compileOnly project(":test-annot-processor")
-}

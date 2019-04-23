@@ -1,6 +1,2 @@
-rootProject.name = 'kotlinelements'
+rootProject.name = 'com.tschuchort.kotlinelements'
 include 'lib'
-findProject(':lib')?.name = 'kotlinelements'
-include 'test-annot-processor'
-include 'annotation-test'
-include 'compile-testing'
