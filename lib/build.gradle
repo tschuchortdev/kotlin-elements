@@ -8,12 +8,19 @@ noArg {
 }
 
 dependencies {
-    compile "me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0"
-    compile "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.1.0"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+
+    //compile "me.eugeniomarletti.kotlin.metadata:kotlin-metadata:1.4.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.1.0"
     testImplementation 'com.github.tschuchortdev:kotlin-compile-testing:1.1.2'
 
     testImplementation 'com.squareup:kotlinpoet:1.0.0-RC1'
     testImplementation 'com.squareup:javapoet:1.11.1'
 
     testImplementation "org.javassist:javassist:3.24.1-GA"
+}
+compileKotlin {
+    kotlinOptions {
+        freeCompilerArgs = ["-XXLanguage:+InlineClasses"]
+    }
 }

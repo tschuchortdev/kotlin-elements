@@ -1,28 +1,21 @@
 package com.tschuchort.kotlinelements
 
-import com.tschuchort.kotlinelements.java.*
-import com.tschuchort.kotlinelements.java.JavaBoxedPrimitiveType
-import com.tschuchort.kotlinelements.java.JavaErrorType
-import com.tschuchort.kotlinelements.java.JavaMappedCollectionType
-import com.tschuchort.kotlinelements.java.JavaPrimitiveArrayType
-import com.tschuchort.kotlinelements.java.JavaReferenceArrayType
-import com.tschuchort.kotlinelements.kotlin.*
-import com.tschuchort.kotlinelements.kotlin.AnnotationsDelegate
-import com.tschuchort.kotlinelements.kotlin.KotlinIntersectionType
-import com.tschuchort.kotlinelements.kotlin.KotlinTypeVariable
-import com.tschuchort.kotlinelements.kotlin.KotlinWildcardType
-import com.tschuchort.kotlinelements.kotlin.MetadataContext
+import com.tschuchort.kotlinelements.from_javax.*
+import com.tschuchort.kotlinelements.from_javax.JavaBoxedPrimitiveType
+import com.tschuchort.kotlinelements.from_javax.JavaErrorType
+import com.tschuchort.kotlinelements.from_javax.JavaMappedCollectionType
+import com.tschuchort.kotlinelements.from_javax.JavaPrimitiveArrayType
+import com.tschuchort.kotlinelements.from_javax.JavaReferenceArrayType
+import com.tschuchort.kotlinelements.from_metadata.*
+import com.tschuchort.kotlinelements.from_metadata.AnnotationsDelegate
+import com.tschuchort.kotlinelements.from_metadata.KotlinTypeVariable
+import com.tschuchort.kotlinelements.from_metadata.KotlinWildcardType
+import com.tschuchort.kotlinelements.from_metadata.MetadataContext
 import com.tschuchort.kotlinelements.mixins.KJVariance
-import me.eugeniomarletti.kotlin.metadata.jvm.jvmTypeAnnotation
-import me.eugeniomarletti.kotlin.metadata.jvm.jvmTypeParameterAnnotation
 import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import java.lang.RuntimeException
-import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 
-import javax.lang.model.AnnotatedConstruct
-import javax.lang.model.element.AnnotationMirror
-import javax.lang.model.element.Element
 import javax.lang.model.type.*
 
 fun TypeMirror.toKJTypeMirror(processingEnv: ProcessingEnvironment, isTypeArg: Boolean = false)

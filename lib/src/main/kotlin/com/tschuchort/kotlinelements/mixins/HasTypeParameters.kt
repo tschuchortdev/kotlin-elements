@@ -1,18 +1,22 @@
 package com.tschuchort.kotlinelements.mixins
 
 import com.tschuchort.kotlinelements.*
-import com.tschuchort.kotlinelements.kotlin.KotlinTypeParameterElement
-import com.tschuchort.kotlinelements.kotlin.MetadataContext
-import com.tschuchort.kotlinelements.zipWith
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
-import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.TypeParameterElement
 
 
 /**
- * A Kotlin element that can have type parameters
+ * A construct that can have type parameters
  */
 interface HasTypeParameters {
 	val typeParameters: List<KJTypeParameterElement>
+}
+
+/**
+ * This interface exists for all Kotlin elements that have type parameters.
+ * They must also support looking up the corresponding KJElement for a Javax TypeParameter
+ * since only the enclosing element has enough information to construct them and we don't want
+ * to iterate through all enclosed type parameters to find the corresponding one.
+ */
+internal interface HasTypeParametersWithLookup : HasTypeParameters {
+	fun lookupKJTypeParameterFor(javaxTypeParam: TypeParameterElement): KJTypeParameterElement
 }

@@ -1,10 +1,5 @@
 package com.tschuchort.kotlinelements
-import me.eugeniomarletti.kotlin.metadata.KotlinMetadataUtils
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.jvm.JvmProtoBuf
 import java.util.*
-import javax.annotation.processing.ProcessingEnvironment
-import javax.lang.model.element.*
 
 internal inline fun <reified R : Any> List<*>.castList(): List<R> = map { it as R }
 
@@ -69,7 +64,7 @@ internal fun String.removeFirstOccurance(literal: String) = replaceFirst(Regex(R
 
 internal fun <T : Any> setOfNotNull(vararg elements: T?): Set<T> = listOfNotNull(*elements).toSet()
 
-data class MutablePair<A, B>(var first: A, var second: B) {
+internal data class MutablePair<A, B>(var first: A, var second: B) {
 	/** Returns string representation of the [MutablePair] including its [first] and [second] values. */
 	override fun toString(): String = "($first, $second)"
 
@@ -96,5 +91,19 @@ internal fun removeTypeArgs(s: String): String {
 	}
 
 	return s
+}
+
+internal fun <T> Set<T>.containsAny(vararg elems: T): Boolean {
+	for (elem in elems) {
+		if (contains(elem))
+			return true
+	}
+
+	return false
+}
+
+internal class LruCache<K, V>(val maxEntries: Int) : LinkedHashMap<K, V>(maxEntries + 1) {
+	override fun removeEldestEntry(eldest: MutableMap.MutableEntry<K, V>): Boolean
+			= super.size > maxEntries
 }
 

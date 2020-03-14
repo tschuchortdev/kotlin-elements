@@ -459,6 +459,10 @@ abstract class KJTypeAlias : KJDeclaredType() {
 			= Objects.hash(expandedType, underlyingType, nullable, annotationMirrors)
 }
 
+abstract class KJInlineType : KJDeclaredType() {
+	//TODO("inline type")
+}
+
 /** Represents a type that could not be resolved */
 abstract class KJErrorType : KJDeclaredType() {
 	abstract override fun toJavaxTypeMirror(): ErrorType
