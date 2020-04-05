@@ -1,11 +1,12 @@
 package com.tschuchort.kotlinelements
 
+import com.sun.tools.javac.code.TypeMetadata
 import com.tschuchort.kotlinelements.mixins.ConvertibleToElement
 import com.tschuchort.kotlinelements.mixins.ConvertibleToTypeMirror
 import com.tschuchort.kotlinelements.mixins.HasQualifiedName
 import kotlinx.metadata.KmAnnotation
 import kotlinx.metadata.KmAnnotationArgument
-import sun.reflect.annotation.AnnotationInvocationHandler
+import java.lang.RuntimeException
 import java.lang.reflect.Proxy
 import java.security.AccessController
 import java.security.PrivilegedAction
@@ -138,107 +139,10 @@ internal fun annotatedConstructFromMetadata(annotations: List<KmAnnotation>,
         require(annotationType.isAnnotation) { "Not an annotation type: $annotationType" }
     }
 
-    private fun instantiateAnnotationProxy() {
-
-    }
-
-    /**
-     * This method, which clones its array argument, would not be necessary
-     * if Cloneable had a public clone method.
-     */
-    private fun cloneArray(array: Any): Any? {
-        val type: Class<*> = array.javaClass
-        if (type == ByteArray::class.java) {
-            val byteArray = array as ByteArray
-            return byteArray.clone()
-        }
-        if (type == CharArray::class.java) {
-            val charArray = array as CharArray
-            return charArray.clone()
-        }
-        if (type == DoubleArray::class.java) {
-            val doubleArray = array as DoubleArray
-            return doubleArray.clone()
-        }
-        if (type == FloatArray::class.java) {
-            val floatArray = array as FloatArray
-            return floatArray.clone()
-        }
-        if (type == IntArray::class.java) {
-            val intArray = array as IntArray
-            return intArray.clone()
-        }
-        if (type == LongArray::class.java) {
-            val longArray = array as LongArray
-            return longArray.clone()
-        }
-        if (type == ShortArray::class.java) {
-            val shortArray = array as ShortArray
-            return shortArray.clone()
-        }
-        if (type == BooleanArray::class.java) {
-            val booleanArray = array as BooleanArray
-            return booleanArray.clone()
-        }
-        val objectArray = array as Array<*>
-        return objectArray.clone()
-    }
-
-
-    /**
-     * Implementation of dynamicProxy.toString()
-     */
-    private fun toStringImpl(): String? {
-        val result = StringBuilder(128)
-        result.append('@')
-        result.append(type.getName())
-        result.append('(')
-        var firstMember = true
-        for ((key, value) in memberValues.entries) {
-            if (firstMember) firstMember = false else result.append(", ")
-            result.append(key)
-            result.append('=')
-            result.append(AnnotationInvocationHandler.memberValueToString(value))
-        }
-        result.append(')')
-        return result.toString()
-    }
-
     override fun <A : Annotation> getAnnotation(annotationType: Class<A>): A? {
         require(annotationType.isAnnotation) { "Not an annotation type: $annotationType" }
         return annotations.firstOrNull { it.className.replace('/', '.') == annotationType.canonicalName }
-            ?.let {
-
-
-                AccessController.doPrivileged(PrivilegedAction {
-                    Proxy.newProxyInstance(
-                        annotationType.classLoader, arrayOf(annotationType)
-                    ) { proxy, method, args ->
-                        val member = method.name
-                        val parameterCount = method.parameterCount
-
-                        // Handle Object and Annotation methods
-
-                        // Handle Object and Annotation methods
-                        if (parameterCount == 1 && member === "equals" && method.parameterTypes[0] == Any::class.java) {
-                            return equalsImpl(proxy, args[0])
-                        }
-                        if (parameterCount != 0) {
-                            throw AssertionError("Too many parameters for an annotation method")
-                        }
-
-                        if (member === "toString") {
-                            return toStringImpl()
-                        } else if (member === "hashCode") {
-                            return hashCodeImpl()
-                        } else if (member === "annotationType") {
-                            return type
-                        }
-                    } as Annotation
-                })
-
-                annotationType.cast()
-            }
+            ?.let { ann -> createAnnotationProxy<A>(ann, annotationType) }
     }
 
     private val annotationMirrors_: List<AnnotationMirror> by lazy {

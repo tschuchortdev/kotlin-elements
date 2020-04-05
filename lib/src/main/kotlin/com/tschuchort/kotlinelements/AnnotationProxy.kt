@@ -1,15 +1,32 @@
 package com.tschuchort.kotlinelements
 
+import kotlinx.metadata.KmAnnotation
 import java.io.Serializable
 import java.lang.annotation.IncompleteAnnotationException
-import java.lang.reflect.AccessibleObject
-import java.lang.reflect.InvocationHandler
-import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Method
+import java.lang.reflect.*
 import java.security.AccessController
 import java.security.PrivilegedAction
 
-internal class AnnotationInvocationHandler(
+internal fun <A : Annotation> createAnnotationProxy(kmAnnotation: KmAnnotation, clazz: Class<out A>): A {
+
+    val methodResults = kmAnnotation.arguments.mapValues { (_, annArg) ->
+        try {
+            AnnotationInvocationHandler.MethodResult.Value(annArg.value)
+        } catch (e: java.lang.RuntimeException) {
+            AnnotationInvocationHandler.MethodResult.ExceptionThrown(e)
+        }
+    }
+
+    return AccessController.doPrivileged(PrivilegedAction {
+        val proxy = Proxy.newProxyInstance(
+            clazz.classLoader, arrayOf(clazz), AnnotationInvocationHandler(clazz, methodResults)
+        )
+
+       clazz.cast(proxy)
+    })
+}
+
+private class AnnotationInvocationHandler(
     private val clazz: Class<out Annotation>,
     private val methodResults: Map<String, MethodResult>
 ) : InvocationHandler, Serializable {
@@ -55,7 +72,7 @@ internal class AnnotationInvocationHandler(
     }
 
     init {
-        assert(clazz.isAnnotation && clazz.interfaces.size == 1 && clazz.interfaces.first() == Annotation::class.java) {
+        require(clazz.isAnnotation && clazz.interfaces.size == 1 && clazz.interfaces.first() == Annotation::class.java) {
             "This InvocationHandler only implements Annotation interfaces"
         }
     }
@@ -65,7 +82,7 @@ internal class AnnotationInvocationHandler(
         "hashCode" -> hashCodeImpl()
         "annotationType" -> clazz
         "equals" -> {
-            require(method.parameterCount == 1 && method.parameterTypes.first() == Any::class.java) {
+            check(method.parameterCount == 1 && method.parameterTypes.first() == Any::class.java) {
                 "equals method must have a single java.lang.Object parameter"
             }
 
