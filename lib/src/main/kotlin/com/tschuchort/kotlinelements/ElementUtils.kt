@@ -1,7 +1,9 @@
-package com.tschuchort.kotlinelements.from_javax
+package com.tschuchort.kotlinelements
 
+import com.tschuchort.kotlinelements.descriptor
 import javax.lang.model.element.*
 import javax.lang.model.util.ElementScanner9
+import javax.lang.model.util.Types
 
 /**
  * A local element is an element declared within an executable element.
@@ -14,6 +16,10 @@ internal fun Element.isLocal(): Boolean = when {
 	else -> false
 }
 
+internal fun ElementKind.isMember(): Boolean =
+	setOf(ElementKind.FIELD, ElementKind.ENUM_CONSTANT, ElementKind.RECORD_COMPONENT,
+		ElementKind.METHOD, ElementKind.INSTANCE_INIT, ElementKind.STATIC_INIT, ElementKind.CONSTRUCTOR)
+			.contains(this)
 
 internal fun Element.asTypeElement(): TypeElement? = when(kind) {
 	ElementKind.CLASS, ElementKind.ENUM,

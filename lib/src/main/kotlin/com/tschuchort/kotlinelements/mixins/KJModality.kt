@@ -2,7 +2,6 @@ package com.tschuchort.kotlinelements.mixins
 
 import kotlinx.metadata.Flag
 import kotlinx.metadata.Flags
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
@@ -32,14 +31,6 @@ enum class KJModality {
 	SEALED;
 
 	companion object {
-		internal fun fromProtoBuf(protoModality: ProtoBuf.Modality): KJModality
-				= when(protoModality) {
-			ProtoBuf.Modality.FINAL -> FINAL
-			ProtoBuf.Modality.ABSTRACT -> ABSTRACT
-			ProtoBuf.Modality.OPEN -> OPEN
-			ProtoBuf.Modality.SEALED -> SEALED
-		}
-
 		internal fun fromKm(flags: Flags) = when {
 			Flag.IS_FINAL(flags) -> FINAL
 			Flag.IS_ABSTRACT(flags) -> ABSTRACT

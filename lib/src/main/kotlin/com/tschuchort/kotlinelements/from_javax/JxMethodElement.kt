@@ -17,7 +17,7 @@ internal class JxMethodElement(
 	HasReceiver by JxHasReceiverDelegate(javaxElem, processingEnv),
 	HasModality by JxHasModalityDelegate(javaxElem),
 	HasTypeParameters by JxHasTypeParametersDelegate(javaxElem, processingEnv),
-	KJExecutableElementInterface by JxExecutableElementDelegate(javaxElem, enclosingElement, origin, processingEnv) {
+	KJExecutableElementInterface by JxExecutableElement(javaxElem, enclosingElement, origin, processingEnv) {
 
 	override val isInline: Boolean = false
 	override val isInfix: Boolean = false

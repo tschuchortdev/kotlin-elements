@@ -14,7 +14,7 @@ internal class JxInitializerElement(
 		private val processingEnv: ProcessingEnvironment
 ) : KJInitializerElement(),
 	HasReceiver by JxHasReceiverDelegate(javaxElem, processingEnv),
-	KJExecutableElementInterface by JxExecutableElementDelegate(javaxElem, enclosingElement, origin, processingEnv) {
+	KJExecutableElementInterface by JxExecutableElement(javaxElem, enclosingElement, origin, processingEnv) {
 
 	override val kind: Kind = when (javaxElem.kind!!) {
 			ElementKind.INSTANCE_INIT -> Kind.Instance

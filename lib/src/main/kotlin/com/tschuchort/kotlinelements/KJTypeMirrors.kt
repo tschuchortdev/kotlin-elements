@@ -2,17 +2,12 @@
 
 package com.tschuchort.kotlinelements
 
-import com.tschuchort.kotlinelements.KJBasicType.Companion.packageName
+import com.tschuchort.kotlinelements.KJPrimitiveType.Companion.packageName
 import com.tschuchort.kotlinelements.mixins.*
 import java.util.*
 import javax.lang.model.AnnotatedConstruct
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.type.*
-
-/** Mixin interface for a [KJTypeMirror] that has an associated [KJElement] which declares it */
-interface ConvertibleToElement {
-	fun asElement(): KJElement
-}
 
 /** Mixin interface for a [KJTypeMirror] that may have a nullability modifier */
 interface HasNullability {
@@ -154,8 +149,11 @@ abstract class KJDeclaredType : KJTypeMirror(), HasTypeArguments, HasQualifiedNa
  */
 sealed class KJMappedType : KJTypeMirror(), HasNullability, HasQualifiedName
 
-abstract class KJBasicType : KJMappedType() {
+abstract class KJPrimitiveType : KJMappedType() {
 	abstract val kind: Kind
+
+	abstract val boxed: Boolean
+
 	enum class Kind {
 		BOOLEAN {
 			override val simpleName = "Boolean"
@@ -220,14 +218,17 @@ abstract class KJBasicType : KJMappedType() {
 
 	final override fun toString(): String = qualifiedName + nullabilitySuffix(this)
 
-	final override fun equals(other: Any?): Boolean = (other as? KJBasicType)?.let {
+	final override fun equals(other: Any?): Boolean = (other as? KJPrimitiveType)?.let {
 		it.kind == kind && it.nullable == nullable && it.annotationMirrors == annotationMirrors
 	} ?: false
 
 	final override fun hashCode(): Int = Objects.hash(kind, annotationMirrors)
 }
 
-abstract class KJMappedNonPrimitiveBuiltInType : KJMappedType(), HasTypeArguments, ConvertibleToElement {
+abstract class KJMappedBuiltInType : KJMappedType(), HasTypeArguments,
+	ConvertibleToElement, HasSimpleName, HasQualifiedName {
+
+	abstract val kind: Kind
 
 	enum class Kind {
 		Object {
@@ -253,7 +254,7 @@ abstract class KJMappedNonPrimitiveBuiltInType : KJMappedType(), HasTypeArgument
 			override val javaSimpleName: kotlin.String = "CharSequence"
 		},
 		String {
-			override val javaSimpleName: kotlin.String = "String "
+			override val javaSimpleName: kotlin.String = "String"
 		},
 		Number {
 			override val javaSimpleName: kotlin.String = "Number"
@@ -262,19 +263,27 @@ abstract class KJMappedNonPrimitiveBuiltInType : KJMappedType(), HasTypeArgument
 			override val javaSimpleName: kotlin.String = "Throwable"
 		};
 
-		abstract val javaSimpleName: kotlin.String
-		open val kotlinSimpleName: kotlin.String get() = javaSimpleName
+		internal abstract val javaSimpleName: kotlin.String
+		internal open val kotlinSimpleName: kotlin.String get() = javaSimpleName
 
-		open val javaPackageName: kotlin.String = "java.lang"
-		open val kotlinPackageName: kotlin.String = "kotlin"
-
-		val javaQualifiedName get() = "$javaPackageName.$javaSimpleName"
-		val kotlinQualifiedName get() = "$kotlinPackageName.$kotlinSimpleName"
+		internal val javaQualifiedName get() = "$javaPackageName.$javaSimpleName"
+		internal val kotlinQualifiedName get() = "$kotlinPackageName.$kotlinSimpleName"
 	}
+
+	companion object {
+		protected const val javaPackageName: kotlin.String = "java.lang"
+		protected const val kotlinPackageName: kotlin.String = "kotlin"
+	}
+
+	override val qualifiedName: String
+		get() = kind.kotlinQualifiedName
+
+	override val simpleName: String
+		get() = kind.kotlinSimpleName
 
 	final override fun toString(): String = qualifiedName + nullabilitySuffix(this)
 
-	final override fun equals(other: Any?): Boolean = (other as? KJMappedNonPrimitiveBuiltInType)?.let {
+	final override fun equals(other: Any?): Boolean = (other as? KJMappedBuiltInType)?.let {
 		it.qualifiedName == qualifiedName && it.nullable == nullable
 				&& it.typeArguments == typeArguments
 				&& it.annotationMirrors == annotationMirrors
@@ -284,53 +293,53 @@ abstract class KJMappedNonPrimitiveBuiltInType : KJMappedType(), HasTypeArgument
 			= Objects.hash(qualifiedName, nullable, typeArguments, annotationMirrors)
 }
 
-abstract class KJMappedCollectionType : KJMappedType(), HasTypeArguments {
+abstract class KJMappedCollectionType : KJMappedType(), HasTypeArguments, HasSimpleName, HasQualifiedName {
 	abstract val enclosingType: KJTypeMirror?
 	abstract val mutable: Boolean?
 	abstract val kind: Kind
 
 	enum class Kind {
 		Iterator {
-			override val namePattern = "$1Iterator$2"
+			override val kotlinNamePattern = "$1Iterator$2"
 			override val javaQualifiedName = "java.util.Iterator"
 		},
 		Iterable {
-			override val namePattern = "$1Iterable$2"
+			override val kotlinNamePattern = "$1Iterable$2"
 			override val javaQualifiedName = "java.lang.Iterable"
 		},
 		Collection {
-			override val namePattern = "$1Collection$2"
+			override val kotlinNamePattern = "$1Collection$2"
 			override val javaQualifiedName = "java.util.Collection"
 		},
 		Set {
-			override val namePattern = "$1Set$2"
+			override val kotlinNamePattern = "$1Set$2"
 			override val javaQualifiedName = "java.util.Set"
 		},
 		List {
-			override val namePattern = "$1List$2"
+			override val kotlinNamePattern = "$1List$2"
 			override val javaQualifiedName = "java.util.List"
 		},
 		ListIterator {
-			override val namePattern = "$1ListIterator$2"
+			override val kotlinNamePattern = "$1ListIterator$2"
 			override val javaQualifiedName = "java.util.ListIterator"
 		},
 		Map {
-			override val namePattern = "$1Map$2"
+			override val kotlinNamePattern = "$1Map$2"
 			override val javaQualifiedName = "java.util.Map"
 		},
 		MapEntry {
-			override val namePattern = "$1Map$2.$1Entry$2"
+			override val kotlinNamePattern = "$1Map$2.$1Entry$2"
 			override val javaQualifiedName = "java.util.Map.Entry"
 		};
 
 		/** Template to create the name based on mutability and type args */
-		internal abstract val namePattern: String
+		internal abstract val kotlinNamePattern: String
 
 		/** The fully qualified name of this type in Java */
-		abstract val javaQualifiedName: String
+		internal abstract val javaQualifiedName: String
 
 		/** The fully qualified name of this type in Kotlin, based on mutability and type args */
-		fun kotlinQualifiedNameWithArgs(
+		internal fun kotlinQualifiedNameWithArgs(
 				mutable: Boolean?,
 				typeArgNames: kotlin.collections.List<String>
 		): String {
@@ -345,17 +354,15 @@ abstract class KJMappedCollectionType : KJMappedType(), HasTypeArguments {
 			else
 				""
 
-			val name = namePattern
-					.replace(mutablePrefixPlaceholder, mutabilityPrefix)
-					.replace(typeArgsPlaceholder, typeArgsSuffix)
+			val name = kotlinNamePattern
+					.replace("$1", mutabilityPrefix)
+					.replace("$2", typeArgsSuffix)
 
 			return "$kotlinPackageName.$name"
 		}
 	}
 
 	companion object {
-		private const val mutablePrefixPlaceholder = "$1"
-		private const val typeArgsPlaceholder = "$2"
 		private const val kotlinPackageName = "kotlin.collections"
 	}
 
@@ -386,7 +393,7 @@ sealed class KJArrayType : KJMappedType(), HasQualifiedName, HasSimpleName {
 }
 
 /**
- * Represents an array of non primitive reference types, this includes
+ * Represents an array of reference types, this includes
  * [java.lang.Integer], [java.lang.Double] and so on.
  */
 abstract class KJReferenceArrayType : KJArrayType(), HasTypeArguments {
@@ -411,7 +418,7 @@ abstract class KJReferenceArrayType : KJArrayType(), HasTypeArguments {
  * They get translated to an array of primitives in Java (int[], double[] etc).
  */
 abstract class KJPrimitiveArrayType : KJArrayType() {
-	abstract override val componentType: KJBasicType
+	abstract override val componentType: KJPrimitiveType
 
 	final override val simpleName: String
 		get() = componentType.simpleName + "Array"
@@ -459,8 +466,10 @@ abstract class KJTypeAlias : KJDeclaredType() {
 			= Objects.hash(expandedType, underlyingType, nullable, annotationMirrors)
 }
 
-abstract class KJInlineType : KJDeclaredType() {
-	//TODO("inline type")
+abstract class KJInlineClassType : KJDeclaredType() {
+	//TODO("inline class type")
+
+	abstract val underlyingType: KJTypeMirror
 }
 
 /** Represents a type that could not be resolved */

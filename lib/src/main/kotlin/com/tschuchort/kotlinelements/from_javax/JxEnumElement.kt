@@ -43,7 +43,7 @@ internal class JxEnumElement(
 		javaxElem.enclosedElements.map { it.toKJElement(processingEnv) }.toSet()
 	}
 
-	override val constants: List<KJEnumConstantElement> by lazy {
+	override val constants: Set<KJEnumConstantElement> by lazy {
 		enclosedElements.mapNotNull { it as? KJEnumConstantElement }
 	}
 

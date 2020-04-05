@@ -8,9 +8,7 @@ import kotlinx.metadata.Flag
 import kotlinx.metadata.KmClass
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.AnnotatedConstruct
-import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
-import javax.lang.model.element.TypeParameterElement
 
 internal class KmClassElement(
 		private val javaxElem: TypeElement,
@@ -36,12 +34,6 @@ internal class KmClassElement(
 
 	override val typeParameters: List<KJTypeParameterElement>
 		get() = typeParametersDelegate.typeParameters
-
-	override fun lookupEnclosedKJElementFor(enclosedJavaxElem: Element): KJElement
-			= enclosedElementsDelegate.lookupEnclosedKJElementFor(enclosedJavaxElem)
-
-	override fun lookupKJTypeParameterFor(javaxTypeParam: TypeParameterElement): KmParameterElement
-			= typeParametersDelegate.lookupKJTypeParameterFor(javaxTypeParam)
 
 	override val enclosedElements: Set<KJElement> get() = enclosedElementsDelegate.enclosedElements
 

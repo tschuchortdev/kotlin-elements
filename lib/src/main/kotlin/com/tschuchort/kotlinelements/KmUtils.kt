@@ -1,12 +1,16 @@
-package com.tschuchort.kotlinelements.from_metadata
+package com.tschuchort.kotlinelements
 
+import kotlinx.metadata.Flag
+import kotlinx.metadata.KmClass
+import kotlinx.metadata.KmFunction
+import kotlinx.metadata.KmFunctionVisitor
+import kotlinx.metadata.internal.metadata.ProtoBuf
+import kotlinx.metadata.internal.metadata.deserialization.NameResolver
+import kotlinx.metadata.internal.metadata.jvm.JvmProtoBuf
 import kotlinx.metadata.jvm.KotlinClassHeader
-import me.eugeniomarletti.kotlin.metadata.*
-import me.eugeniomarletti.kotlin.metadata.shadow.load.java.JvmAbi
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.deserialization.NameResolver
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.jvm.JvmProtoBuf
-import me.eugeniomarletti.kotlin.metadata.shadow.name.NameUtils
+import kotlinx.metadata.jvm.KotlinClassMetadata
+import kotlinx.metadata.jvm.isRaw
+import kotlinx.metadata.jvm.signature
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
@@ -57,24 +61,14 @@ internal fun getManglingSuffix(jvmModuleName: String?): String {
 	return NameUtils.sanitizeAsJavaIdentifier(jvmModuleName ?: JvmAbi.DEFAULT_MODULE_NAME)
 }
 
-/**
- * Whether this is a (possibly anonymous) singleton class of the kind denoted by the `object` keyword
- */
-internal fun ProtoBuf.Class.isObject(): Boolean = (classKind == ProtoBuf.Class.Kind.OBJECT)
+internal fun KmClass.isSimpleObjectClass() = Flag.Class.IS_OBJECT(flags)
 
-/** Returns the [NameResolver] of the closest parent javaElement (or this javaElement) that has one */
-internal fun getNameResolver(elem: Element): NameResolver? {
-	val metadata = elem.kotlinMetadata
-	return when(metadata) {
-		is KotlinPackageMetadata -> metadata.data.nameResolver
-		is KotlinClassMetadata   -> metadata.data.nameResolver
-		else                     -> elem.enclosingElement?.let(::getNameResolver)
-	}
-}
+internal fun KmClass.isCompanionObjectClass() = Flag.Class.IS_COMPANION_OBJECT(flags)
 
-/** Returns the [KotlinMetadata] of the closest parent javaElement (or this javaElement) that has one */
-internal fun getMetadata(elem: Element): KotlinMetadata?
-		= elem.kotlinMetadata ?: elem.enclosingElement?.let(::getMetadata)
+
+/** Returns the [KotlinClassMetadata] of the closest parent TypeElement (or this TypeElement) that has one */
+internal fun getMetadata(elem: Element): KotlinClassMetadata?
+		= (elem as? TypeElement)?.getKotlinMetadata() ?: elem.enclosingElement?.let(::getMetadata)
 
 /**
  * true if this java element may be a synthetic annotation holder for
@@ -105,14 +99,6 @@ internal fun TypeMirror.isPrimitive() = when(kind) {
 	else          -> false
 }
 
-//TODO("make internal for release")
-val ProcessingEnvironment.kotlinMetadataUtils: KotlinMetadataUtils
-	get() {
-		return object : KotlinMetadataUtils {
-			override val processingEnv = this@kotlinMetadataUtils
-		}
-	}
-
 /**
  * Returns the JVM signature string in the form "$Name$MethodDescriptor", for example: `equals(Ljava/lang/Object;)Z`
  * for this [JvmProtoBuf.JvmMethodSignature] if it has one.
@@ -138,16 +124,3 @@ internal fun JvmProtoBuf.JvmFieldSignature.jvmSignatureString(nameResolver: Name
 	else
 		null
 }
-
-/**
- * Returns the JVM signature in the form "$Name$MethodDescriptor", for example: `equals(Ljava/lang/Object;)Z`.
- *
- * For reference, see the [JVM specification, section 4.3](http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3).
- */
-//TODO("make internal for release")
-fun ExecutableElement.getJvmMethodSignature(processingEnv: ProcessingEnvironment): String
-		= with(processingEnv.kotlinMetadataUtils) {
-	this@getJvmMethodSignature.jvmMethodSignature
-}
-
-internal typealias JvmSignature = String

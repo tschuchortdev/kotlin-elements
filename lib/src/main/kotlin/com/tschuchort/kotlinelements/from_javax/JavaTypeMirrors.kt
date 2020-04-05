@@ -9,7 +9,7 @@ import javax.lang.model.AnnotatedConstruct
 import javax.lang.model.type.*
 
 internal class JavaPrimitiveType(private val javaxType: PrimitiveType)
-	: KJBasicType(), AnnotatedConstruct by javaxType {
+	: KJPrimitiveType(), AnnotatedConstruct by javaxType {
 
 	override val nullable: Boolean? = false
 	override fun toJavaxTypeMirror(): PrimitiveType = javaxType
@@ -34,7 +34,7 @@ internal class JavaBoxedPrimitiveType private constructor(
 		private val javaxType: DeclaredType,
 		override val nullable: Boolean?,
 		override val kind: Kind
-) : KJBasicType(), AnnotatedConstruct by javaxType {
+) : KJPrimitiveType(), AnnotatedConstruct by javaxType {
 
 	override fun toJavaxTypeMirror(): DeclaredType = javaxType
 
@@ -85,8 +85,8 @@ internal class JavaPrimitiveArrayType(
 
 	override val nullable: Boolean? = null
 
-	override val componentType: KJBasicType
-			= javaxType.componentType.toKJTypeMirror(processingEnv) as KJBasicType
+	override val componentType: KJPrimitiveType
+			= javaxType.componentType.toKJTypeMirror(processingEnv) as KJPrimitiveType
 
 	override fun toJavaxTypeMirror(): ArrayType = javaxType
 }
@@ -162,7 +162,7 @@ internal class JavaMappedCollectionType private constructor(
 internal class JavaMappedNonPrimitiveBuiltInType private constructor(
 		private val javaxType: DeclaredType,
 		private val processingEnv: ProcessingEnvironment
-) : KJMappedNonPrimitiveBuiltInType(), AnnotatedConstruct by javaxType {
+) : KJMappedBuiltInType(), AnnotatedConstruct by javaxType {
 	override fun asElement(): KJElement {
 	}
 

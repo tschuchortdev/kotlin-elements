@@ -4,6 +4,10 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.util.Elements
 
+interface HasOrigin {
+	val origin: KJOrigin
+}
+
 /** The origin of a construct */
 sealed class KJOrigin {
 	/** A construct originating from Java source code */
@@ -38,10 +42,10 @@ sealed class KJOrigin {
 		 * Returns the corresponding [Elements.Origin] or null when a direct conversion
 		 * is not possible.
 		 */
-		fun toJavaxOrigin(): Elements.Origin? = when (this) {
-			Explicit                                                                                -> Elements.Origin.EXPLICIT
-			Mandated                                                                                -> Elements.Origin.MANDATED
-			Synthetic                                                                               -> Elements.Origin.SYNTHETIC
+		fun toJavax(): Elements.Origin? = when (this) {
+			Explicit          -> Elements.Origin.EXPLICIT
+			Mandated          -> Elements.Origin.MANDATED
+			Synthetic         -> Elements.Origin.SYNTHETIC
 			Inferred, Unknown -> null
 		}
 	}
@@ -69,8 +73,4 @@ sealed class KJOrigin {
 			null                      -> Java.Unknown
 		}
 	}
-}
-
-interface HasOrigin {
-	val origin: KJOrigin
 }

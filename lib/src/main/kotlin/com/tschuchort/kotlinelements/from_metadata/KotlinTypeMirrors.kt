@@ -12,7 +12,7 @@ internal class KotlinBasicType(
 		override val nullable: Boolean,
 		private val annotationsDelegate: AnnotatedConstruct,
 		val processingEnv: ProcessingEnvironment
-) : KJBasicType(), AnnotatedConstruct by annotationsDelegate {
+) : KJPrimitiveType(), AnnotatedConstruct by annotationsDelegate {
 
 	override fun toJavaxTypeMirror(): TypeMirror {
 		val primitiveType = processingEnv.typeUtils.getPrimitiveType(kind.javaxPrimitiveTypeKind)

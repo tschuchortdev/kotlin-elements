@@ -16,7 +16,7 @@ internal class JxConstructorElement(
 ) : KJConstructorElement(),
 	HasVisibility by JxHasVisibilityDelegate(javaxElem),
 	HasReceiver by JxHasReceiverDelegate(javaxElem, processingEnv),
-	KJExecutableElementInterface by JxExecutableElementDelegate(javaxElem, enclosingElem, origin, processingEnv) {
+	KJExecutableElementInterface by JxExecutableElement(javaxElem, enclosingElem, origin, processingEnv) {
 
 	override val isPrimary: Boolean = false
 

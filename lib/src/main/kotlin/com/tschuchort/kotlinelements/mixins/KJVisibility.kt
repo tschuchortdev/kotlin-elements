@@ -2,7 +2,6 @@ package com.tschuchort.kotlinelements.mixins
 
 import kotlinx.metadata.Flag
 import kotlinx.metadata.Flags
-import me.eugeniomarletti.kotlin.metadata.shadow.metadata.ProtoBuf
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import kotlin.AssertionError
@@ -21,19 +20,19 @@ interface HasVisibility {
 }
 
 enum class KJVisibility {
-	/** has `internal` */
+	/** Visible only in the enclosing module */
 	INTERNAL,
 
-	/** Java source element that has no visibility modifier */
+	/** Visible only in the enclosing package (like a Java element with no visibility modifier */
 	PACKAGE_PRIVATE,
 
-	/** has `private` modifier */
+	/** Only visible from instances of the enclosing declaration container */
 	PRIVATE,
 
-	/** has `protected` modifier */
+	/** Visible from instances of the enclosing declaration container or its subclasses */
 	PROTECTED,
 
-	/** has `public` or no visibility modifier */
+	/** Visible everywhere */
 	PUBLIC,
 
 	/**
@@ -63,23 +62,22 @@ enum class KJVisibility {
 	PRIVATE_TO_THIS,
 
 	/**
-	 * is a local element (inside an executable element)
-	 * and thus has no explicit visibility modifier
+	 * Visible only in the local scope (like inside a function body)
 	 */
 	LOCAL;
 
-	companion object {
-		internal fun fromProtoBuf(protoVisibility: ProtoBuf.Visibility)
-				: KJVisibility = when (protoVisibility) {
-			ProtoBuf.Visibility.INTERNAL        -> INTERNAL
-			ProtoBuf.Visibility.PRIVATE         -> PRIVATE
-			ProtoBuf.Visibility.PROTECTED       -> PROTECTED
-			ProtoBuf.Visibility.PUBLIC          -> PUBLIC
-			ProtoBuf.Visibility.PRIVATE_TO_THIS -> PRIVATE_TO_THIS
-			ProtoBuf.Visibility.LOCAL           -> LOCAL
-		}
+	fun asJavaxModifier(): Modifier? = when (this) {
+		INTERNAL -> null
+		PACKAGE_PRIVATE -> null
+		PRIVATE -> Modifier.PRIVATE
+		PROTECTED -> Modifier.PROTECTED
+		PUBLIC -> Modifier.PUBLIC
+		PRIVATE_TO_THIS -> Modifier.PRIVATE
+		LOCAL -> null
+	}
 
-		internal fun fromJavax(javaxElem: Element)
+	companion object {
+		fun fromJavax(javaxElem: Element)
 				: KJVisibility = with(javaxElem.modifiers) {
 			when {
 				contains(Modifier.PUBLIC)    -> PUBLIC

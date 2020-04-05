@@ -1,6 +1,6 @@
 package com.tschuchort.kotlinelements
 
-import com.tschuchort.kotlinelements.from_javax.*
+/*import com.tschuchort.kotlinelements.from_javax.*
 import com.tschuchort.kotlinelements.from_javax.JxConstructorElement
 import com.tschuchort.kotlinelements.from_javax.JxInitializerElement
 import com.tschuchort.kotlinelements.from_javax.JxMethodElement
@@ -171,9 +171,4 @@ private object PropertyBaseName {
 		else null
 	}
 }
-
-
-
-
-
-
+*/

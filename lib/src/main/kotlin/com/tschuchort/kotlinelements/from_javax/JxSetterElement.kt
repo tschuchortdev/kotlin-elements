@@ -17,7 +17,7 @@ internal class JxSetterElement(
 	HasReceiver by JxHasReceiverDelegate(javaxElem, processingEnv),
 	HasVisibility by JxHasVisibilityDelegate(javaxElem),
 	HasModality by JxHasModalityDelegate(javaxElem),
-	KJExecutableElementInterface by JxExecutableElementDelegate(javaxElem, origin, processingEnv) {
+	KJExecutableElementInterface by JxExecutableElement(javaxElem, origin, processingEnv) {
 
 	override val isDefaultImplementation: Boolean = false
 	override val isInline: Boolean = false

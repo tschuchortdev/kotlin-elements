@@ -1,7 +1,7 @@
 package com.tschuchort.kotlinelements.from_metadata
 
 import com.tschuchort.kotlinelements.*
-import com.tschuchort.kotlinelements.from_javax.asTypeElement
+import com.tschuchort.kotlinelements.asTypeElement
 import kotlinx.metadata.KmConstructor
 import kotlinx.metadata.KmFunction
 import kotlinx.metadata.KmProperty
@@ -28,12 +28,6 @@ internal class KotlinEnclosedElementsDelegate(
 		val unconvertedElements = hashMapOf<JvmSignature, Element>()
 	}
 
-	override fun lookupEnclosedKJElementFor(enclosedJavaxElem: Element): KJElement {
-		return convertedElements[enclosedJavaxElem] ?: throw IllegalArgumentException(
-				"Could not lookup KJElement for TypeParameterElement $enclosedJavaxElem"
-		)
-	}
-
 	private val javaMethodElems = javaxElements.filter { it.kind == ElementKind.METHOD }
 			.castList<ExecutableElement>()
 
@@ -51,7 +45,7 @@ internal class KotlinEnclosedElementsDelegate(
 	private val javaModuleElems = javaxElements.filter { it.kind == ElementKind.MODULE }
 			.castList<ModuleElement>()
 
-	val companion: KotlinObjectElement? by lazy {
+	val companion: KJObjectElement? by lazy {
 		companionSimpleName?.run {
 			val companionElement = javaTypeElems.single {
 				it.kind == ElementKind.CLASS
@@ -63,7 +57,7 @@ internal class KotlinEnclosedElementsDelegate(
 		}
 	}
 
-	val typeAliases: Set<KotlinTypeAliasElement> by lazy {
+	val typeAliases: Set<KJTypeAliasElement> by lazy {
 		protoTypeAliases.asSequence().map { protoTypeAlias ->
 			try {
 				check(protoTypeAlias.hasName())
@@ -80,12 +74,12 @@ internal class KotlinEnclosedElementsDelegate(
 						protoNameResolver, enclosingKtElement, processingEnv.elementUtils, processingEnv.typeUtils)
 			}
 			catch (e : Exception) {
-				throw KotlinElementConversionException(protoTypeAlias, protoNameResolver, e)
+				throw KJConversionException(protoTypeAlias, protoNameResolver, e)
 			}
 		}.toSet()
 	}
 
-	val types: Set<KotlinTypeElement> by lazy {
+	val types: Set<KJTypeElement> by lazy {
 		javaTypeElems.mapNotNull {
 			it.asKotlin(processingEnv) as? KotlinTypeElement
 		}.toSet()
@@ -97,7 +91,7 @@ internal class KotlinEnclosedElementsDelegate(
 		}.toSet()
 	}
 
-	val properties: Set<KotlinPropertyElement> by lazy {
+	val properties: Set<KJPropertyElement> by lazy {
 		protoProps.asSequence().map { protoProperty ->
 			try {
 				val propertyJvmProtoSignature = protoProperty.jvmPropertySignature!!
@@ -168,7 +162,7 @@ internal class KotlinEnclosedElementsDelegate(
 						protoNameResolver, processingEnv)
 			}
 			catch (e : Exception) {
-				throw KotlinElementConversionException(
+				throw KJConversionException(
 						protoProperty,
 						protoNameResolver,
 						protoTypeTable,
@@ -183,11 +177,11 @@ internal class KotlinEnclosedElementsDelegate(
 	 *
 	 * The primary constructor will be the first one in the list
 	 */
-	val constructors: Set<KotlinConstructorElement> by lazy {
+	val constructors: Set<KJConstructorElement> by lazy {
 		/* If the enclosing element is an annotation class, the proto class will contain
 		a constructor signature, but in reality annotations don't really have constructors
 		so no corresponding ExecutableElement exists. We will ignore it here. */
-		if(enclosingKtElement is KotlinAnnotationElement) {
+		if(enclosingKtElement is KJAnnotationElement) {
 			assert(protoCtors.size == 1)
 			assert(javaCtorElems.isEmpty())
 			return@lazy emptySet<KotlinConstructorElement>()
@@ -227,7 +221,7 @@ internal class KotlinEnclosedElementsDelegate(
 	/**
 	 * functions enclosed within this element
 	 */
-	val functions: Set<KotlinFunctionElement> by lazy {
+	val functions: Set<KJFunctionElement> by lazy {
 		protoFunctions.asSequence().map { protoFunc ->
 			try {
 				val (javaFunc, javaOverloads) = findCorrespondingExecutableElements(
@@ -244,13 +238,13 @@ internal class KotlinEnclosedElementsDelegate(
 	}
 
 	/**
-	 * used for comparing parameters
+	 * Used for comparing parameters
 	 *
-	 * this should really be private in [findCorrespondingExecutableElements] but can't be
-	 * because naturally the Kotlin compiler is buggy as hell and will crash (KT-26697)
+	 * This should really be private in [findCorrespondingExecutableElements] but can't be
+	 * because naturally the Kotlin compiler is buggy as hell and will crash (KT-26697).
 	 *
 	 * Also it can not be a an inner class or _once again_ the compiler will produce garbage
-	 * (VerifyError: Bad type on operand stack) 😐🔫
+	 * (VerifyError: Bad type on operand stack). 😐🔫
 	 */
 	private open class JavaParameter(paramElem: VariableElement, val processingEnv: ProcessingEnvironment,
 									 val required: Boolean? = null) {
@@ -299,10 +293,10 @@ internal class KotlinEnclosedElementsDelegate(
 
 				assert(
 						javaParamName == protoParamName
+								// ugly edge case here where the java parameter name is "p0" on data class
+								// generated equals method while Kotlin parameter name is "other"
 								|| protoJvmSignature == "equals(Ljava/lang/Object;)Z"
 				) {
-					// ugly edge case here where the java parameter name is "p0" on data class generated equals
-					// method while Kotlin parameter name will is "other"
 					"Java parameter name ($javaParamName) and proto parameter name ($protoParamName) should be identical"
 				}
 
@@ -368,15 +362,6 @@ internal class KotlinEnclosedElementsDelegate(
 		else
 			signature
 	}
-
-	private fun ProtoBuf.Function.jvmSignature(): String
-			= this@jvmSignature.getJvmMethodSignature(protoNameResolver)
-		?: throw IllegalArgumentException("could not get JVM signature for ProtoBuf.Function")
-
-
-	private fun ProtoBuf.Property.fieldJvmSignature(): String
-			= this@fieldJvmSignature.getJvmFieldSignature(protoNameResolver, protoTypeTable)?.run { name + desc }
-		?: throw IllegalArgumentException("could not get JVM signature for ProtoBuf.Property field")
 
 	/**
 	 * Returns the JVM signature in the form "$Name$MethodDescriptor", for example: `equals(Ljava/lang/Object;)Z`.

@@ -1,4 +1,4 @@
-@file:Suppress("unused", "RedundantModalityModifier")
+@file:Suppress("unused", "RedundantModalityModifier", "ClassName")
 
 package com.tschuchort.kotlinelements
 
@@ -7,7 +7,7 @@ import java.util.*
 import javax.lang.model.AnnotatedConstruct
 import javax.lang.model.element.*
 
-internal interface KJElementInterface : AnnotatedConstruct, HasOrigin {
+internal interface KJElement_ : AnnotatedConstruct, HasOrigin, ConvertibleToTypeMirror {
 	/**
 	 * The element in whose context this element was declared.
 	 * Behaves similar to [Element.getEnclosingElement].
@@ -24,12 +24,13 @@ internal interface KJElementInterface : AnnotatedConstruct, HasOrigin {
 
 	abstract val simpleName: String
 
-	abstract fun asTypeMirror(): KJTypeMirror?
+	abstract override fun asTypeMirror(): KJTypeMirror?
 
 	abstract fun asJavaxElement(): Element
+	companion object
 }
 
-sealed class KJElement : KJElementInterface {
+sealed class KJElement : KJElement_  {
 	abstract override fun toString(): String
 
 	final override fun equals(other: Any?): Boolean
@@ -39,135 +40,160 @@ sealed class KJElement : KJElementInterface {
 	companion object
 }
 
-abstract class KJTypeParameterElement : KJElement(), HasVariance {
-	abstract val reified: Boolean
+internal interface KJTypeParameterElement_ : KJElement_, HasVariance {
 	abstract val bounds: Set<KJTypeMirror>
+	abstract val reified: Boolean
 
+	override val enclosedElements: Set<Nothing> get() = emptySet()
 	abstract override fun asJavaxElement(): TypeParameterElement
 	abstract override val enclosingElement: KJElement
-	final override val enclosedElements: Set<Nothing> = emptySet()
+	companion object
+}
 
+abstract class KJTypeParameterElement : KJElement(), KJTypeParameterElement_ {
 	final override fun toString(): String = simpleName
 	companion object
 }
 
-internal interface KJTypeElementInterface : KJElementInterface, HasVisibility, HasQualifiedName {
+internal interface KJTypeElement_ : KJElement_, HasVisibility, HasQualifiedName {
 	abstract val interfaces: Set<KJTypeMirror>
 	abstract val superclass: KJTypeMirror?
 
 	abstract override val enclosingElement: KJElement
+	abstract override fun asJavaxElement(): TypeElement
+	companion object
 }
 
-sealed class KJTypeElement : KJElement(), KJTypeElementInterface {
-	internal abstract fun lookupMemberKJElementFor(memberElem: Element): KJElement
-
+sealed class KJTypeElement : KJElement(), KJTypeElement_ {
 	final override fun toString(): String = qualifiedName
 	companion object
 }
 
-internal interface KJClassElementInterface : KJTypeElementInterface, HasTypeParameters, HasModality {
+internal interface KJClassElement_ : KJTypeElement_, HasTypeParameters, HasModality {
 	/** Whether this type is an inner type */
 	abstract val isInner: Boolean
 
 	abstract override fun asJavaxElement(): TypeElement
-}
-
-abstract class KJClassElement : KJTypeElement(), KJClassElementInterface {
 	companion object
 }
 
-abstract class KJDataClassElement : KJClassElement() {
-	final override val origin: KJOrigin.Kotlin.Declared = KJOrigin.Kotlin.Declared
+abstract class KJClassElement : KJTypeElement(), KJClassElement_ {
 	companion object
+}
+
+internal interface KJObjectElement_ : KJTypeElement_ {
+	abstract val isCompanion: Boolean
+	override val origin: KJOrigin.Kotlin.Declared get() = KJOrigin.Kotlin.Declared
+}
+
+abstract class KJObjectElement : KJTypeElement(), KJObjectElement_ {
+	companion object
+}
+
+internal interface KJDataClassElement_ : KJClassElement_ {
+	override val origin: KJOrigin.Kotlin.Declared get() = KJOrigin.Kotlin.Declared
+	companion object
+}
+
+abstract class KJDataClassElement : KJClassElement(), KJDataClassElement_ {
+	companion object
+}
+
+internal interface KJSealedClassElement_ : KJClassElement_ {
+	abstract val sealedSubclasses: Set<KJClassElement>
+	override val origin: KJOrigin.Kotlin.Declared get() = KJOrigin.Kotlin.Declared
 }
 
 abstract class KJSealedClassElement : KJClassElement() {
-	abstract val sealedSubclasses: Set<KJClassElement>
-	final override val origin: KJOrigin.Kotlin.Declared = KJOrigin.Kotlin.Declared
 	companion object
 }
 
-abstract class KJInterfaceElement : KJTypeElement(), HasTypeParameters, HasModality {
-	abstract override fun asJavaxElement(): TypeElement
+internal interface KJInterfaceElement_ : KJTypeElement_, HasTypeParameters, HasModality
+
+abstract class KJInterfaceElement : KJTypeElement(), KJInterfaceElement_ {
 	companion object
 }
 
-abstract class KJObjectElement : KJTypeElement() {
-	abstract val isCompanion: Boolean
-
-	final override val origin: KJOrigin.Kotlin.Declared = KJOrigin.Kotlin.Declared
-	abstract override fun asJavaxElement(): TypeElement
-	companion object
-}
-
-abstract class KJEnumElement : KJTypeElement(), HasModality {
+internal interface KJEnumElement_ : KJTypeElement_, HasModality {
 	/** The enum constants defined by this enum declaration in declaration order */
-	abstract val constants: List<KJEnumConstantElement>
+	abstract val constants: Set<KJEnumConstantElement>
+}
 
-	abstract override fun asJavaxElement(): TypeElement
+abstract class KJEnumElement : KJTypeElement(), KJEnumElement_ {
 	companion object
 }
 
-abstract class KJEnumConstantElement : KJElement() {
+internal interface KJEnumConstantElement_ : KJElement_ {
 	abstract override fun asJavaxElement(): VariableElement
 	abstract override val enclosingElement: KJEnumElement
-	final override val enclosedElements: Set<Nothing> = emptySet()
+	override val enclosedElements: Set<Nothing> get () = emptySet()
+}
 
+abstract class KJEnumConstantElement : KJElement(), KJEnumConstantElement_ {
 	final override fun toString(): String = simpleName
 	companion object
 }
 
-abstract class KJFileFacadeElement : KJTypeElement(), HasModality {
+internal interface KJFileFacadeElement_ : KJTypeElement_, HasModality {
 	abstract val isMultiFileClassFacade: Boolean
 
-	final override val origin: KJOrigin.Kotlin.Interop = KJOrigin.Kotlin.Interop
-	final override val interfaces: Set<Nothing> = emptySet()
-	final override val superclass: Nothing? = null
+	override val origin: KJOrigin.Kotlin.Interop get () = KJOrigin.Kotlin.Interop
+	override val interfaces: Set<Nothing> get () = emptySet()
+	override val superclass: Nothing? get () = null
 	abstract override fun asJavaxElement(): TypeElement
+}
+
+abstract class KJFileFacadeElement : KJTypeElement(), KJFileFacadeElement_ {
 	companion object
 }
 
-abstract class KJAnnotationElement : KJTypeElement(), HasModality {
+internal interface KJAnnotationElement_ : KJTypeElement_ {
 	abstract val attributes: List<KJAnnotationAttributeElement>
 
 	abstract override fun asJavaxElement(): TypeElement
+	override val interfaces: Set<Nothing> get () = emptySet()
+	override val superclass: Nothing? get () = null
+}
 
-	final override val interfaces: Set<Nothing> = emptySet()
-	final override val superclass: Nothing? = null
-
+abstract class KJAnnotationElement : KJTypeElement(), KJAnnotationElement_ {
 	companion object
 }
 
-abstract class KJAnnotationAttributeElement : KJElement() {
+internal interface KJAnnotationAttributeElement_ : KJElement_ {
 	/** The default value of this annotation parameter or null if it doesn't have one */
 	abstract val defaultValue: AnnotationValue?
 
 	abstract override fun asJavaxElement(): ExecutableElement
 	abstract override val enclosingElement: KJAnnotationElement
-	final override val enclosedElements: Set<Nothing> = emptySet()
+	override val enclosedElements: Set<Nothing> get () = emptySet()
+}
 
-	override fun toString(): String = simpleName
+abstract class KJAnnotationAttributeElement : KJElement(), KJAnnotationAttributeElement_ {
+	final override fun toString(): String = simpleName
 	companion object
 }
 
-abstract class KJTypeAliasElement : KJElement(), HasTypeParameters,
-									HasSyntheticMethodForAnnotations, HasQualifiedName{
+internal interface KJTypeAliasElement_ : KJElement_, HasTypeParameters, HasQualifiedName, HasVisibility {
 	abstract override fun asTypeMirror(): KJTypeAlias
-
-	final override val origin: KJOrigin.Kotlin.Declared = KJOrigin.Kotlin.Declared
 	abstract override val enclosingElement: KJFileFacadeElement
-	final override val enclosedElements: Set<Nothing> = emptySet()
+	override val origin: KJOrigin.Kotlin.Declared get () = KJOrigin.Kotlin.Declared
+	override val enclosedElements: Set<Nothing> get() = emptySet()
+}
 
+abstract class KJTypeAliasElement : KJElement(), KJTypeAliasElement_ {
 	final override fun toString(): String = qualifiedName
 	companion object
 }
 
-internal interface KJExecutableElementInterface : KJElementInterface {
+internal interface KJExecutableElement_ : KJElement_,  HasReceiver {
 	/** The formal parameters of this executable element in declaration order */
 	abstract val parameters: List<KJParameterElement>
 
 	abstract val returnType: KJTypeMirror?
 	abstract val thrownTypes: List<KJTypeMirror>
+
+	override val enclosedElements: Set<KJParameterElement>
+		get() = parameters.toSet()
 
 	abstract override fun asTypeMirror(): KJExecutableType
 	abstract override val enclosingElement: KJElement
@@ -175,11 +201,7 @@ internal interface KJExecutableElementInterface : KJElementInterface {
 	abstract override fun asJavaxElement(): ExecutableElement
 }
 
-
-sealed class KJExecutableElement : KJElement(), KJExecutableElementInterface, HasReceiver {
-	override val enclosedElements: Set<KJParameterElement>
-		get() = parameters.toSet()
-
+sealed class KJExecutableElement : KJElement(), KJExecutableElement_ {
 	final override fun toString(): String {
 		val retSignature = returnType?.let { ": $it" } ?: ""
 		val paramsSignature = parameters.map { it.asTypeMirror() }.toString()
@@ -189,28 +211,47 @@ sealed class KJExecutableElement : KJElement(), KJExecutableElementInterface, Ha
 	companion object
 }
 
-abstract class KJFunctionElement : KJExecutableElement(),
-								   HasTypeParameters,
-								   HasModality,
-								   HasVisibility,
-								   HasKotlinExternalImplementation,
-								   HasKotlinMultiPlatformImplementations {
+internal interface KJFunctionElement_ : KJExecutableElement_,
+												HasTypeParameters,
+												HasModality,
+												HasVisibility,
+												HasKotlinExternalImplementation,
+												HasKotlinMultiPlatformImplementations,
+												HasJvmOverloads {
 	abstract val isInline: Boolean
 	abstract val isInfix: Boolean
 	abstract val isTailRec: Boolean
 	abstract val isSuspend: Boolean
 	abstract val isOperator: Boolean
 	abstract val isStatic: Boolean
+}
 
+abstract class KJFunctionElement : KJExecutableElement(), KJFunctionElement_ {
 	companion object
 }
 
-abstract class KJConstructorElement : KJExecutableElement(), HasVisibility {
+internal interface KJConstructorElement_ : KJExecutableElement_, HasVisibility, HasJvmOverloads {
 	/** Whether this constructor is the primary constructor of its class */
 	abstract val isPrimary: Boolean
 
 	abstract override val enclosingElement: KJTypeElement
+}
 
+abstract class KJConstructorElement : KJExecutableElement(), KJConstructorElement_ {
+	companion object
+}
+
+internal interface KJJvmOverloadElement_ : KJExecutableElement_, HasTypeParameters {
+	/**
+	 * The original function or constructor that this element is a generated JvmOverload of.
+	 * Will be either a [KJFunctionElement] or a [KJConstructorElement].
+	 */
+	abstract val originalMethod: ExecutableElement
+
+	override val origin: KJOrigin.Kotlin.Interop get() = KJOrigin.Kotlin.Interop
+}
+
+abstract class KJJvmOverloadElement : KJExecutableElement(), KJJvmOverloadElement_ {
 	companion object
 }
 
@@ -225,8 +266,8 @@ abstract class KJInitializerElement : KJExecutableElement() {
 	companion object
 }
 
-internal interface KJAccessorElementInterface : HasVisibility, HasModality,
-												HasKotlinExternalImplementation {
+internal interface KJAccessorElement_ : KJExecutableElement_, HasVisibility,
+										HasModality, HasKotlinExternalImplementation {
 	/**
 	 * Whether this accessor is the default implementation and not a
 	 * custom getter/setter written by programmer
@@ -235,22 +276,30 @@ internal interface KJAccessorElementInterface : HasVisibility, HasModality,
 
 	/** Whether this accessor is inline */
 	abstract val isInline: Boolean
+
+	abstract override val enclosingElement: KJPropertyElement
 }
 
-sealed class KJAccessorElement : KJExecutableElement(), KJAccessorElementInterface {
-	abstract override val enclosingElement: KJPropertyElement
+sealed class KJAccessorElement : KJExecutableElement(), KJAccessorElement_ {
 	companion object
+}
+
+internal interface KJGetterElement_ : KJAccessorElement_ {
+	override val parameters: List<Nothing> get() = emptyList()
+	override val enclosedElements: Set<Nothing> get() = emptySet()
 }
 
 abstract class KJGetterElement : KJAccessorElement() {
-	override val parameters: List<Nothing> = emptyList()
-	override val enclosedElements: Set<Nothing> = emptySet()
 	companion object
 }
 
-abstract class KJSetterElement : KJAccessorElement()
+internal interface KJSetterElement_ : KJAccessorElement_ {
+	override val returnType: KJTypeMirror
+}
 
-abstract class KJParameterElement : KJElement() {
+abstract class KJSetterElement : KJAccessorElement(), KJSetterElement_
+
+internal interface KJParameterElement_ : KJElement_ {
 	/**
 	 * Whether this parameter has a default value
 	 *
@@ -270,15 +319,18 @@ abstract class KJParameterElement : KJElement() {
 	abstract val isVararg: Boolean
 
 	abstract override fun asJavaxElement(): VariableElement
-	override val enclosedElements: Set<Nothing> = emptySet()
+	override val enclosedElements: Set<Nothing> get() = emptySet()
+}
+
+abstract class KJParameterElement : KJElement(), KJParameterElement_ {
 	companion object
 }
 
-abstract class KJPropertyElement : KJElement(), HasReceiver, HasVisibility,
-								   HasModality,
-								   HasSyntheticMethodForAnnotations,
-								   HasKotlinMultiPlatformImplementations,
-								   HasKotlinExternalImplementation {
+internal interface KJPropertyElement_ : KJElement_, HasReceiver, HasVisibility,
+										HasModality,
+										HasSyntheticMethodForAnnotations,
+										HasKotlinMultiPlatformImplementations,
+										HasKotlinExternalImplementation {
 	/**
 	 * If the Kotlin property has annotations with target [AnnotationTarget.PROPERTY]
 	 * the Kotlin compiler will generate an empty parameterless void-returning
@@ -320,27 +372,39 @@ abstract class KJPropertyElement : KJElement(), HasReceiver, HasVisibility,
 	abstract val isReadOnly: Boolean
 
 	abstract override val enclosingElement: KJTypeElement
+}
+
+abstract class KJPropertyElement : KJElement(), KJPropertyElement_ {
 	companion object
 }
 
-sealed class KJFieldElement : KJElement(), HasReceiver {
+internal interface KJFieldElement_ : KJElement_, HasReceiver {
 	abstract override fun asJavaxElement(): VariableElement
+	abstract override val enclosingElement: KJElement
+	override val enclosedElements: Set<Nothing> get() = emptySet()
+}
 
-	abstract override val enclosingElement: KJPropertyElement
-
-	override val enclosedElements: Set<Nothing> = emptySet()
+abstract class KJFieldElement : KJElement(), KJFieldElement_ {
 	final override fun toString(): String = simpleName
 	companion object
+}
+
+internal interface KJDelegateFieldElement_ : KJFieldElement_ {
+	/** A delegate field is always enclosed by its property */
+	abstract override val enclosingElement: KJPropertyElement
 }
 
 /**
  * A [KJDelegateFieldElement] is the field that contains the delegate instance
  * for Kotlin delegated properties.
  */
-abstract class KJDelegateFieldElement : KJFieldElement() {
-	/** A delegate field is always enclosed by its property */
-	abstract override val enclosingElement: KJPropertyElement
+abstract class KJDelegateFieldElement : KJFieldElement(), KJDelegateFieldElement_ {
 	companion object
+}
+
+internal interface KJBackingFieldElement_ : KJFieldElement_ {
+	/** A backing field is always enclosed by its property */
+	abstract override val enclosingElement: KJPropertyElement
 }
 
 /**
@@ -349,13 +413,11 @@ abstract class KJDelegateFieldElement : KJFieldElement() {
  * (i.e. `mProp` would be the backing field of the property `prop` with the
  * accessors `setProp` and `getProp`).
  */
-abstract class KJBackingFieldElement : KJFieldElement() {
-	/* A backing field is always enclosed by its property */
-	abstract override val enclosingElement: KJPropertyElement
+abstract class KJBackingFieldElement : KJFieldElement(), KJBackingFieldElement_ {
 	companion object
 }
 
-abstract class KJModuleElement : KJElement(), HasQualifiedName, CanBeUnnamed {
+internal interface KJModuleElement_ : KJElement_, HasQualifiedName, CanBeUnnamed {
 	/** Whether this module is open */
 	abstract val isOpen: Boolean
 
@@ -368,26 +430,39 @@ abstract class KJModuleElement : KJElement(), HasQualifiedName, CanBeUnnamed {
 	abstract override val enclosedElements: Set<KJPackageElement>
 	abstract override fun asJavaxElement(): ModuleElement
 	abstract override fun asTypeMirror(): KJModuleType
+}
 
+abstract class KJModuleElement : KJElement(), KJModuleElement_  {
 	final override fun toString(): String
 			= if (isUnnamed) "unnamed module" else qualifiedName
 
 	companion object
 }
 
-abstract class KJPackageElement : KJElement(), HasQualifiedName, CanBeUnnamed {
+internal interface KJPackageElement_ : KJElement_, HasQualifiedName, CanBeUnnamed {
 	/** Whether this package is unnamed */
 	abstract override val isUnnamed: Boolean
 
 	abstract override fun asJavaxElement(): PackageElement
 	abstract override fun asTypeMirror(): KJPackageType
+}
 
+abstract class KJPackageElement : KJElement(), KJPackageElement_ {
 	final override fun toString(): String
 			= if (isUnnamed) "unnamed package" else qualifiedName
 
 	companion object
 }
 
+internal interface KJOtherElement_ : KJElement_ {
+	/** A [KJOtherElement] will always have originated from a Javax [Element] with kind [ElementKind.OTHER]. */
+	abstract override val origin: KJOrigin.Java
+
+	/** This [Element] will have kind [ElementKind.OTHER]. */
+	abstract override fun asJavaxElement(): Element
+}
+
+/** An element that was converted from a Javax [Element] with kind [ElementKind.OTHER]. */
 abstract class KJOtherElement : KJElement() {
 	companion object
 }
