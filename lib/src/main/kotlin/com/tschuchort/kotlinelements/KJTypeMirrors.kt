@@ -12,6 +12,7 @@ import javax.lang.model.type.*
 /** Mixin interface for a [KJTypeMirror] that may have a nullability modifier */
 interface HasNullability {
 	val nullable: Boolean?
+	companion object
 }
 
 internal fun nullabilitySuffix(it: HasNullability) = when(it.nullable) {
@@ -23,6 +24,7 @@ internal fun nullabilitySuffix(it: HasNullability) = when(it.nullable) {
 /** Mixin interface for [KJTypeMirror]s that may have type arguments */
 interface HasTypeArguments {
 	val typeArguments: List<KJTypeMirror>
+	companion object
 }
 
 /** Represents the use of a type, similar to [TypeMirror] */
@@ -39,6 +41,8 @@ sealed class KJTypeMirror: AnnotatedConstruct {
 	abstract override fun toString(): String
 	abstract override fun equals(other: Any?): Boolean
 	abstract override fun hashCode(): Int
+
+	companion object
 }
 
 /** Represents the type of an executable element such as a method or constructor */
@@ -68,6 +72,8 @@ abstract class KJExecutableType : KJTypeMirror() {
 			parameterTypes, receiverType, returnType,
 			thrownTypes, typeVariables, annotationMirrors
 	)
+
+	companion object
 }
 
 /** Represents the intersection of multiple types. This type may appear
@@ -84,6 +90,8 @@ abstract class KJIntersectionType : KJTypeMirror() {
 	} ?: false
 
 	final override fun hashCode(): Int = Objects.hash(bounds, annotationMirrors)
+
+	companion object
 }
 
 /** Represents the null type. The type of the expression null */
@@ -141,13 +149,17 @@ abstract class KJDeclaredType : KJTypeMirror(), HasTypeArguments, HasQualifiedNa
 
 	override fun hashCode(): Int
 			= Objects.hash(qualifiedName, nullable, typeArguments, annotationMirrors)
+
+	companion object
 }
 
 /**
  * Represents types that do not necessarily have the same name in Java code as
  * in Kotlin, including primitives, collections and arrays.
  */
-sealed class KJMappedType : KJTypeMirror(), HasNullability, HasQualifiedName
+sealed class KJMappedType : KJTypeMirror(), HasNullability, HasQualifiedName {
+	companion object
+}
 
 abstract class KJPrimitiveType : KJMappedType() {
 	abstract val kind: Kind
@@ -270,11 +282,6 @@ abstract class KJMappedBuiltInType : KJMappedType(), HasTypeArguments,
 		internal val kotlinQualifiedName get() = "$kotlinPackageName.$kotlinSimpleName"
 	}
 
-	companion object {
-		protected const val javaPackageName: kotlin.String = "java.lang"
-		protected const val kotlinPackageName: kotlin.String = "kotlin"
-	}
-
 	override val qualifiedName: String
 		get() = kind.kotlinQualifiedName
 
@@ -291,6 +298,11 @@ abstract class KJMappedBuiltInType : KJMappedType(), HasTypeArguments,
 
 	final override fun hashCode(): Int
 			= Objects.hash(qualifiedName, nullable, typeArguments, annotationMirrors)
+
+	companion object {
+		protected const val javaPackageName: kotlin.String = "java.lang"
+		protected const val kotlinPackageName: kotlin.String = "kotlin"
+	}
 }
 
 abstract class KJMappedCollectionType : KJMappedType(), HasTypeArguments, HasSimpleName, HasQualifiedName {
@@ -362,10 +374,6 @@ abstract class KJMappedCollectionType : KJMappedType(), HasTypeArguments, HasSim
 		}
 	}
 
-	companion object {
-		private const val kotlinPackageName = "kotlin.collections"
-	}
-
 	final override val simpleName: String
 		get() = kind.kotlinQualifiedNameWithArgs(mutable, emptyList()).substringAfterLast(".")
 
@@ -384,12 +392,17 @@ abstract class KJMappedCollectionType : KJMappedType(), HasTypeArguments, HasSim
 
 	final override fun hashCode(): Int
 			= Objects.hash(mutable, nullable, kind, typeArguments, annotationMirrors)
+
+	companion object {
+		private const val kotlinPackageName = "kotlin.collections"
+	}
 }
 
 /** Represents an array type */
 sealed class KJArrayType : KJMappedType(), HasQualifiedName, HasSimpleName {
 	abstract val componentType: KJTypeMirror
 	abstract override fun toJavaxTypeMirror(): ArrayType
+	companion object
 }
 
 /**
@@ -411,6 +424,8 @@ abstract class KJReferenceArrayType : KJArrayType(), HasTypeArguments {
 		it.nullable == nullable && it.componentType == componentType
 				&& it.annotationMirrors == annotationMirrors
 	} ?: false
+
+	companion object
 }
 
 /**
@@ -434,6 +449,8 @@ abstract class KJPrimitiveArrayType : KJArrayType() {
 	} ?: false
 
 	final override fun hashCode(): Int = Objects.hash(componentType, nullable, annotationMirrors)
+
+	companion object
 }
 
 /** Represents the use of a type alias */
@@ -464,12 +481,15 @@ abstract class KJTypeAlias : KJDeclaredType() {
 
 	final override fun hashCode(): Int
 			= Objects.hash(expandedType, underlyingType, nullable, annotationMirrors)
+
+	companion object
 }
 
 abstract class KJInlineClassType : KJDeclaredType() {
 	//TODO("inline class type")
 
 	abstract val underlyingType: KJTypeMirror
+	companion object
 }
 
 /** Represents a type that could not be resolved */
@@ -506,6 +526,8 @@ abstract class KJTypeVariable : KJTypeMirror(), HasSimpleName, ConvertibleToElem
 
 	final override fun hashCode(): Int
 			= Objects.hash(upperBound, lowerBound, simpleName, annotationMirrors)
+
+	companion object
 }
 
 /** Represents a union type. As of the RELEASE_7 source version,
@@ -522,6 +544,8 @@ abstract class KJUnionType : KJTypeMirror() {
 	} ?: false
 
 	final override fun hashCode(): Int = Objects.hash(alternatives, annotationMirrors)
+
+	companion object
 }
 
 /**
@@ -609,10 +633,14 @@ abstract class KJWildcardType : KJTypeMirror() {
 	} ?: false
 
 	final override fun hashCode(): Int = Objects.hash(kind, annotationMirrors)
+
+	companion object
 }
 
 /** Represents a pseudo-type like that of a package or module */
-sealed class KJPseudoType : KJTypeMirror()
+sealed class KJPseudoType : KJTypeMirror() {
+	companion object
+}
 
 /** Represents the pseudo-type of a package */
 abstract class KJPackageType : KJPseudoType(), HasQualifiedName, CanBeUnnamed {
@@ -625,6 +653,8 @@ abstract class KJPackageType : KJPseudoType(), HasQualifiedName, CanBeUnnamed {
 	} ?: false
 
 	final override fun hashCode(): Int = Objects.hash(toString(), annotationMirrors)
+
+	companion object
 }
 
 /** Represents the pseudo-type of a module */
@@ -638,7 +668,11 @@ abstract class KJModuleType : KJPseudoType(), HasQualifiedName, CanBeUnnamed {
 	} ?: false
 
 	final override fun hashCode(): Int = Objects.hash(qualifiedName, annotationMirrors)
+
+	companion object
 }
 
 /** Represents a type of unknown or unspecified kind */
-abstract class KJOtherType : KJTypeMirror()
+abstract class KJUnknownType : KJTypeMirror() {
+	companion object
+}

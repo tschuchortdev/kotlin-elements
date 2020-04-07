@@ -171,8 +171,6 @@ internal fun ProtoBuf.Type.toKJTypeMirror(
 	}
 }
 
-class KotlinTypeMirrorConversionException internal constructor(
-		internal val protoType: ProtoBuf.Type,
-		internal val metadataContext: MetadataContext,
-		cause: Throwable
-) : RuntimeException("Could not convert ProtoBuf.Type to KotlinTypeMirror", cause)
+class KJTypeMirrorConversionException(
+	cause: Throwable
+) : KJConversionException("", cause)

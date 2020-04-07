@@ -298,7 +298,7 @@ internal class JavaModuleType(private val javaxType: NoType)
 }
 
 internal class JavaOtherType(private val javaxType: TypeMirror)
-	: KJOtherType(), AnnotatedConstruct by javaxType {
+	: KJUnkownType(), AnnotatedConstruct by javaxType {
 
 	override fun toJavaxTypeMirror(): TypeMirror = javaxType
 

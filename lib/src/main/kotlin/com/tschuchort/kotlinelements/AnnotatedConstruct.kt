@@ -1,15 +1,10 @@
 package com.tschuchort.kotlinelements
 
-import com.sun.tools.javac.code.TypeMetadata
 import com.tschuchort.kotlinelements.mixins.ConvertibleToElement
 import com.tschuchort.kotlinelements.mixins.ConvertibleToTypeMirror
 import com.tschuchort.kotlinelements.mixins.HasQualifiedName
 import kotlinx.metadata.KmAnnotation
 import kotlinx.metadata.KmAnnotationArgument
-import java.lang.RuntimeException
-import java.lang.reflect.Proxy
-import java.security.AccessController
-import java.security.PrivilegedAction
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.AnnotatedConstruct
 import javax.lang.model.element.*
@@ -54,9 +49,7 @@ sealed class KJAnnotationValue<out T : Any> {
 }
 
 interface KJAnnotatedConstruct {
-
     val annotations: List<KJAnnotationMirror>
-
     fun asJavax(): AnnotatedConstruct
 
     companion object
@@ -92,6 +85,7 @@ internal fun KJAnnotationMirror.Companion.fromMetadata(kmAnn: KmAnnotation, proc
     }
 
     override fun asJavax(): AnnotationMirror {
+        return annotationMirrorFromMetadata(kmAnn, processingEnv)
     }
 
     override fun asTypeMirror(): KJDeclaredType {
@@ -119,8 +113,11 @@ internal fun KJAnnotatedConstruct.Companion.fromMetadata(kmAnnotations: List<KmA
         : KJAnnotatedConstruct = object : KJAnnotatedConstruct {
 
     private val annotationsByClass: Map<KClass<*>, KJAnnotationMirror> by lazy {
-        kmAnnotations.map { KJAnnotationMirror.fromMetadata(it, processingEnv) }
-            .associateBy {  }
+        kmAnnotations.associate { kmAnn ->
+            val annClass = Class.forName(kmAnn.className.replace('/', '.')).kotlin
+            val annMirror = KJAnnotationMirror.fromMetadata(kmAnn, processingEnv)
+            Pair(annClass, annMirror)
+        }
     }
 
     override val annotations: List<KJAnnotationMirror> = annotationsByClass.values.toList()
@@ -135,12 +132,18 @@ internal fun annotatedConstructFromMetadata(annotations: List<KmAnnotation>,
                                             processingEnv: ProcessingEnvironment)
         : AnnotatedConstruct = object : AnnotatedConstruct {
 
-    override fun <A : Annotation> getAnnotationsByType(annotationType: Class<A>): Array<A> {
+    override fun <A : Annotation> getAnnotationsByType(annotationType: Class<A>): Array<out A> {
         require(annotationType.isAnnotation) { "Not an annotation type: $annotationType" }
+
+        @Suppress("UNCHECKED_CAST")
+        return annotations.filter { it.className.replace('/', '.') == annotationType.canonicalName }
+            .map { ann -> createAnnotationProxy<A>(ann, annotationType) as Any }
+            .toTypedArray() as Array<out A>
     }
 
     override fun <A : Annotation> getAnnotation(annotationType: Class<A>): A? {
         require(annotationType.isAnnotation) { "Not an annotation type: $annotationType" }
+
         return annotations.firstOrNull { it.className.replace('/', '.') == annotationType.canonicalName }
             ?.let { ann -> createAnnotationProxy<A>(ann, annotationType) }
     }
@@ -154,12 +157,19 @@ internal fun annotatedConstructFromMetadata(annotations: List<KmAnnotation>,
 
 internal fun annotationMirrorFromMetadata(ann: KmAnnotation, processingEnv: ProcessingEnvironment)
         = object : AnnotationMirror {
+
     private val typeElement by lazy {
         processingEnv.elementUtils.getTypeElement(ann.className.replace('/', '.'))
             .also { assert(it.kind == ElementKind.ANNOTATION_TYPE) }
     }
 
     override fun getAnnotationType(): DeclaredType {
+        try {
+            return processingEnv.typeUtils.getDeclaredType(typeElement)
+        }
+        catch (t: Throwable) {
+            throw KJConversionException("While trying to convert a KmAnnotation to Javax AnnotationMirror:\n$ann", t)
+        }
     }
 
     private val elementValues_: Map<out ExecutableElement, AnnotationValue> by lazy {
@@ -168,18 +178,18 @@ internal fun annotationMirrorFromMetadata(ann: KmAnnotation, processingEnv: Proc
                 .mapNotNull { it.asExecutableElement() }
                 .associateBy { it.simpleName.toString() }
 
-            ann.arguments.entries.map { annArg ->
-                val executable = executablesByName[annArg.key]
+            ann.arguments.entries.associate { annArg ->
+                val argAccessor = executablesByName[annArg.key]
                     ?: error(
                         "Could not find executable element with the same name that represents the " +
                                 "annotation property ${annArg.key} in the annotation class element " +
                                 "$typeElement.\nLooked at the following executable elements: $executablesByName"
                     )
 
-                val value = annotationValueFromMetadata(annArg.value)
+                val argValue = annotationValueFromMetadata(annArg.value, processingEnv)
 
-                Pair(executable, value)
-            }.toMap()
+                Pair(argAccessor, argValue)
+            }
         }
         catch (t : Throwable) {
             throw KJConversionException("While trying to convert a KmAnnotation to Javax AnnotationMirror:\n$ann", t)
@@ -194,7 +204,7 @@ internal fun annotationValueFromMetadata(annArg: KmAnnotationArgument<*>, proces
     @Suppress("REDUNDANT_PROJECTION", "USELESS_CAST")
     override fun getValue(): Any? = try {
         when (annArg) {
-            is KmAnnotationArgument.KClassValue -> TODO() as TypeMirror
+            is KmAnnotationArgument.KClassValue -> annArg.value.replace("/", "."  as TypeMirror
             is KmAnnotationArgument.EnumValue -> {
                 val javaxTypeElem =
                     processingEnv.elementUtils.getTypeElement(annArg.enumClassName.replace('/', '.'))
@@ -218,7 +228,7 @@ internal fun annotationValueFromMetadata(annArg: KmAnnotationArgument<*>, proces
 
     @Suppress("UNCHECKED_CAST")
     override fun toString(): String = when (annArg) {
-        is KmAnnotationArgument.KClassValue -> TODO()
+        is KmAnnotationArgument.KClassValue ->
         is KmAnnotationArgument.EnumValue -> (value as VariableElement).toString()
         is KmAnnotationArgument.AnnotationValue -> (value as AnnotationMirror).toString()
         is KmAnnotationArgument.ArrayValue -> (value as List<AnnotationValue>).joinToString(", ", "{", "}")
